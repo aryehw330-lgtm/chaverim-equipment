@@ -40,13 +40,14 @@ body{font-family:-apple-system,'Helvetica Neue',sans-serif;background:#f0ede6;co
 .equip-location{font-size:11px;color:var(--dark-gray);margin-top:2px}
 .form-group{margin-bottom:14px}
 label{display:block;font-size:13px;font-weight:600;color:#444;margin-bottom:5px}
-select,input[type=text],textarea{width:100%;padding:11px 13px;border:1.5px solid #ddd;border-radius:10px;font-size:15px;background:#fff;-webkit-appearance:none;appearance:none;color:#222}
+select,input[type=text],input[type=password],textarea{width:100%;padding:11px 13px;border:1.5px solid #ddd;border-radius:10px;font-size:15px;background:#fff;-webkit-appearance:none;appearance:none;color:#222}
 select:focus,input:focus,textarea:focus{outline:none;border-color:var(--green-light)}
 textarea{resize:vertical;min-height:70px}
 .btn{width:100%;padding:14px;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;transition:opacity .2s}
 .btn:active{opacity:.8}
 .btn-green{background:var(--green);color:#fff}
 .btn-gold{background:var(--gold);color:var(--green)}
+.btn-red{background:var(--red);color:#fff}
 .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
 .stat-card{background:var(--card-bg);border-radius:12px;padding:12px 8px;text-align:center;box-shadow:var(--shadow)}
 .stat-num{font-size:26px;font-weight:800;color:var(--green)}
@@ -66,6 +67,18 @@ textarea{resize:vertical;min-height:70px}
 .type-btn{padding:12px;border-radius:10px;border:2px solid #ddd;background:#fff;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;text-align:center}
 .type-btn.selected-out{border-color:#e67e22;background:#fff3e0;color:#e67e22}
 .type-btn.selected-in{border-color:#27ae60;background:#e8f5e9;color:#27ae60}
+.lock-screen{padding:40px 20px;text-align:center}
+.lock-icon{font-size:48px;margin-bottom:16px}
+.lock-title{font-size:18px;font-weight:700;color:var(--green);margin-bottom:8px}
+.lock-sub{font-size:13px;color:var(--dark-gray);margin-bottom:20px}
+.lock-input-wrap{display:flex;gap:8px;max-width:300px;margin:0 auto 16px}
+.lock-input-wrap input{flex:1;text-align:center;font-size:20px;letter-spacing:4px;border-radius:12px}
+.lock-error{color:var(--red);font-size:13px;margin-top:8px;min-height:18px}
+.loc-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0ede6}
+.loc-item:last-child{border-bottom:none}
+.loc-name{font-size:13px;font-weight:600;flex:1}
+.loc-current{font-size:12px;color:var(--dark-gray);flex:1}
+.loc-edit-btn{background:var(--green);color:#fff;border:none;padding:5px 10px;border-radius:7px;font-size:12px;cursor:pointer;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -88,6 +101,7 @@ textarea{resize:vertical;min-height:70px}
   </div>
   <div class="card"><div class="card-header">Currently Out</div><div class="card-body" id="dash-out-list"><div class="loading"><div class="spinner"></div><br>Loading...</div></div></div>
   <div class="card"><div class="card-header">CNC Items (Wrong Location)</div><div class="card-body" id="dash-cnc-list"><div class="loading"><div class="spinner"></div><br>Loading...</div></div></div>
+  <div class="card"><div class="card-header">Recent Activity</div><div class="card-body" id="dash-activity"><div class="loading"><div class="spinner"></div><br>Loading...</div></div></div>
 </div>
 <div class="page" id="page-checkinout">
   <div class="card"><div class="card-header">Check In / Check Out</div><div class="card-body">
@@ -98,9 +112,17 @@ textarea{resize:vertical;min-height:70px}
     <div class="form-group"><label>Item</label><select id="form-item"><option value="">- Select item -</option></select></div>
     <div class="form-group"><label>Member # (BC-___)</label><input type="text" id="form-member" placeholder="e.g. 123" maxlength="6"></div>
     <div class="form-group"><label>Call # (optional)</label><input type="text" id="form-call" placeholder="e.g. 4521"></div>
-    <div class="form-group" id="location-group"><label>Location</label><input type="text" id="form-location" placeholder="Where is it going?"></div>
-    <div class="form-group" id="cc-cnc-group" style="display:none"><label>Status</label><select id="form-cc-cnc"><option value="CC">CC - Returned to correct location</option><option value="CNC">CNC - Item in wrong location</option></select></div>
-    <div class="form-group" id="cnc-note-group" style="display:none"><label>CNC Note</label><textarea id="form-cnc-note" placeholder="e.g. CNC Fan 1 left at wrong trailer"></textarea></div>
+    <div class="form-group" id="cc-cnc-group" style="display:none">
+      <label>Status (CC / CNC)</label>
+      <select id="form-cc-cnc" onchange="toggleCncNote()">
+        <option value="CC">CC - Returned to correct location</option>
+        <option value="CNC">CNC - Item in wrong location (be specific)</option>
+      </select>
+    </div>
+    <div class="form-group" id="cnc-note-group" style="display:none">
+      <label>CNC Details - Where is it? Be specific.</label>
+      <textarea id="form-cnc-note" placeholder="e.g. Fan 3 left at 123 Main St, not returned to COBC garage"></textarea>
+    </div>
     <button class="btn btn-green" onclick="submitCheckInOut()">Submit</button>
   </div></div>
 </div>
@@ -115,132 +137,77 @@ textarea{resize:vertical;min-height:70px}
   <div class="card"><div class="card-body" id="inventory-list"><div class="loading"><div class="spinner"></div><br>Loading...</div></div></div>
 </div>
 <div class="page" id="page-admin">
-  <div class="card"><div class="card-header">Add New Item</div><div class="card-body">
-    <div class="form-group"><label>Item Name</label><input type="text" id="new-item-name" placeholder="e.g. Air Compressor #3"></div>
-    <div class="form-group"><label>Default Location</label><input type="text" id="new-item-location" placeholder="e.g. Teaneck Garage"></div>
-    <button class="btn btn-gold" onclick="addNewItem()">Add Item to Sheet</button>
-  </div></div>
-  <div class="card"><div class="card-header">Recent Activity</div><div class="card-body" id="admin-activity"><div class="loading"><div class="spinner"></div><br>Loading...</div></div></div>
-  <div class="card"><div class="card-header">System Info</div><div class="card-body" style="font-size:13px;color:#555;line-height:1.8;">
-    <div><strong>Version:</strong> GitHub PWA v1.0</div>
-    <div><strong>Last Sync:</strong> <span id="last-sync">-</span></div>
-    <br><button class="btn btn-green" onclick="refreshAll()">Force Refresh</button>
-  </div></div>
+  <div id="admin-lock">
+    <div class="lock-screen">
+      <div class="lock-icon">&#128274;</div>
+      <div class="lock-title">Admin Access</div>
+      <div class="lock-sub">Enter the 4-digit admin code to continue</div>
+      <div class="lock-input-wrap">
+        <input type="password" id="admin-pin" maxlength="4" placeholder="****" oninput="checkPin()" inputmode="numeric" pattern="[0-9]*">
+      </div>
+      <div class="lock-error" id="pin-error"></div>
+    </div>
+  </div>
+  <div id="admin-content" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-size:13px;color:var(--dark-gray)">&#128275; Admin unlocked</div>
+      <button onclick="lockAdmin()" style="background:none;border:1px solid #ddd;padding:5px 12px;border-radius:8px;font-size:12px;cursor:pointer">Lock</button>
+    </div>
+    <div class="card"><div class="card-header">+ Add New Item</div><div class="card-body">
+      <div class="form-group"><label>Item Name</label><input type="text" id="new-item-name" placeholder="e.g. Air Compressor #3"></div>
+      <div class="form-group"><label>Default Location</label><input type="text" id="new-item-location" placeholder="e.g. Teaneck Garage"></div>
+      <button class="btn btn-gold" onclick="addNewItem()">Add Item to Sheet</button>
+    </div></div>
+    <div class="card"><div class="card-header">Edit Item Locations (Col D)</div><div class="card-body" id="location-editor">
+      <div class="loading"><div class="spinner"></div><br>Loading items...</div>
+    </div></div>
+    <div class="card"><div class="card-header">System Info</div><div class="card-body" style="font-size:13px;color:#555;line-height:1.8;">
+      <div><strong>Version:</strong> GitHub PWA v1.1</div>
+      <div><strong>Last Sync:</strong> <span id="last-sync">-</span></div>
+      <br><button class="btn btn-green" onclick="refreshAll()">Force Refresh</button>
+    </div></div>
+  </div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
 const AS='https://script.google.com/macros/s/AKfycbyXwNBWlifFTPzWdQycpC27fTUsn956KPn9MbrPDM9kXqrFYrqdYqvN_8a1WDmN92OMsQ/exec';
-let items=[],curFilter='all',selType=null;
-function switchTab(t,el){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
-  document.getElementById('page-'+t).classList.add('active');
-  el.classList.add('active');
-  if(t==='inventory')renderInv();
-  if(t==='dashboard')renderDash();
-  if(t==='admin')renderActivity();
-  if(t==='checkinout')populateDrop();
+const ADMIN_PIN='4357';
+let items=[],curFilter='all',selType=null,adminUnlocked=false;
+function checkPin(){
+  const v=document.getElementById('admin-pin').value;
+  document.getElementById('pin-error').textContent='';
+  if(v.length===4){
+    if(v===ADMIN_PIN){adminUnlocked=true;document.getElementById('admin-lock').style.display='none';document.getElementById('admin-content').style.display='block';renderLocationEditor();}
+    else{document.getElementById('pin-error').textContent='Incorrect code. Try again.';document.getElementById('admin-pin').value='';}
+  }
 }
-async function load(){
-  try{
-    const r=await fetch(AS+'?action=getInventory&t='+Date.now());
-    const d=await r.json();
-    if(d&&d.items){items=d.items;document.getElementById('last-sync').textContent=new Date().toLocaleTimeString();return d.items;}
-  }catch(e){console.error(e);}
-  return null;
-}
+function lockAdmin(){adminUnlocked=false;document.getElementById('admin-lock').style.display='block';document.getElementById('admin-content').style.display='none';document.getElementById('admin-pin').value='';document.getElementById('pin-error').textContent='';}
+function switchTab(t,el){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));document.getElementById('page-'+t).classList.add('active');el.classList.add('active');if(t==='inventory')renderInv();if(t==='dashboard')renderDash();if(t==='checkinout')populateDrop();}
+async function load(){try{const r=await fetch(AS+'?action=getInventory&t='+Date.now());const d=await r.json();if(d&&d.items){items=d.items;document.getElementById('last-sync').textContent=new Date().toLocaleTimeString();return d.items;}}catch(e){console.error(e);}return null;}
 async function renderDash(){
   const data=items.length?items:await load();
-  if(!data){
-    document.getElementById('dash-out-list').innerHTML='<div style="color:#888;font-size:13px">Could not load. Check connection.</div>';
-    document.getElementById('dash-cnc-list').innerHTML='';
-    return;
-  }
+  if(!data){document.getElementById('dash-out-list').innerHTML='<div style="color:#888;font-size:13px">Could not load data.</div>';document.getElementById('dash-cnc-list').innerHTML='';document.getElementById('dash-activity').innerHTML='';return;}
   document.getElementById('stat-total').textContent=data.length;
-  const out=data.filter(i=>i.status==='OUT'),cnc=data.filter(i=>i.ccCnc==='CNC');
+  const out=data.filter(i=>i.status==='OUT'),cnc=data.filter(i=>(i.ccCnc||'').toUpperCase()==='CNC');
   document.getElementById('stat-out').textContent=out.length;
   document.getElementById('stat-in').textContent=data.filter(i=>i.status==='IN').length;
-  document.getElementById('dash-out-list').innerHTML=out.length
-    ?out.map(i=>'<div class="equip-item"><div class="equip-status-dot dot-out"></div><div style="flex:1"><div class="equip-name">'+i.name+'</div><div class="equip-location">'+(i.location||'-')+' - BC-'+(i.member||'?')+'</div></div><span class="badge badge-out">OUT</span></div>').join('')
-    :'<div style="color:#27ae60;font-size:14px;text-align:center;padding:10px">All items checked in!</div>';
-  document.getElementById('dash-cnc-list').innerHTML=cnc.length
-    ?cnc.map(i=>'<div class="equip-item"><div class="equip-status-dot" style="background:#e74c3c"></div><div style="flex:1"><div class="equip-name">'+i.name+'</div><div class="equip-location">'+(i.location||'-')+'</div></div><span class="badge badge-cnc">CNC</span></div>').join('')
-    :'<div style="color:#888;font-size:13px;text-align:center;padding:10px">No CNC items</div>';
+  document.getElementById('dash-out-list').innerHTML=out.length?out.map(i=>'<div class="equip-item"><div class="equip-status-dot dot-out"></div><div style="flex:1"><div class="equip-name">'+i.name+'</div><div class="equip-location">'+(i.location||'-')+' - BC-'+(i.member||'?')+'</div></div><span class="badge badge-out">OUT</span></div>').join(''):'<div style="color:#27ae60;font-size:14px;text-align:center;padding:10px">All items checked in!</div>';
+  document.getElementById('dash-cnc-list').innerHTML=cnc.length?cnc.map(i=>'<div class="equip-item"><div class="equip-status-dot" style="background:#e74c3c"></div><div style="flex:1"><div class="equip-name">'+i.name+'</div><div class="equip-location">'+(i.location||'-')+'</div></div><span class="badge badge-cnc">CNC</span></div>').join(''):'<div style="color:#888;font-size:13px;text-align:center;padding:10px">No CNC items</div>';
+  const recent=[...data].filter(i=>i.lastUpdated).sort((a,b)=>new Date(b.lastUpdated)-new Date(a.lastUpdated)).slice(0,10);
+  document.getElementById('dash-activity').innerHTML=recent.length?recent.map(i=>'<div class="equip-item"><div class="equip-status-dot '+(i.status==='IN'?'dot-in':'dot-out')+'"></div><div style="flex:1"><div class="equip-name">'+i.name+'</div><div class="equip-location">'+(i.lastUpdated?new Date(i.lastUpdated).toLocaleString():'-')+'</div></div><span class="badge '+(i.status==='IN'?'badge-in':'badge-out')+'">'+i.status+'</span></div>').join(''):'<div style="color:#888;font-size:13px">No recent activity</div>';
 }
 function setFilter(f,el){curFilter=f;document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));el.classList.add('active');renderInv();}
-async function renderInv(){
-  const data=items.length?items:await load();
-  if(!data){document.getElementById('inventory-list').innerHTML='<div style="color:#888">Could not load.</div>';return;}
-  filterInv();
-}
-function filterInv(){
-  const q=(document.getElementById('search-input').value||'').toLowerCase();
-  let f=items;
-  if(curFilter==='IN')f=f.filter(i=>i.status==='IN');
-  else if(curFilter==='OUT')f=f.filter(i=>i.status==='OUT');
-  else if(curFilter==='CNC')f=f.filter(i=>i.ccCnc==='CNC');
-  if(q)f=f.filter(i=>(i.name||'').toLowerCase().includes(q)||(i.location||'').toLowerCase().includes(q));
-  document.getElementById('inventory-list').innerHTML=f.length
-    ?f.map(i=>'<div class="equip-item"><div class="equip-status-dot '+(i.status==='IN'?'dot-in':'dot-out')+'"></div><div style="flex:1"><div class="equip-name">'+i.name+'</div><div class="equip-location">'+(i.location||'-')+(i.member?' - BC-'+i.member:'')+'</div></div><div style="text-align:right"><span class="badge '+(i.status==='IN'?'badge-in':'badge-out')+'">'+i.status+'</span>'+(i.ccCnc?'<br><span class="badge '+(i.ccCnc==='CNC'?'badge-cnc':'badge-cc')+'">'+i.ccCnc+'</span>':'')+'</div></div>').join('')
-    :'<div style="color:#888;text-align:center;padding:20px">No items found</div>';
-}
-function selectType(t){
-  selType=t;
-  document.getElementById('btn-checkout').className='type-btn'+(t==='OUT'?' selected-out':'');
-  document.getElementById('btn-checkin').className='type-btn'+(t==='IN'?' selected-in':'');
-  document.getElementById('location-group').style.display=t==='OUT'?'block':'none';
-  document.getElementById('cc-cnc-group').style.display=t==='IN'?'block':'none';
-  document.getElementById('cnc-note-group').style.display='none';
-  if(t==='IN')document.getElementById('form-cc-cnc').onchange=function(){document.getElementById('cnc-note-group').style.display=this.value==='CNC'?'block':'none';};
-}
-function populateDrop(){
-  const s=document.getElementById('form-item');
-  s.innerHTML='<option value="">- Select item -</option>';
-  items.forEach(i=>{const o=document.createElement('option');o.value=i.row||i.name;o.textContent=i.name+(i.status?' ('+i.status+')':'');s.appendChild(o);});
-}
-async function submitCheckInOut(){
-  if(!selType){toast('Select Check IN or OUT');return;}
-  const item=document.getElementById('form-item').value,member=document.getElementById('form-member').value.trim();
-  if(!item){toast('Select an item');return;}
-  if(!member){toast('Enter member number');return;}
-  const p={action:'checkInOut',status:selType,row:item,member,call:document.getElementById('form-call').value.trim(),location:document.getElementById('form-location').value.trim(),ccCnc:selType==='IN'?document.getElementById('form-cc-cnc').value:'',cncNote:selType==='IN'&&document.getElementById('form-cc-cnc').value==='CNC'?document.getElementById('form-cnc-note').value.trim():''};
-  toast('Submitting...');
-  try{
-    const r=await fetch(AS,{method:'POST',body:JSON.stringify(p)});
-    const d=await r.json();
-    if(d.success){toast(selType==='OUT'?'Checked out!':'Checked in!');['form-item','form-member','form-call','form-location'].forEach(id=>document.getElementById(id).value='');items=[];setTimeout(refreshAll,500);}
-    else toast('Error: '+(d.error||'Unknown'));
-  }catch(e){toast('Could not connect.');}
-}
-async function renderActivity(){
-  const data=items.length?items:await load();
-  if(!data)return;
-  const recent=[...data].filter(i=>i.lastUpdated).sort((a,b)=>new Date(b.lastUpdated)-new Date(a.lastUpdated)).slice(0,15);
-  document.getElementById('admin-activity').innerHTML=recent.length
-    ?recent.map(i=>'<div class="equip-item"><div class="equip-status-dot '+(i.status==='IN'?'dot-in':'dot-out')+'"></div><div style="flex:1"><div class="equip-name">'+i.name+'</div><div class="equip-location">'+(i.lastUpdated?new Date(i.lastUpdated).toLocaleString():'-')+'</div></div><span class="badge '+(i.status==='IN'?'badge-in':'badge-out')+'">'+i.status+'</span></div>').join('')
-    :'<div style="color:#888;font-size:13px">No recent activity</div>';
-}
-async function addNewItem(){
-  const name=document.getElementById('new-item-name').value.trim(),loc=document.getElementById('new-item-location').value.trim();
-  if(!name){toast('Enter item name');return;}
-  toast('Adding...');
-  try{
-    const r=await fetch(AS,{method:'POST',body:JSON.stringify({action:'addItem',name,location:loc})});
-    const d=await r.json();
-    if(d.success){toast('Item added!');document.getElementById('new-item-name').value='';document.getElementById('new-item-location').value='';items=[];refreshAll();}
-    else toast('Error: '+(d.error||'Unknown'));
-  }catch(e){toast('Could not connect.');}
-}
-function refreshAll(){
-  items=[];
-  load().then(()=>{
-    renderDash();
-    if(document.getElementById('page-inventory').classList.contains('active'))renderInv();
-    if(document.getElementById('page-admin').classList.contains('active'))renderActivity();
-    if(document.getElementById('page-checkinout').classList.contains('active'))populateDrop();
-    toast('Refreshed');
-  });
-}
+async function renderInv(){const data=items.length?items:await load();if(!data){document.getElementById('inventory-list').innerHTML='<div style="color:#888">Could not load.</div>';return;}filterInv();}
+function filterInv(){const q=(document.getElementById('search-input').value||'').toLowerCase();let f=items;if(curFilter==='IN')f=f.filter(i=>i.status==='IN');else if(curFilter==='OUT')f=f.filter(i=>i.status==='OUT');else if(curFilter==='CNC')f=f.filter(i=>(i.ccCnc||'').toUpperCase()==='CNC');if(q)f=f.filter(i=>(i.name||'').toLowerCase().includes(q)||(i.location||'').toLowerCase().includes(q));document.getElementById('inventory-list').innerHTML=f.length?f.map(i=>'<div class="equip-item"><div class="equip-status-dot '+(i.status==='IN'?'dot-in':'dot-out')+'"></div><div style="flex:1"><div class="equip-name">'+i.name+'</div><div class="equip-location">'+(i.location||'-')+(i.member?' - BC-'+i.member:'')+'</div></div><div style="text-align:right"><span class="badge '+(i.status==='IN'?'badge-in':'badge-out')+'">'+i.status+'</span>'+(i.ccCnc?'<br><span class="badge '+((i.ccCnc||'').toUpperCase()==='CNC'?'badge-cnc':'badge-cc')+'">'+i.ccCnc+'</span>':'')+'</div></div>').join(''):'<div style="color:#888;text-align:center;padding:20px">No items found</div>';}
+function selectType(t){selType=t;document.getElementById('btn-checkout').className='type-btn'+(t==='OUT'?' selected-out':'');document.getElementById('btn-checkin').className='type-btn'+(t==='IN'?' selected-in':'');document.getElementById('cc-cnc-group').style.display=t==='IN'?'block':'none';document.getElementById('cnc-note-group').style.display='none';document.getElementById('form-cc-cnc').value='CC';}
+function toggleCncNote(){const isCnc=document.getElementById('form-cc-cnc').value==='CNC';document.getElementById('cnc-note-group').style.display=isCnc?'block':'none';}
+function populateDrop(){const s=document.getElementById('form-item');s.innerHTML='<option value="">- Select item -</option>';items.forEach(i=>{const o=document.createElement('option');o.value=i.row||i.name;o.textContent=i.name+(i.status?' ('+i.status+')':'');s.appendChild(o);});}
+async function submitCheckInOut(){if(!selType){toast('Select Check IN or OUT');return;}const item=document.getElementById('form-item').value,member=document.getElementById('form-member').value.trim();if(!item){toast('Select an item');return;}if(!member){toast('Enter member number');return;}const ccCnc=selType==='IN'?document.getElementById('form-cc-cnc').value:'';const cncNote=ccCnc==='CNC'?document.getElementById('form-cnc-note').value.trim():'';if(ccCnc==='CNC'&&!cncNote){toast('Please describe the wrong location (be specific)');return;}const p={action:'checkInOut',status:selType,row:item,member,call:document.getElementById('form-call').value.trim(),ccCnc,cncNote};toast('Submitting...');try{const r=await fetch(AS,{method:'POST',body:JSON.stringify(p)});const d=await r.json();if(d.success){toast(selType==='OUT'?'Checked out!':'Checked in!');['form-item','form-member','form-call','form-cnc-note'].forEach(id=>document.getElementById(id).value='');document.getElementById('cc-cnc-group').style.display='none';document.getElementById('cnc-note-group').style.display='none';selType=null;document.getElementById('btn-checkout').className='type-btn';document.getElementById('btn-checkin').className='type-btn';items=[];setTimeout(refreshAll,500);}else toast('Error: '+(d.error||'Unknown'));}catch(e){toast('Could not connect.');}}
+function renderLocationEditor(){const el=document.getElementById('location-editor');if(!items.length){el.innerHTML='<div style="color:#888;font-size:13px">No items loaded. Try refreshing.</div>';return;}el.innerHTML=items.map(i=>'<div class="loc-item" id="loc-row-'+i.row+'"><div class="loc-name">'+i.name+'</div><div class="loc-current" id="loc-val-'+i.row+'">'+(i.location||'-')+'</div><button class="loc-edit-btn" onclick="editLocation('+i.row+',\''+((i.location||'').replace(/'/g,"\'"))+'\')">Edit</button></div>').join('');}
+function editLocation(row,currentLoc){const newLoc=prompt('New location for this item:',currentLoc);if(newLoc===null)return;if(!newLoc.trim()){toast('Location cannot be blank');return;}saveLocation(row,newLoc.trim());}
+async function saveLocation(row,newLoc){toast('Saving...');try{const r=await fetch(AS,{method:'POST',body:JSON.stringify({action:'updateLocation',row,location:newLoc})});const d=await r.json();if(d.success){const item=items.find(i=>i.row===row);if(item)item.location=newLoc;document.getElementById('loc-val-'+row).textContent=newLoc;toast('Location updated!');}else toast('Error: '+(d.error||'Unknown'));}catch(e){toast('Could not connect.');}}
+async function addNewItem(){const name=document.getElementById('new-item-name').value.trim(),loc=document.getElementById('new-item-location').value.trim();if(!name){toast('Enter item name');return;}toast('Adding...');try{const r=await fetch(AS,{method:'POST',body:JSON.stringify({action:'addItem',name,location:loc})});const d=await r.json();if(d.success){toast('Item added!');document.getElementById('new-item-name').value='';document.getElementById('new-item-location').value='';items=[];refreshAll();}else toast('Error: '+(d.error||'Unknown'));}catch(e){toast('Could not connect.');}}
+function refreshAll(){items=[];load().then(()=>{renderDash();if(document.getElementById('page-inventory').classList.contains('active'))renderInv();if(document.getElementById('page-checkinout').classList.contains('active'))populateDrop();if(adminUnlocked)renderLocationEditor();toast('Refreshed');});}
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 load().then(()=>{renderDash();populateDrop();});
 </script>
