@@ -1,497 +1,178 @@
-const SSID  = '1iOE4c-BBatkH8zljpQTFmrzZZe_Q4uvBDWAQCos51PE';
-const SHEET = 'Inventory';
-const URL   = 'https://script.google.com/macros/s/AKfycbyXwNBWlifFTPzWdQycpC27fTUsn956KPn9MbrPDM9kXqrFYrqdYqvN_8a1WDmN92OMsQ/exec';
-const LOGO_FILE_ID = '1_4COiTPS2ThR7rsl4zHTKvWQ6K4op81Z';
-
-function getLogo() {
-  try {
-    // Use Drive thumbnail URL - much smaller, no auth needed for public files
-    // Fetch the image, resize to small thumbnail before encoding
-    var cache = CacheService.getScriptCache();
-    var cached = cache.get('cobc_logo_v2');
-    if (cached) return cached;
-    // Fetch as thumbnail (smaller size) 
-    var url = 'https://drive.google.com/thumbnail?id=' + LOGO_FILE_ID + '&sz=w80-h80';
-    var resp = UrlFetchApp.fetch(url, {followRedirects: true, muteHttpExceptions: true});
-    var bytes = resp.getContent();
-    var mime = 'image/jpeg';
-    var b64 = Utilities.base64Encode(bytes);
-    var dataUrl = 'data:' + mime + ';base64,' + b64;
-    // Only cache if small enough (under 90KB)
-    if (dataUrl.length < 90000) {
-      cache.put('cobc_logo_v2', dataUrl, 21600);
-    }
-    return dataUrl;
-  } catch(e) {
-    Logger.log('getLogo error: ' + e.toString());
-    return '';
-  }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="COBC Equipment">
+<meta name="theme-color" content="#1a3a2a">
+<title>Chaverim Equipment Manager</title>
+<style>
+:root{--green:#1a3a2a;--green-light:#3a8a58;--gold:#c9a84c;--dark-gray:#888;--red:#c0392b;--card-bg:#fff;--shadow:0 2px 12px rgba(0,0,0,.12)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,'Helvetica Neue',sans-serif;background:#f0ede6;color:#222;min-height:100vh;padding-bottom:80px}
+.header{background:var(--green);color:#fff;padding:14px 16px 12px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.header-logo{width:38px;height:38px;background:var(--gold);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:var(--green);flex-shrink:0}
+.header-title{font-size:17px;font-weight:700;line-height:1.2}.header-sub{font-size:11px;opacity:.7}.header-right{margin-left:auto}
+.refresh-btn{background:rgba(255,255,255,.15);border:none;color:#fff;padding:7px 12px;border-radius:8px;font-size:13px;cursor:pointer}
+.tabs{display:flex;background:var(--green);padding:0 8px 8px;gap:6px}
+.tab{flex:1;padding:8px 4px;background:rgba(255,255,255,.12);border:none;color:rgba(255,255,255,.7);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
+.tab.active{background:var(--gold);color:var(--green)}
+.page{display:none;padding:12px}.page.active{display:block}
+.card{background:var(--card-bg);border-radius:14px;box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden}
+.card-header{background:var(--green);color:#fff;padding:12px 16px;font-size:14px;font-weight:700}
+.card-body{padding:14px 16px}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.5px}
+.badge-in{background:#d4edda;color:#155724}.badge-out{background:#ffeeba;color:#856404}
+.badge-cc{background:#cce5ff;color:#004085}.badge-cnc{background:#f8d7da;color:#721c24}
+.equip-item{display:flex;align-items:flex-start;padding:11px 0;border-bottom:1px solid #f0ede6;gap:10px}
+.equip-item:last-child{border-bottom:none}
+.equip-status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.dot-in{background:#27ae60}.dot-out{background:#e67e22}
+.equip-name{font-size:14px;font-weight:600}
+.equip-location{font-size:11px;color:var(--dark-gray);margin-top:2px}
+.equip-cnc-detail{font-size:11px;color:#c0392b;margin-top:3px;font-style:italic}
+.form-group{margin-bottom:14px}
+label{display:block;font-size:13px;font-weight:600;color:#444;margin-bottom:5px}
+select,input[type=text],input[type=password],textarea{width:100%;padding:11px 13px;border:1.5px solid #ddd;border-radius:10px;font-size:15px;background:#fff;-webkit-appearance:none;appearance:none;color:#222}
+select:focus,input:focus,textarea:focus{outline:none;border-color:var(--green-light)}
+textarea{resize:vertical;min-height:70px}
+.btn{width:100%;padding:14px;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.btn:active{opacity:.8}.btn-green{background:var(--green);color:#fff}.btn-gold{background:var(--gold);color:var(--green)}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.stat-card{background:var(--card-bg);border-radius:12px;padding:12px 8px;text-align:center;box-shadow:var(--shadow)}
+.stat-num{font-size:26px;font-weight:800;color:var(--green)}
+.stat-label{font-size:10px;color:var(--dark-gray);font-weight:600;margin-top:2px}
+.search-wrap{position:relative;margin-bottom:12px}
+.search-wrap input{padding-left:36px;border-radius:12px;background:#fff;border:1.5px solid #ddd}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--dark-gray)}
+.loading{text-align:center;padding:40px 20px;color:var(--dark-gray);font-size:14px}
+.spinner{display:inline-block;width:28px;height:28px;border:3px solid #ddd;border-top-color:var(--green-light);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+.filter-pills{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.pill{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid #ddd;background:#fff;cursor:pointer;transition:all .15s}
+.pill.active{background:var(--green);color:#fff;border-color:var(--green)}
+.checkin-type-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.type-btn{padding:12px;border-radius:10px;border:2px solid #ddd;background:#fff;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;text-align:center}
+.type-btn.selected-out{border-color:#e67e22;background:#fff3e0;color:#e67e22}
+.type-btn.selected-in{border-color:#27ae60;background:#e8f5e9;color:#27ae60}
+.lock-screen{padding:40px 20px;text-align:center}
+.lock-icon{font-size:48px;margin-bottom:16px}
+.lock-title{font-size:18px;font-weight:700;color:var(--green);margin-bottom:8px}
+.lock-sub{font-size:13px;color:var(--dark-gray);margin-bottom:20px}
+.lock-input-wrap{display:flex;gap:8px;max-width:300px;margin:0 auto 16px}
+.lock-input-wrap input{flex:1;text-align:center;font-size:20px;letter-spacing:4px;border-radius:12px}
+.lock-error{color:var(--red);font-size:13px;margin-top:8px;min-height:18px}
+.loc-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0ede6}
+.loc-item:last-child{border-bottom:none}
+.loc-name{font-size:13px;font-weight:600;flex:1}.loc-current{font-size:12px;color:var(--dark-gray);flex:1}
+.loc-edit-btn{background:var(--green);color:#fff;border:none;padding:5px 10px;border-radius:7px;font-size:12px;cursor:pointer;white-space:nowrap}
+.member-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0ede6}
+.member-item:last-child{border-bottom:none}
+.member-unit{font-size:13px;font-weight:700;color:var(--green);min-width:52px}
+.member-name{font-size:13px;flex:1}.member-phone{font-size:12px;color:var(--dark-gray)}
+.section-note{font-size:12px;color:var(--dark-gray);margin-bottom:12px;padding:8px 12px;background:#f8f5f0;border-radius:8px}
+</style></head><body>
+<div class="header"><div class="header-logo">C</div><div><div class="header-title">Chaverim Equipment</div><div class="header-sub">Bergen County COBC</div></div><div class="header-right"><button class="refresh-btn" onclick="refreshAll()">&#8635; Refresh</button></div></div>
+<div class="tabs"><button class="tab active" onclick="switchTab('dashboard',this)">Dashboard</button><button class="tab" onclick="switchTab('checkinout',this)">Check In/Out</button><button class="tab" onclick="switchTab('inventory',this)">Inventory</button><button class="tab" onclick="switchTab('admin',this)">Admin</button></div>
+<div class="page active" id="page-dashboard">
+  <div class="stats-row"><div class="stat-card"><div class="stat-num" id="stat-total">-</div><div class="stat-label">Total Items</div></div><div class="stat-card"><div class="stat-num" id="stat-out" style="color:#e67e22">-</div><div class="stat-label">Checked Out</div></div><div class="stat-card"><div class="stat-num" id="stat-in" style="color:#27ae60">-</div><div class="stat-label">Available</div></div></div>
+  <div class="card"><div class="card-header">Currently Out</div><div class="card-body" id="dash-out-list"><div class="loading"><div class="spinner"></div><br>Loading...</div></div></div>
+  <div class="card"><div class="card-header">CNC Items (Wrong Location)</div><div class="card-body" id="dash-cnc-list"><div class="loading"><div class="spinner"></div><br>Loading...</div></div></div>
+  <div class="card"><div class="card-header">Recent Activity</div><div class="card-body" id="dash-activity"><div class="loading"><div class="spinner"></div><br>Loading...</div></div></div>
+</div>
+<div class="page" id="page-checkinout">
+  <div class="card"><div class="card-header">Check In / Check Out</div><div class="card-body">
+    <div class="checkin-type-row"><button class="type-btn" id="btn-checkout" onclick="selectType('OUT')">Check OUT</button><button class="type-btn" id="btn-checkin" onclick="selectType('IN')">Check IN</button></div>
+    <div class="form-group"><label>Item</label><select id="form-item"><option value="">- Select item -</option></select></div>
+    <div class="form-group"><label>Member</label><select id="form-member"><option value="">- Select member -</option></select></div>
+    <div class="form-group"><label>Call #</label><input type="text" id="form-call" placeholder="e.g. 4521"></div>
+    <div class="form-group" id="cc-cnc-group" style="display:none"><label>Status (CC / CNC)</label><select id="form-cc-cnc" onchange="toggleCncNote()"><option value="CC">CC - Returned to correct location</option><option value="CNC">CNC - Item in wrong location (be specific)</option></select></div>
+    <div class="form-group" id="cnc-note-group" style="display:none"><label>CNC Details - Item is at:</label><textarea id="form-cnc-note" placeholder="e.g. Fan 3 left at 123 Main St / wrong trailer / member car"></textarea></div>
+    <button class="btn btn-green" onclick="submitCheckInOut()">Submit</button>
+  </div></div>
+</div>
+<div class="page" id="page-inventory">
+  <div class="search-wrap"><span class="search-icon">&#128269;</span><input type="text" id="search-input" placeholder="Search equipment..." oninput="filterInv()"></div>
+  <div class="filter-pills"><button class="pill active" onclick="setFilter('all',this)">All</button><button class="pill" onclick="setFilter('IN',this)">In</button><button class="pill" onclick="setFilter('OUT',this)">Out</button><button class="pill" onclick="setFilter('CNC',this)">CNC</button></div>
+  <div class="card"><div class="card-body" id="inventory-list"><div class="loading"><div class="spinner"></div><br>Loading...</div></div></div>
+</div>
+<div class="page" id="page-admin">
+  <div id="admin-lock"><div class="lock-screen"><div class="lock-icon">&#128274;</div><div class="lock-title">Admin Access</div><div class="lock-sub">Enter the 4-digit admin code to continue</div><div class="lock-input-wrap"><input type="password" id="admin-pin" maxlength="4" placeholder="****" oninput="checkPin()" inputmode="numeric" pattern="[0-9]*"></div><div class="lock-error" id="pin-error"></div></div></div>
+  <div id="admin-content" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:13px;color:var(--dark-gray)">&#128275; Admin unlocked</div><button onclick="lockAdmin()" style="background:none;border:1px solid #ddd;padding:5px 12px;border-radius:8px;font-size:12px;cursor:pointer">Lock</button></div>
+    <div class="card"><div class="card-header">+ Add New Equipment Item</div><div class="card-body">
+      <div class="form-group"><label>Item Name</label><input type="text" id="new-item-name" placeholder="e.g. Air Compressor #3"></div>
+      <div class="form-group"><label>Default Location</label><input type="text" id="new-item-location" placeholder="e.g. Teaneck Garage"></div>
+      <button class="btn btn-gold" onclick="addNewItem()">Add Item to Sheet</button>
+    </div></div>
+    <div class="card"><div class="card-header">&#128205; Edit Item Locations (Col D)</div><div class="card-body" id="location-editor"><div class="loading"><div class="spinner"></div><br>Loading...</div></div></div>
+    <div class="card"><div class="card-header">&#128101; Member Management</div><div class="card-body">
+      <div class="section-note">Members appear in the Check In/Out member dropdown.</div>
+      <div class="form-group"><label>Unit # (e.g. BC-99)</label><input type="text" id="new-member-unit" placeholder="BC-99"></div>
+      <div class="form-group"><label>First Name</label><input type="text" id="new-member-first" placeholder="Yehuda"></div>
+      <div class="form-group"><label>Last Name</label><input type="text" id="new-member-last" placeholder="Cohen"></div>
+      <div class="form-group"><label>Phone Number</label><input type="text" id="new-member-phone" placeholder="(201) 555-1234"></div>
+      <button class="btn btn-gold" onclick="addMember()" style="margin-bottom:16px">Add Member</button>
+      <div id="member-list"><div class="loading"><div class="spinner"></div><br>Loading members...</div></div>
+    </div></div>
+    <div class="card"><div class="card-header">&#128279; System Info</div><div class="card-body" style="font-size:13px;color:#555;line-height:1.8;"><div><strong>Version:</strong> GitHub PWA v1.2</div><div><strong>Last Sync:</strong> <span id="last-sync">-</span></div><br><button class="btn btn-green" onclick="refreshAll()">Force Refresh</button></div></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const AS='https://script.google.com/macros/s/AKfycbyXwNBWlifFTPzWdQycpC27fTUsn956KPn9MbrPDM9kXqrFYrqdYqvN_8a1WDmN92OMsQ/exec';
+const ADMIN_PIN='4357';
+let items=[],members=[],curFilter='all',selType=null,adminUnlocked=false;
+function checkPin(){const v=document.getElementById('admin-pin').value;document.getElementById('pin-error').textContent='';if(v.length===4){if(v===ADMIN_PIN){adminUnlocked=true;document.getElementById('admin-lock').style.display='none';document.getElementById('admin-content').style.display='block';renderLocationEditor();renderMemberList();}else{document.getElementById('pin-error').textContent='Incorrect code. Try again.';document.getElementById('admin-pin').value='';}}}
+function lockAdmin(){adminUnlocked=false;document.getElementById('admin-lock').style.display='block';document.getElementById('admin-content').style.display='none';document.getElementById('admin-pin').value='';document.getElementById('pin-error').textContent='';}
+function switchTab(t,el){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));document.getElementById('page-'+t).classList.add('active');el.classList.add('active');if(t==='inventory')renderInv();if(t==='dashboard')renderDash();if(t==='checkinout'){populateDrop();populateMemberDrop();}}
+async function load(){try{const r=await fetch(AS+'?action=getInventory&t='+Date.now());const d=await r.json();if(d&&d.items){items=d.items;document.getElementById('last-sync').textContent=new Date().toLocaleTimeString();return d.items;}}catch(e){}return null;}
+async function loadMembers(){try{const r=await fetch(AS+'?action=getMembers&t='+Date.now());const d=await r.json();if(d&&d.members){members=d.members;return d.members;}}catch(e){}return null;}
+function getCncDetail(c){if(!c)return '';if(c.toUpperCase().startsWith('CNC'))return c.slice(3).replace(/^[s-:]+/,'').trim();return '';}
+async function renderDash(){
+  const data=items.length?items:await load();
+  if(!data){document.getElementById('dash-out-list').innerHTML='<div style="color:#888">Could not load.</div>';document.getElementById('dash-cnc-list').innerHTML='';document.getElementById('dash-activity').innerHTML='';return;}
+  document.getElementById('stat-total').textContent=data.length;
+  const out=data.filter(i=>i.status==='OUT'),cnc=data.filter(i=>(i.ccCnc||'').toUpperCase().startsWith('CNC'));
+  document.getElementById('stat-out').textContent=out.length;
+  document.getElementById('stat-in').textContent=data.filter(i=>i.status==='IN').length;
+  document.getElementById('dash-out-list').innerHTML=out.length?out.map(i=>{const cd=getCncDetail(i.ccCnc);return '<div class="equip-item"><div class="equip-status-dot dot-out"></div><div style="flex:1"><div class="equip-name">'+i.name+'</div><div class="equip-location">'+(i.location||'-')+' &middot; BC-'+(i.member||'?')+(i.call?' &middot; Call #'+i.call:'')+'</div>'+(cd?'<div class="equip-cnc-detail">&#9888; CNC: '+cd+'</div>':'')+'</div><span class="badge badge-out">OUT</span></div>';}).join(''):'<div style="color:#27ae60;text-align:center;padding:10px">All items checked in!</div>';
+  document.getElementById('dash-cnc-list').innerHTML=cnc.length?cnc.map(i=>{const d=getCncDetail(i.ccCnc);return '<div class="equip-item"><div class="equip-status-dot" style="background:#e74c3c"></div><div style="flex:1"><div class="equip-name">'+i.name+'</div>'+(d?'<div class="equip-cnc-detail">'+d+'</div>':'<div class="equip-location">'+(i.location||'-')+'</div>')+'</div><span class="badge badge-cnc">CNC</span></div>';}).join(''):'<div style="color:#888;font-size:13px;text-align:center;padding:10px">No CNC items</div>';
+  const rec=[...data].filter(i=>i.lastUpdated).sort((a,b)=>new Date(b.lastUpdated)-new Date(a.lastUpdated)).slice(0,10);
+  document.getElementById('dash-activity').innerHTML=rec.length?rec.map(i=>'<div class="equip-item"><div class="equip-status-dot '+(i.status==='IN'?'dot-in':'dot-out')+'"></div><div style="flex:1"><div class="equip-name">'+i.name+'</div><div class="equip-location">'+(i.lastUpdated?new Date(i.lastUpdated).toLocaleString():'-')+'</div></div><span class="badge '+(i.status==='IN'?'badge-in':'badge-out')+'">'+i.status+'</span></div>').join(''):'<div style="color:#888;font-size:13px">No recent activity</div>';
 }
-
-function doGet(e) {
-  var p      = e.parameter || {};
-  var item   = p.item   || '';
-  var action = p.action || '';
-  if (action === 'getInventory') { return getInventoryJSON(); }
-  if (action === 'getMembers') { return getMembersJSON(); }
-  var member = p.member || '';
-  var phone  = p.phone  || '';
-  var ccnc   = p.ccnc   || '';
-
-  var view = p.view || '';
-  if (!item) return HtmlService.createHtmlOutput(portalPage());
-  // QR sticker view
-  if (view === 'qr') {
-    try {
-      var ss = SpreadsheetApp.openById(SSID);
-      var sheet = ss.getSheetByName(SHEET);
-      var data = sheet.getDataRange().getValues();
-      for (var i = 1; i < data.length; i++) {
-        if (data[i][2] && data[i][2].toString().trim() === item.trim()) {
-          var loc = data[i][3] ? data[i][3].toString() : '';
-          return HtmlService.createHtmlOutput(qrPage(item, loc));
-        }
-      }
-    } catch(e) {}
-    return HtmlService.createHtmlOutput(qrPage(item, ''));
-  }
-
-  if (!action) {
-    try {
-      var ss    = SpreadsheetApp.openById(SSID);
-      var sheet = ss.getSheetByName(SHEET);
-      var data  = sheet.getDataRange().getValues();
-      for (var i = 1; i < data.length; i++) {
-        if (data[i][2] && data[i][2].toString().trim() === item.trim()) {
-          var colB   = data[i][1] ? data[i][1].toString().trim().toUpperCase() : '';
-          var status = (colB === 'OUT') ? 'OUT' : 'IN';
-          var loc    = data[i][3] ? data[i][3].toString() : '';
-          var out = HtmlService.createHtmlOutput(scanPage(item, loc, status));
-          out.setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-          return out;
-        }
-      }
-      return HtmlService.createHtmlOutput(errorPage('Item not found: ' + item));
-    } catch(err) {
-      return HtmlService.createHtmlOutput(errorPage('Error: ' + err.toString()));
-    }
-  }
-
-  if (action === 'in' || action === 'out') {
-    if (!member) return HtmlService.createHtmlOutput(errorPage('Member number is required.'));
-    if (!phone)  return HtmlService.createHtmlOutput(errorPage('Call number is required.'));
-    try {
-      var ss    = SpreadsheetApp.openById(SSID);
-      var sheet = ss.getSheetByName(SHEET);
-      // Use CacheService (in-memory, much faster than reading sheet)
-      var cache  = CacheService.getScriptCache();
-      var rowKey = 'r_' + item.trim().replace(/[^a-zA-Z0-9]/g,'_');
-      var locKey = 'l_' + item.trim().replace(/[^a-zA-Z0-9]/g,'_');
-      var cachedRow = cache.get(rowKey);
-      var r, loc;
-      if (cachedRow) {
-        r   = parseInt(cachedRow);
-        loc = cache.get(locKey) || '';
-      } else {
-        // Cache miss - read sheet once, build full cache
-        var data = sheet.getDataRange().getValues();
-        var rowMap = {}, locMap = {};
-        for (var i = 1; i < data.length; i++) {
-          if (!data[i][2]) continue;
-          var k = data[i][2].toString().trim().replace(/[^a-zA-Z0-9]/g,'_');
-          rowMap['r_'+k] = String(i+1);
-          locMap['l_'+k] = data[i][3] ? data[i][3].toString() : '';
-        }
-        // Store all at once (max 21 day cache, 6hr default)
-        cache.putAll(rowMap, 21600);
-        cache.putAll(locMap, 21600);
-        r   = parseInt(rowMap[rowKey]);
-        loc = locMap[locKey] || '';
-        if (!r) return HtmlService.createHtmlOutput(errorPage('Item not found: ' + item));
-      }
-      var now  = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'M/d/yy h:mm a');
-      var inV  = action === 'in'  ? 'IN'  : '';
-      var outV = action === 'out' ? 'OUT' : '';
-      // Single batch write - fastest possible
-      sheet.getRange(r, 1, 1, 8).setValues([[inV, outV, item, loc, member, phone, now, ccnc]]);
-      SpreadsheetApp.flush();
-      return HtmlService.createHtmlOutput(confirmPage(item, loc, action, member, phone, ccnc));
-    } catch(err) {
-      return HtmlService.createHtmlOutput(errorPage('Error: ' + err.toString()));
-    }
-  }
-
-  return HtmlService.createHtmlOutput(errorPage('Invalid request.'));
+function setFilter(f,el){curFilter=f;document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));el.classList.add('active');renderInv();}
+async function renderInv(){const data=items.length?items:await load();if(!data){document.getElementById('inventory-list').innerHTML='<div style="color:#888">Could not load.</div>';return;}filterInv();}
+function filterInv(){const q=(document.getElementById('search-input').value||'').toLowerCase();let f=items;if(curFilter==='IN')f=f.filter(i=>i.status==='IN');else if(curFilter==='OUT')f=f.filter(i=>i.status==='OUT');else if(curFilter==='CNC')f=f.filter(i=>(i.ccCnc||'').toUpperCase().startsWith('CNC'));if(q)f=f.filter(i=>(i.name||'').toLowerCase().includes(q)||(i.location||'').toLowerCase().includes(q));document.getElementById('inventory-list').innerHTML=f.length?f.map(i=>{const cd=getCncDetail(i.ccCnc);return '<div class="equip-item"><div class="equip-status-dot '+(i.status==='IN'?'dot-in':'dot-out')+'"></div><div style="flex:1"><div class="equip-name">'+i.name+'</div><div class="equip-location">'+(i.location||'-')+(i.member?' &middot; BC-'+i.member:'')+'</div>'+(cd?'<div class="equip-cnc-detail">&#9888; CNC: '+cd+'</div>':'')+'</div><div style="text-align:right;flex-shrink:0"><span class="badge '+(i.status==='IN'?'badge-in':'badge-out')+'">'+i.status+'</span>'+(i.ccCnc?'<br><span class="badge '+((i.ccCnc||'').toUpperCase().startsWith('CNC')?'badge-cnc':'badge-cc')+'" style="margin-top:3px">'+((i.ccCnc||'').toUpperCase().startsWith('CNC')?'CNC':i.ccCnc)+'</span>':'')+'</div></div>';}).join(''):'<div style="color:#888;text-align:center;padding:20px">No items found</div>';}
+function selectType(t){selType=t;document.getElementById('btn-checkout').className='type-btn'+(t==='OUT'?' selected-out':'');document.getElementById('btn-checkin').className='type-btn'+(t==='IN'?' selected-in':'');document.getElementById('cc-cnc-group').style.display='block';document.getElementById('cnc-note-group').style.display='none';document.getElementById('form-cc-cnc').value='CC';}
+function toggleCncNote(){document.getElementById('cnc-note-group').style.display=document.getElementById('form-cc-cnc').value==='CNC'?'block':'none';}
+function populateDrop(){const s=document.getElementById('form-item');const cv=s.value;s.innerHTML='<option value="">- Select item -</option>';items.forEach(i=>{const o=document.createElement('option');o.value=i.row||i.name;o.textContent=i.name+(i.status?' ('+i.status+')':'');s.appendChild(o);});if(cv)s.value=cv;}
+function populateMemberDrop(){const s=document.getElementById('form-member');const cv=s.value;s.innerHTML='<option value="">- Select member -</option>';members.forEach(m=>{const o=document.createElement('option');const u=(m.unit||'').toString().replace('BC-','');o.value=u;o.textContent=(m.unit||'')+((m.firstName||m.lastName)?' - '+((m.firstName||'')+' '+(m.lastName||'')).trim():'');s.appendChild(o);});if(cv)s.value=cv;}
+async function submitCheckInOut(){
+  if(!selType){toast('Select Check IN or OUT');return;}
+  const item=document.getElementById('form-item').value,member=document.getElementById('form-member').value.trim(),call=document.getElementById('form-call').value.trim();
+  if(!item){toast('Select an item');return;}if(!member){toast('Select a member');return;}if(!call){toast('Enter a call number');return;}
+  const ccCnc=document.getElementById('form-cc-cnc').value,cncNote=ccCnc==='CNC'?document.getElementById('form-cnc-note').value.trim():'';
+  if(ccCnc==='CNC'&&!cncNote){toast('Describe where the item is');return;}
+  toast('Submitting...');
+  try{
+    const r=await fetch(AS,{method:'POST',body:JSON.stringify({action:'checkInOut',status:selType,row:item,member,call,ccCnc,cncNote})});
+    const d=await r.json();
+    if(d.success){toast(selType==='OUT'?'Checked out!':'Checked in!');['form-item','form-member','form-call','form-cnc-note'].forEach(id=>document.getElementById(id).value='');document.getElementById('cc-cnc-group').style.display='none';document.getElementById('cnc-note-group').style.display='none';selType=null;document.getElementById('btn-checkout').className='type-btn';document.getElementById('btn-checkin').className='type-btn';items=[];setTimeout(refreshAll,500);}
+    else toast('Error: '+(d.error||'Unknown'));
+  }catch(e){toast('Could not connect.');}
 }
-
-function esc(v) {
-  return (v||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function scanPage(item, loc, status) {
-  var isIn  = status === 'IN';
-  var stBg  = isIn ? '#EAF3DE' : '#fdecea';
-  var stCol = isIn ? '#2d6a4f' : '#c0392b';
-  var stLbl = isIn ? 'Currently IN' : 'Currently OUT';
-  var safeIt = (item||'').replace(/\\/g,'\\\\').replace(/"/g,'\\"');
-  var safeLoc = (loc||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  var U = URL;
-  var h = '';
-  h += '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">';
-  h += '<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;background:#f0f2f5;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}';
-  h += '.card{background:white;border-radius:20px;padding:2rem 1.5rem;max-width:480px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.08)}';
-  h += '.org{font-size:15px;font-weight:700;color:#1e6b3c;letter-spacing:.08em;text-transform:uppercase;text-align:center;margin-bottom:1rem}';
-  h += '.itm{font-size:22px;font-weight:700;text-align:center;margin-bottom:4px}';
-  h += '.loc{font-size:13px;color:#888;text-align:center;margin-bottom:12px}';
-  h += '.badge{padding:5px 16px;border-radius:20px;font-size:13px;font-weight:600;margin:0 auto 1.5rem;display:block;width:fit-content;text-align:center;transition:all .3s}';
-  h += '.sep{height:1px;background:#f0f0f0;margin-bottom:1.25rem}';
-  h += 'label{font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px}';
-  h += 'input{width:100%;padding:18px 16px;border:1.5px solid #e8e8e8;border-radius:10px;font-size:20px;margin-bottom:18px;outline:none;-webkit-appearance:none;appearance:none}';
-  h += '.hint{font-size:14px;color:#e24b4a;margin-top:-8px;margin-bottom:36px;line-height:1.6;padding-bottom:12px;margin-top:8px}';
-  h += '.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}';
-  h += '.bin{background:#1e6b3c;color:white;border:none;border-radius:12px;padding:22px;font-size:22px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}';
-  h += '.bout{background:#e24b4a;color:white;border:none;border-radius:12px;padding:22px;font-size:22px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}';
-  h += '.ov{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:999;align-items:center;justify-content:center}';
-  h += '.ov.on{display:flex}.ob{background:white;border-radius:16px;padding:2rem 1.5rem;max-width:280px;width:90%;text-align:center}';
-  h += '.oc{width:64px;height:64px;border-radius:50%;color:white;font-size:28px;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem}';
-  h += '.ol{font-size:20px;font-weight:700;margin-bottom:6px}.os{font-size:17px;color:#888;margin-bottom:6px}';
-  h += '.ocd{font-size:12px;color:#aaa;margin-bottom:1.2rem}.od{width:100%;padding:10px;background:#1e6b3c;color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer}';
-  h += '</style></head><body>';
-  h += '<div class="ov" id="ov"><div class="ob"><div class="oc" id="oc"></div><div class="ol" id="ol"></div><div class="os">Submission confirmed</div><div class="ocd" id="ocd"></div><button class="od" onclick="doneFn()">Done</button></div></div>';
-  h += '<div class="card"><div class="org">Bergen County Chaverim</div>';
-  h += '<div class="itm">' + esc(item) + '</div>';
-  h += '<div class="loc">' + safeLoc + '</div>';
-  h += '<div class="badge" id="badge" style="background:' + stBg + ';color:' + stCol + '">' + stLbl + '</div>';
-  h += '<div class="sep"></div>';
-  h += '<label>Member #</label><input id="mb" type="text" placeholder="Your member number">';
-  h += '<label>Call #</label><input id="ph" type="text" placeholder="See call number in WhatsApp chat">';
-  h += '<label>CC / CNC</label><input id="cc" type="text" placeholder="Write CC or CNC">';
-  h += '<div class="hint">CC = returned to correct location OR condition corrected on call \u00a0|\u00a0 CNC = item in wrong location \u2014 Be Specific (e.g. \"CNC Fan 1 left at wrong trailer\")';
-  h += '<div class="row"><button class="bin" onclick="go(\'in\')">IN</button><button class="bout" onclick="go(\'out\')">OUT</button></div>';
-  h += '</div>';
-  h += '<script>var U="' + U + '",IT="' + safeIt + '",iv=null;';
-  h += 'function go(a){';
-  h += '  var m=document.getElementById("mb").value.trim();';
-  h += '  var p=document.getElementById("ph").value.trim();';
-  h += '  var c=document.getElementById("cc").value.trim();';
-  h += '  if(!m){alert("Please enter your member number.");return;}';
-  h += '  if(!p){alert("Please enter a call number.");return;}';
-  h += '  var col=a==="in"?"#1D9E75":"#E24B4A";';
-  h += '  var sym=a==="in"?"&#10003;":"&#8595;";';
-  h += '  var lbl=a==="in"?"Checked IN":"Checked OUT";';
-  h += '  document.getElementById("oc").style.background=col;';
-  h += '  document.getElementById("oc").innerHTML=sym;';
-  h += '  document.getElementById("ol").textContent=lbl;';
-  h += '  document.getElementById("ov").classList.add("on");';
-  h += '  var badge=document.getElementById("badge");';
-  h += '  if(a==="in"){badge.textContent="Currently IN";badge.style.background="#EAF3DE";badge.style.color="#2d6a4f";}';
-  h += '  else{badge.textContent="Currently OUT";badge.style.background="#fdecea";badge.style.color="#c0392b";}';
-  h += '  var px=new Image();';
-  h += '  px.src=U+"?item="+encodeURIComponent(IT)+"&action="+a+"&member="+encodeURIComponent(m)+"&phone="+encodeURIComponent(p)+"&ccnc="+encodeURIComponent(c);';
-  h += '  var t=10;document.getElementById("ocd").textContent="Closing in "+t+"s...";';
-  h += '  iv=setInterval(function(){t--;if(t>0){document.getElementById("ocd").textContent="Closing in "+t+"s...";}else{clearInterval(iv);doneFn();}},1000);';
-  h += '}';
-  h += 'function doneFn(){if(iv)clearInterval(iv);document.getElementById("ov").classList.remove("on");document.getElementById("mb").value="";document.getElementById("ph").value="";document.getElementById("cc").value="";}';
-  h += '<\/script></body></html>';
-  return h;
-}
-function confirmPage(item, loc, action, member, phone, ccnc) {
-  var isIn = action === 'in';
-  var col  = isIn ? '#1D9E75' : '#E24B4A';
-  var sym  = isIn ? '&#10003;' : '&#8595;';
-  var lbl  = isIn ? 'Checked IN' : 'Checked OUT';
-  var note = 'Member #' + esc(member) + (phone ? ' &mdash; Call #' + esc(phone) : '') + (ccnc ? ' &mdash; ' + esc(ccnc) : '');
-  var h = '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
-  h += '<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;background:#f0f2f5;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}';
-  h += '.card{background:white;border-radius:20px;padding:2.5rem 1.5rem;max-width:320px;width:100%;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.08)}';
-  h += '.org{font-size:11px;font-weight:700;color:#1e6b3c;letter-spacing:.08em;text-transform:uppercase;margin-bottom:2rem}';
-  h += '.circle{width:72px;height:72px;border-radius:50%;color:white;font-size:32px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem}';
-  h += '.lbl{font-size:22px;font-weight:700;margin-bottom:8px}.itm{font-size:16px;color:#333;margin-bottom:4px}';
-  h += '.loc{font-size:13px;color:#aaa;margin-bottom:1.5rem}.note{font-size:12px;color:#bbb;line-height:1.6;margin-bottom:1.5rem}';
-  h += '.cd{font-size:13px;color:#888;margin-bottom:1rem}.btn{display:inline-block;padding:10px 28px;background:#1e6b3c;color:white;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;border:none;cursor:pointer}';
-  h += '</style></head><body><div class="card">';
-  var logo = getLogo();
-  var logoHtml = logo ? '<img src="'+logo+'" style="width:28px;height:28px;border-radius:50%;object-fit:cover">' : '';
-  h += '<div class="org" style="display:flex;align-items:center;justify-content:center;gap:8px">' + logoHtml + '<span>Bergen County Chaverim</span></div>';
-  h += '<div class="circle" style="background:' + col + '">' + sym + '</div>';
-  h += '<div class="lbl">' + lbl + '</div>';
-  h += '<div class="itm">' + esc(item) + '</div>';
-  h += '<div class="loc">' + esc(loc) + '</div>';
-  h += '<div class="note">' + note + '</div>';
-  h += '<div class="cd" id="cd">Returning to form in 10s...</div>';
-  h += '<button class="btn" onclick="goBack()">Done</button>';
-  h += '</div><script>';
-  h += 'var t=10,iv=setInterval(function(){t--;if(t>0){document.getElementById("cd").textContent="Returning to form in "+t+"s...";}else{clearInterval(iv);history.back();}},1000);';
-  h += 'function goBack(){clearInterval(iv);history.back();}';
-  h += '<\/script></body></html>';
-  // Rename categories for display
-  h = h.replace(/Sump Pump/g, function(m, offset) { return 'Monster Sump Pump'; }).replace(/Monster Monster Sump Pump/g, 'Monster Sump Pump').replace(/Standard Monster Sump Pump/g, 'Standard Sump Pump');
-  return h;
-}
-
-function qrPage(item, loc) {
-  var logo = getLogo();
-  var logoHtml = logo ? '<img src="'+logo+'" style="width:40px;height:40px;object-fit:contain;margin-bottom:6px">' : '';
-  var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(URL + '?item=' + encodeURIComponent(item));
-  var h = '<!DOCTYPE html><html><head><meta charset="utf-8">';
-  h += '<title>' + esc(item) + ' - COBC Equipment</title>';
-  h += '<style>';
-  h += '@media print { @page { margin: 0.3in; } body { margin: 0; } .no-print { display: none; } }';
-  h += 'body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: #f5f5f5; margin: 0; padding: 20px; }';
-  h += '.sticker { background: white; border: 2px solid #1e6b3c; border-radius: 12px; padding: 20px; text-align: center; width: 220px; box-shadow: 0 4px 12px rgba(0,0,0,.1); }';
-  h += '.org-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px; }';
-  h += '.org-name { font-size: 11px; font-weight: 700; color: #1e6b3c; letter-spacing: .06em; text-transform: uppercase; }';
-  h += '.qr { margin: 8px auto; display: flex; justify-content: center; }';
-  h += '.qr img { width: 180px; height: 180px; display: block; }';
-  h += '.item-name { font-size: 18px; font-weight: 700; color: #222; margin-top: 10px; }';
-  h += '.item-loc { font-size: 12px; color: #888; margin-top: 4px; }';
-  h += '.scan-hint { font-size: 10px; color: #aaa; margin-top: 8px; }';
-  h += '.print-btn { margin-top: 20px; padding: 10px 24px; background: #1e6b3c; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }';
-  h += '</style></head><body>';
-  h += '<div class="sticker">';
-  h += '<div class="org-row">' + logoHtml + '<span class="org-name">Bergen County<br>Chaverim</span></div>';
-  h += '<div class="qr"><img src="' + qrUrl + '" alt="QR Code"></div>';
-  h += '<div class="item-name">' + esc(item) + '</div>';
-  h += '<div class="item-loc">' + esc(loc) + '</div>';
-  h += '<div class="scan-hint">Scan to check in / out</div>';
-  h += '</div>';
-  h += '<button class="print-btn no-print" onclick="window.print()">🖨️ Print Sticker</button>';
-  h += '</body></html>';
-  return h;
-}
-
-function errorPage(msg) {
-  return '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-    + '<style>body{font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f0f2f5}'
-    + '.box{background:white;border-radius:16px;padding:2rem;max-width:320px;text-align:center}'
-    + 'h2{color:#e24b4a;margin-bottom:8px}p{color:#888;font-size:14px}a{display:inline-block;margin-top:1rem;color:#1e6b3c;font-weight:600}'
-    + '</style></head><body><div class="box"><h2>Oops</h2><p>' + esc(msg||'Something went wrong.') + '</p>'
-    + '<a href="' + URL + '">&larr; Back to portal</a></div></body></html>';
-}
-
-function portalPage() {
-  try {
-    var ss    = SpreadsheetApp.openById(SSID);
-    var sheet = ss.getSheetByName(SHEET);
-    var data  = sheet.getDataRange().getValues();
-    var inv   = {};
-    for (var i = 1; i < data.length; i++) {
-      var item = data[i][2];
-      if (!item) continue;
-      var s = item.toString();
-      var cat = '';
-      if      (s.match(/^Fan /))               cat = 'Fan';
-      else if (s.match(/^Heater /))            cat = 'Heater';
-      else if (s.match(/^Light Tower /))       cat = 'Light Tower';
-      else if (s.match(/^Shop Vac /))          cat = 'Shop Vac';
-      else if (s.match(/^Monster Sump Pump/))  cat = 'Sump Pump';
-      else if (s.match(/^Sump Pump /))         cat = 'Sump Pump';
-      else if (s.match(/^A\/C (\d+k BTU)/))  { cat = 'A/C ' + s.match(/^A\/C (\d+k BTU)/)[1]; }
-      else if (s.match(/^EZ-Spare/)) {
-        var loc = data[i][3] ? data[i][3].toString().toLowerCase() : '';
-        cat = loc.indexOf('englewood') > -1 ? 'EZ-Spare (Englewood)' : 'EZ-Spare (Teaneck)';
-      } else { cat = s.replace(/\s+\d+$/, '').trim(); }
-      if (!inv[cat]) inv[cat] = [];
-      inv[cat].push(s);
-    }
-    var cats = Object.keys(inv);
-    var h = '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
-    h += '<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;background:#f0f2f5;min-height:100vh;padding:1.5rem 1rem}';
-    h += '.org{font-size:11px;font-weight:700;color:#1e6b3c;letter-spacing:.08em;text-transform:uppercase;text-align:center;margin-bottom:6px}';
-    h += '.ttl{font-size:20px;font-weight:700;text-align:center;margin-bottom:2px}.sub{font-size:13px;color:#888;text-align:center;margin-bottom:1.5rem}';
-    h += '.card{background:white;border-radius:16px;padding:1.25rem;margin-bottom:12px;border:1px solid #e8e8e8;max-width:420px;margin-left:auto;margin-right:auto}';
-    h += '.sl{font-size:11px;font-weight:700;color:#1e6b3c;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}';
-    h += '.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.g2{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}';
-    h += '.btn{padding:10px 6px;border-radius:10px;border:1.5px solid #e8e8e8;background:white;font-size:12px;font-weight:600;cursor:pointer;color:#555;width:100%}';
-    h += '.btn.a{background:#1e6b3c;color:white;border-color:#1e6b3c}.dv{height:1px;background:#f0f0f0;margin:14px 0}.hd{display:none}';
-    h += '</style></head><body>';
-    h += '<div class="org">Bergen County Chaverim</div><div class="ttl">Equipment Check In/Out</div><div class="sub">Select a category to get started</div>';
-    h += '<div class="card"><div class="sl">Step 1 - Select category</div><div class="g3" id="cats"></div>';
-    h += '<div id="is" class="hd"><div class="dv"></div><div class="sl">Step 2 - Select item</div><div class="g2" id="items"></div></div></div>';
-    h += '<script>var B="' + URL + '",INV=' + JSON.stringify(inv) + ',C=' + JSON.stringify(cats) + ';';
-    h += '(function(){var g=document.getElementById("cats");C.forEach(function(c){var b=document.createElement("button");b.className="btn";b.textContent=c;b.onclick=function(){sC(c,b);};g.appendChild(b);});})();';
-    h += 'function sC(c,b){document.querySelectorAll("#cats .btn").forEach(function(x){x.classList.remove("a");});b.classList.add("a");var ig=document.getElementById("items");ig.innerHTML="";(INV[c]||[]).forEach(function(it){var x=document.createElement("button");x.className="btn";x.textContent=it;x.onclick=function(){window.location.href=B+"?item="+encodeURIComponent(it);};ig.appendChild(x);});document.getElementById("is").classList.remove("hd");}';
-    h += '<\/script></body></html>';
-    return h;
-  } catch(err) {
-    return errorPage('Portal error: ' + err.toString());
-  }
-}
-
-function addQRLinks() {
-  var ss    = SpreadsheetApp.openById(SSID);
-  var sheet = ss.getSheetByName(SHEET);
-  var data  = sheet.getDataRange().getValues();
-  var BASE  = URL + '?item=';
-
-  // Headers
-  sheet.getRange(1,9).setValue('Open Form').setFontWeight('bold').setBackground('#1e6b3c').setFontColor('white');
-  sheet.getRange(1,10).setValue('Print QR Sticker').setFontWeight('bold').setBackground('#1e6b3c').setFontColor('white');
-
-  // Clear old K and L columns
-  sheet.getRange(1, 11, data.length, 2).clearContent();
-
-  for (var i = 1; i < data.length; i++) {
-    var item = data[i][2];
-    if (!item) continue;
-    var formUrl    = BASE + encodeURIComponent(item.toString());
-    var stickerUrl = BASE + encodeURIComponent(item.toString()) + '&view=qr';
-    // Col I = Open Form (member scan link)
-    sheet.getRange(i+1, 9).setFormula('=HYPERLINK("' + formUrl + '","Open Form")');
-    // Col J = Print QR Sticker page (logo + QR + item name)
-    sheet.getRange(i+1, 10).setFormula('=HYPERLINK("' + stickerUrl + '","🖨️ Print QR Sticker")');
-  }
-
-  Logger.log('Done - ' + (data.length-1) + ' rows');
-}
-
-function onOpen() {
-  SpreadsheetApp.getUi()
-    .createMenu('⚙️ COBC Tools')
-    .addItem('📋 Make QR Codes for New Items', 'addNewItemsMenu')
-    .addItem('🔄 Rebuild Cache Only', 'warmup')
-    .addToUi();
-}
-
-function addNewItemsMenu() {
-  var ui = SpreadsheetApp.getUi();
-  var result = ui.alert(
-    'Make QR Codes for New Items',
-    'This will create QR codes for any new items you added to the sheet.\n\n' +
-    'Existing QR codes are NOT changed — printed stickers stay valid.\n\nContinue?',
-    ui.ButtonSet.YES_NO
-  );
-  if (result === ui.Button.YES) {
-    addQRLinks();
-    ui.alert('✅ Done!', 'QR codes created for new items. Cache rebuilt. Ready to use.', ui.ButtonSet.OK);
-  }
-}
-
-
-// ── PWA API: getInventory for GitHub PWA ──────────────────────────────────────
-function getInventoryJSON() {
-  var ss = SpreadsheetApp.openById('1iOE4c-BBatkH8zljpQTFmrzZZe_Q4uvBDWAQCos51PE');
-  var sheet = ss.getSheetByName('Inventory');
-  var data = sheet.getDataRange().getValues();
-  var items = [];
-  for (var i = 1; i < data.length; i++) {
-    var row = data[i];
-    if (!row[2]) continue; // skip blank rows (col C = item name)
-    items.push({
-      row: i + 1,
-      status: (row[1] || '').toString().toLowerCase().includes('out') ? 'OUT' : 'IN',
-      name: row[2] || '',           // col C: item name
-      location: row[3] || '',       // col D: location
-      member: row[4] || '',         // col E: member number
-      call: row[5] || '',           // col F: call number
-      lastUpdated: row[6] ? row[6].toString() : '', // col G: timestamp
-      ccCnc: row[7] || ''           // col H: CC/CNC
-    });
-  }
-  return ContentService.createTextOutput(JSON.stringify({items: items}))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-// ── PWA POST handler ─────────────────────────────────────────────────────────
-function doPost(e) {
-  try {
-    var body = JSON.parse(e.postData.contents);
-    var action = body.action || '';
-    var ss = SpreadsheetApp.openById('1iOE4c-BBatkH8zljpQTFmrzZZe_Q4uvBDWAQCos51PE');
-    var sheet = ss.getSheetByName('Inventory');
-
-    if (action === 'checkInOut') {
-      var rowNum = parseInt(body.row);
-      if (!rowNum || isNaN(rowNum)) {
-        var data = sheet.getDataRange().getValues();
-        for (var i = 1; i < data.length; i++) {
-          if (data[i][2] === body.row) { rowNum = i + 1; break; }
-        }
-      }
-      if (!rowNum) return jsonResponse({success: false, error: 'Item not found'});
-
-      var status = body.status || 'IN';
-      var now = new Date();
-      var ccCnc = body.ccCnc || '';
-      var cncNote = body.cncNote || '';
-
-      // Col A = always IN, Col B = OUT when checked out
-      sheet.getRange(rowNum, 1).setValue('IN');
-      sheet.getRange(rowNum, 2).setValue(status === 'OUT' ? 'OUT' : '');
-      sheet.getRange(rowNum, 5).setValue(body.member || '');   // col E: member number
-      sheet.getRange(rowNum, 6).setValue(body.call || '');     // col F: call number
-      sheet.getRange(rowNum, 7).setValue(now);                  // col G: timestamp
-
-      if (status === 'OUT') {
-        // For OUT: store CC/CNC status in col H, CNC note goes to col D (location)
-        if (ccCnc === 'CNC' && cncNote) {
-          sheet.getRange(rowNum, 8).setValue('CNC - ' + cncNote); // col H: full CNC detail
-          sheet.getRange(rowNum, 4).setValue(cncNote);            // col D: location = CNC note
-        } else {
-          sheet.getRange(rowNum, 8).setValue(ccCnc || '');
-        }
-      } else {
-        // For IN: store CC/CNC in col H
-        if (ccCnc === 'CNC' && cncNote) {
-          sheet.getRange(rowNum, 8).setValue('CNC - ' + cncNote); // col H: full CNC detail
-        } else {
-          sheet.getRange(rowNum, 8).setValue(ccCnc || '');
-        }
-        if (ccCnc !== 'CNC') {
-          sheet.getRange(rowNum, 4).setValue('COBC'); // reset location on clean check-in
-        }
-      }
-      return jsonResponse({success: true});
-    }
-
-    if (action === 'addItem') {
-      sheet.appendRow(['IN', '', body.name || '', body.location || 'COBC', '', '', new Date(), '']);
-      return jsonResponse({success: true});
-    }
-
-    if (action === 'updateLocation') {
-      var rowNum = parseInt(body.row);
-      if (!rowNum || isNaN(rowNum)) return jsonResponse({success: false, error: 'Invalid row'});
-      sheet.getRange(rowNum, 4).setValue(body.location || '');
-      return jsonResponse({success: true});
-    }
-
-    if (action === 'addMember') {
-      var mss = SpreadsheetApp.openById('1Leh-KVqnLai650Se4JftnG1zTz6FbuCcbOUqUGmlfEk');
-      var msheet = mss.getSheetByName('Sheet1');
-      msheet.appendRow([body.unit || '', body.lastName || '', body.firstName || '', body.phone || '']);
-      return jsonResponse({success: true});
-    }
-
-    return jsonResponse({success: false, error: 'Unknown action'});
-  } catch(err) {
-    return jsonResponse({success: false, error: err.toString()});
-  }
-}
-// ── PWA API: getMembers ───────────────────────────────────────────────────────
-function getMembersJSON() {
-  var ss = SpreadsheetApp.openById('1Leh-KVqnLai650Se4JftnG1zTz6FbuCcbOUqUGmlfEk');
-  var sheet = ss.getSheetByName('Sheet1');
-  var data = sheet.getDataRange().getValues();
-  var members = [];
-  for (var i = 1; i < data.length; i++) {
-    var row = data[i];
-    if (!row[0]) continue;
-    members.push({
-      unit: row[0] || '',
-      lastName: row[1] || '',
-      firstName: row[2] || '',
-      phone: row[3] || '',
-      row: i + 1
-    });
-  }
-  return ContentService.createTextOutput(JSON.stringify({members: members}))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-
-function jsonResponse(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-</html>
+function renderLocationEditor(){const el=document.getElementById('location-editor');if(!items.length){el.innerHTML='<div style="color:#888;font-size:13px">No items loaded.</div>';return;}el.innerHTML=items.map(i=>'<div class="loc-item" id="loc-row-'+i.row+'"><div class="loc-name">'+i.name+'</div><div class="loc-current" id="loc-val-'+i.row+'">'+(i.location||'-')+'</div><button class="loc-edit-btn" onclick="editLocation('+i.row+',''+((i.location||'').replace(/\/g,'\\').replace(/'/g,"\'"))+'')">Edit</button></div>').join('');}
+function editLocation(row,cur){const n=prompt('New location:',cur);if(n===null)return;if(!n.trim()){toast('Cannot be blank');return;}saveLocation(row,n.trim());}
+async function saveLocation(row,loc){toast('Saving...');try{const r=await fetch(AS,{method:'POST',body:JSON.stringify({action:'updateLocation',row,location:loc})});const d=await r.json();if(d.success){const it=items.find(i=>i.row===row);if(it)it.location=loc;document.getElementById('loc-val-'+row).textContent=loc;toast('Updated!');}else toast('Error: '+(d.error||''));}catch(e){toast('Could not connect.');}}
+function renderMemberList(){const el=document.getElementById('member-list');if(!members.length){el.innerHTML='<div style="color:#888;font-size:13px">No members loaded.</div>';return;}el.innerHTML=members.map(m=>'<div class="member-item"><div class="member-unit">'+(m.unit||'-')+'</div><div class="member-name">'+((m.firstName||'')+' '+(m.lastName||'')).trim()+'</div><div class="member-phone">'+(m.phone||'-')+'</div></div>').join('');}
+async function addMember(){const unit=document.getElementById('new-member-unit').value.trim(),first=document.getElementById('new-member-first').value.trim(),last=document.getElementById('new-member-last').value.trim(),phone=document.getElementById('new-member-phone').value.trim();if(!unit){toast('Enter unit number');return;}if(!last){toast('Enter last name');return;}toast('Adding...');try{const r=await fetch(AS,{method:'POST',body:JSON.stringify({action:'addMember',unit,firstName:first,lastName:last,phone})});const d=await r.json();if(d.success){toast('Member added!');['new-member-unit','new-member-first','new-member-last','new-member-phone'].forEach(id=>document.getElementById(id).value='');members=[];const nm=await loadMembers();if(nm)renderMemberList();}else toast('Error: '+(d.error||''));}catch(e){toast('Could not connect.');}}
+async function addNewItem(){const name=document.getElementById('new-item-name').value.trim(),loc=document.getElementById('new-item-location').value.trim();if(!name){toast('Enter item name');return;}toast('Adding...');try{const r=await fetch(AS,{method:'POST',body:JSON.stringify({action:'addItem',name,location:loc})});const d=await r.json();if(d.success){toast('Item added!');document.getElementById('new-item-name').value='';document.getElementById('new-item-location').value='';items=[];refreshAll();}else toast('Error: '+(d.error||''));}catch(e){toast('Could not connect.');}}
+function refreshAll(){items=[];members=[];Promise.all([load(),loadMembers()]).then(()=>{renderDash();if(document.getElementById('page-inventory').classList.contains('active'))renderInv();if(document.getElementById('page-checkinout').classList.contains('active')){populateDrop();populateMemberDrop();}if(adminUnlocked){renderLocationEditor();renderMemberList();}toast('Refreshed');});}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+Promise.all([load(),loadMembers()]).then(()=>{renderDash();populateDrop();populateMemberDrop();});
+</script></body></html>
