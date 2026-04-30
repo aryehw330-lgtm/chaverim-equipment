@@ -60,22 +60,11 @@
         <div id="inventory-list">Syncing data...</div>
     </div>
 
-    <div id="page-checklist" class="page">
-        <h2 style="margin-top:0">✅ Inventory Checklist</h2>
-        <div id="checklist-content">
-            <div id="full-checklist-list"></div>
-        </div>
-    </div>
-
     <div id="page-admin" class="page">
         <h2>⚙️ Admin Settings</h2>
         <div style="background:#fff; padding:20px; border-radius:12px; box-shadow:0 2px 5px rgba(0,0,0,0.05)">
-            <p><strong>Database:</strong> Google Sheets</p>
-            <p><strong>Version:</strong> 91.0 (CNC Enabled)</p>
+            <p><strong>Database:</strong> [Google Sheets](https://docs.google.com/spreadsheets/d/1iOE4c-BBatkH8zljpQTFmrzZZe_Q4uvBDWAQCos51PE/edit)</p>
             <button class="action-btn" style="width:100%; margin-bottom:10px;" onclick="fetchData()">🔄 Refresh All Data</button>
-            <a href="https://docs.google.com/spreadsheets/d/1iOE4c-BBatkH8zljpQTFmrzZZe_Q4uvBDWAQCos51PE/edit" target="_blank" style="text-decoration:none;">
-                <button class="action-btn" style="width:100%; background:#28a745">📗 Open Spreadsheet</button>
-            </a>
         </div>
     </div>
 </div>
@@ -86,9 +75,6 @@
     </div>
     <div class="tab" onclick="switchTab('inventory', this)">
         <span class="tab-icon">🔄</span>Check In/Out
-    </div>
-    <div class="tab" onclick="switchTab('checklist', this)">
-        <span class="tab-icon">✅</span>Checklist
     </div>
     <div class="tab" onclick="switchTab('admin', this)">
         <span class="tab-icon">⚙️</span>Admin
@@ -107,7 +93,7 @@
         <input type="text" id="locationInput" placeholder="Location">
         <div style="display:flex; gap:10px; margin-top:15px;">
             <button style="flex:1; padding:12px; border-radius:8px; border:none;" onclick="closeModal()">Cancel</button>
-            <button id="saveBtn" style="flex:1; padding:12px; border-radius:8px; border:none; background:var(--primary); color:#fff;" onclick="submitUpdate()">Save</button>
+            <button id="saveBtn" style="flex:1; padding:12px; border-radius:8px; border:none; background:var(--primary); color:#fff;" onclick="submitUpdate()">Save Changes</button>
         </div>
     </div>
 </div>
@@ -152,11 +138,8 @@
     function renderLists() {
         const outList = document.getElementById('dash-out-list');
         const invList = document.getElementById('inventory-list');
-        const checklistList = document.getElementById('full-checklist-list');
-        
         outList.innerHTML = '';
         invList.innerHTML = '';
-        checklistList.innerHTML = '';
 
         allData.forEach(item => {
             const isCnc = item.cncStatus && item.cncStatus.toString().toUpperCase() === 'CNC';
@@ -178,15 +161,7 @@
                     <button class="action-btn" onclick="openModal('${item.name.replace(/'/g, "\\'")}', '${status}', '${(item.location || "").replace(/'/g, "\\'")}')">Update</button>
                 </div>`;
 
-            const checklistHtml = `
-                <div style="background:#fff; padding:12px; margin-bottom:8px; border-radius:8px; display:flex; align-items:center; gap:10px; border-bottom:1px solid #eee;">
-                    <input type="checkbox" style="width:20px; height:20px;">
-                    <span style="font-weight:bold;">${item.name}</span>
-                    <span style="font-size:0.8rem; color:#888;">(${item.location || 'No Loc'})</span>
-                </div>`;
-
             invList.innerHTML += html;
-            checklistList.innerHTML += checklistHtml;
             if (status === 'OUT' || isCnc) {
                 outList.innerHTML += html;
             }
@@ -220,7 +195,7 @@
             });
             setTimeout(() => {
                 closeModal();
-                btn.innerText = "Save";
+                btn.innerText = "Save Changes";
                 btn.disabled = false;
                 fetchData();
             }, 8000);
