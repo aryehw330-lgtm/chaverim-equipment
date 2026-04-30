@@ -2,192 +2,201 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-    <title>Chaverim Equipment Manager</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chaverim Equipment</title>
     <style>
-        :root {--green: #1a3a2a; --gold: #c9a84c; --card-bg: #fff; --shadow: 0 2px 12px rgba(0,0,0,0.12);}
-        body {font-family: -apple-system, sans-serif; background: #f0ede6; margin: 0; padding-bottom: 80px;}
-        .header {background: var(--green); color: #fff; padding: 15px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100;}
-        .tabs {display: flex; background: var(--green); padding: 0 10px 10px; gap: 5px;}
-        .tab {flex: 1; padding: 10px; background: rgba(255,255,255,0.1); border: none; color: #fff; border-radius: 8px; font-weight: 600; cursor: pointer;}
-        .tab.active {background: var(--gold); color: var(--green);}
-        .page {display: none; padding: 15px;}
-        .page.active {display: block;}
-        .card {background: var(--card-bg); border-radius: 12px; box-shadow: var(--shadow); margin-bottom: 15px; overflow: hidden;}
-        .card-header {background: var(--green); color: #fff; padding: 10px 15px; font-weight: 700;}
-        .card-body {padding: 15px;}
-        .equip-item {display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee;}
-        .badge {padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase;}
-        .badge-out {background: #ffeeba; color: #856404;}
-        .badge-in {background: #d4edda; color: #155724;}
-        .badge-cnc {background: #f8d7da; color: #721c24;}
-        .action-btn {background: var(--green); color: #fff; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 600; cursor: pointer;}
-        .modal {display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; padding: 20px;}
-        .modal.active {display: flex;}
-        .modal-content {background: #fff; width: 100%; max-width: 400px; border-radius: 15px; padding: 20px;}
-        input, select {width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box;}
-        .btn-save {width: 100%; padding: 14px; background: var(--green); color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;}
-        .lock-overlay {position: fixed; inset: 0; background: #1a3a2a; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; color: #fff; text-align: center;}
+        :root { --primary: #007bff; --bg: #f4f7f6; --text: #333; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background: var(--bg); color: var(--text); padding-bottom: 70px; }
+        .header { background: #fff; padding: 15px; text-align: center; font-weight: bold; font-size: 1.2rem; border-bottom: 1px solid #ddd; position: sticky; top: 0; z-index: 100; }
+        .container { padding: 15px; }
+        .page { display: none; }
+        .page.active { display: block; }
+        .equip-item { background: #fff; padding: 12px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .badge { padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
+        .badge-in { background: #d4edda; color: #155724; }
+        .badge-out { background: #f8d7da; color: #721c24; }
+        .badge-cnc { background: #fff3cd; color: #856404; }
+        .action-btn { background: var(--primary); color: #fff; border: none; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; cursor: pointer; }
+        .tabs { position: fixed; bottom: 0; width: 100%; background: #fff; display: flex; border-top: 1px solid #ddd; }
+        .tab { flex: 1; text-align: center; padding: 12px; font-size: 0.9rem; color: #666; cursor: pointer; }
+        .tab.active { color: var(--primary); font-weight: bold; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: #fff; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; }
+        .modal-content h3 { margin-top: 0; }
+        input, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1rem; }
+        .modal-btns { display: flex; gap: 10px; margin-top: 10px; }
+        .modal-btns button { flex: 1; padding: 12px; border-radius: 6px; border: none; font-size: 1rem; cursor: pointer; }
+        #saveBtn { background: var(--primary); color: #fff; }
+        #cancelBtn { background: #eee; color: #333; }
+        #lockOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
     </style>
 </head>
 <body>
 
-<div class="lock-overlay" id="lockOverlay">
-    <h2>🔐 Chaverim Equipment</h2>
-    <p>Bergen County COBC Access</p>
-    <input type="password" id="lockInput" placeholder="Enter Access Code">
-    <button class="action-btn" onclick="checkLockCode()">Unlock System</button>
-    <p id="lockError" style="color: #ff6b6b; margin-top: 10px;"></p>
+<div id="lockOverlay">
+    <h2>Chaverim Equipment</h2>
+    <p>Enter access code to continue:</p>
+    <input type="password" id="lockInput" placeholder="Code">
+    <button class="action-btn" style="width:100%" onclick="checkLock()">Unlock</button>
+    <p id="lockError" style="color:red; margin-top:10px;"></p>
 </div>
 
-<div class="header">
-    <h2 style="margin:0">Equipment Manager</h2>
+<div class="header">Equipment Manager</div>
+
+<div class="container">
+    <div id="page-dashboard" class="page active">
+        <h3>Out/CNC Items</h3>
+        <div id="dash-out-list">Loading...</div>
+    </div>
+
+    <div id="page-inventory" class="page">
+        <h3>Full Inventory</h3>
+        <div id="inventory-list">Loading...</div>
+    </div>
 </div>
 
 <div class="tabs">
-    <button class="tab active" onclick="switchTab('dashboard', this)">Dashboard</button>
-    <button class="tab" onclick="switchTab('inventory', this)">Inventory</button>
-</div>
-
-<div id="page-dashboard" class="page active">
-    <div class="card">
-        <div class="card-header">Items OUT / CNC</div>
-        <div class="card-body" id="dash-out-list">Loading...</div>
-    </div>
-</div>
-
-<div id="page-inventory" class="page">
-    <div class="card">
-        <div class="card-header">Full Inventory</div>
-        <div class="card-body" id="inventory-list">Loading items...</div>
-    </div>
+    <div class="tab active" onclick="switchTab('dashboard', this)">Dashboard</div>
+    <div class="tab" onclick="switchTab('inventory', this)">Inventory</div>
 </div>
 
 <div class="modal" id="editModal">
     <div class="modal-content">
-        <h3 id="modalItemName" style="margin-top:0">Item Name</h3>
+        <h3 id="modalItemName">Item Name</h3>
         <label>Status</label>
         <select id="statusInput">
-            <option value="IN">IN (Available)</option>
-            <option value="OUT">OUT (Borrowed)</option>
+            <option value="IN">IN</option>
+            <option value="OUT">OUT</option>
         </select>
-        <label>Member Name / CNC Note</label>
-        <input type="text" id="locationInput" placeholder="Who has it? (or 'cnc...')">
-        <button class="btn-save" id="saveBtn" onclick="submitUpdate()">Save Changes</button>
-        <button onclick="closeModal()" style="width:100%; margin-top:10px; background:none; border:none; color:#666; cursor:pointer">Cancel</button>
+        <label>Location / CNC Info</label>
+        <input type="text" id="locationInput" placeholder="Location or CNC details">
+        <div class="modal-btns">
+            <button id="cancelBtn" onclick="closeModal()">Cancel</button>
+            <button id="saveBtn" onclick="submitUpdate()">Save</button>
+        </div>
     </div>
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyUJjSpgGSwhFKcmlSHyiobEU8q-TS5LyKnVKaYDzqIjmDfmPF9ApMTx_cSuG20hf3bpQ/exec";
-let allData = [];
-let currentItemName = "";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyWhoiWNGOAem6UJq7LltM17xBEV6VGQutMD1gWZv1wSkjLlF4sYaetTSnGkoE6XTZ30A/exec";
+    let allData = [];
+    let currentItemName = "";
 
-function checkLockCode() {
-    if (document.getElementById('lockInput').value === "COBC2026") {
-        localStorage.setItem('chaverim_auth', 'true');
-        document.getElementById('lockOverlay').style.display = 'none';
-        fetchData();
-    } else {
-        document.getElementById('lockError').innerText = "Incorrect Code";
-    }
-}
-
-async function fetchData() {
-    try {
-        const response = await fetch(SCRIPT_URL);
-        allData = await response.json();
-        renderLists();
-    } catch (e) {
-        console.error("Fetch error:", e);
-    }
-}
-
-function switchTab(tabId, el) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.getElementById('page-' + tabId).classList.add('active');
-    el.classList.add('active');
-}
-
-function renderLists() {
-    const outList = document.getElementById('dash-out-list');
-    const invList = document.getElementById('inventory-list');
-    outList.innerHTML = ''; invList.innerHTML = '';
-    
-    allData.forEach(item => {
-        const isCnc = item.status.toLowerCase().startsWith('cnc');
-        const badgeClass = isCnc ? 'badge-cnc' : (item.status === 'IN' ? 'badge-in' : 'badge-out');
-        
-        const html = `
-        <div class="equip-item">
-            <div>
-                <strong>${item.name}</strong><br>
-                <span class="badge ${badgeClass}">${item.status}</span> • ${item.location}
-            </div>
-            <button class="action-btn" onclick="openModal('${item.name.replace(/'/g, "\\'")}', '${item.status}', '${item.location.replace(/'/g, "\\'")}')">Update</button>
-        </div>`;
-        
-        invList.innerHTML += html;
-        if (item.status === 'OUT' || isCnc) outList.innerHTML += html;
-    });
-}
-
-function openModal(name, status, loc) {
-    currentItemName = name;
-    document.getElementById('modalItemName').innerText = name;
-    document.getElementById('statusInput').value = status.startsWith('cnc') ? 'OUT' : status;
-    document.getElementById('locationInput').value = loc;
-    document.getElementById('editModal').classList.add('active');
-}
-
-function closeModal() { document.getElementById('editModal').classList.remove('active'); }
-
-async function submitUpdate() {
-    const btn = document.getElementById('saveBtn');
-    const locInput = document.getElementById('locationInput').value.trim();
-    const statusInput = document.getElementById('statusInput').value;
-    
-    btn.innerText = "Saving...";
-    btn.disabled = true;
-
-    let finalStatus = statusInput;
-    let finalLocation = locInput;
-
-    if (locInput.toLowerCase().startsWith('cnc')) {
-        finalStatus = locInput;
-        finalLocation = null;
-    }
-
-    const payload = {
-        item: currentItemName,
-        status: finalStatus,
-        location: finalLocation,
-        role: "admin"
+    window.onload = () => {
+        if (localStorage.getItem('chaverim_auth') === 'true') {
+            document.getElementById('lockOverlay').style.display = 'none';
+            fetchData();
+        }
     };
 
-    try {
-        await fetch(SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            body: JSON.stringify(payload)
-        });
-        closeModal();
-        setTimeout(fetchData, 1500);
-    } catch (e) {
-        alert("Save failed.");
-    } finally {
-        btn.innerText = "Save Changes";
-        btn.disabled = false;
+    function checkLock() {
+        if (document.getElementById('lockInput').value === "COBC2026") {
+            localStorage.setItem('chaverim_auth', 'true');
+            document.getElementById('lockOverlay').style.display = 'none';
+            fetchData();
+        } else {
+            document.getElementById('lockError').innerText = "Incorrect Code";
+        }
     }
-}
 
-window.onload = () => {
-    if (localStorage.getItem('chaverim_auth') === 'true') {
-        document.getElementById('lockOverlay').style.display = 'none';
-        fetchData();
+    async function fetchData() {
+        try {
+            const response = await fetch(SCRIPT_URL);
+            allData = await response.json();
+            renderLists();
+        } catch (e) {
+            console.error("Fetch error:", e);
+        }
     }
-};
+
+    function switchTab(tabId, el) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('page-' + tabId).classList.add('active');
+        el.classList.add('active');
+    }
+
+    function renderLists() {
+        const outList = document.getElementById('dash-out-list');
+        const invList = document.getElementById('inventory-list');
+        outList.innerHTML = '';
+        invList.innerHTML = '';
+
+        allData.forEach(item => {
+            const isCnc = item.status.toLowerCase().startsWith('cnc');
+            const badgeClass = isCnc ? 'badge-cnc' : (item.status === 'IN' ? 'badge-in' : 'badge-out');
+            
+            const html = `
+                <div class="equip-item">
+                    <div>
+                        <strong>${item.name}</strong><br>
+                        <span class="badge ${badgeClass}">${item.status}</span> • ${item.location}
+                    </div>
+                    <button class="action-btn" onclick="openModal('${item.name.replace(/'/g, "\\'")}', '${item.status}', '${item.location.replace(/'/g, "\\'")}')">Update</button>
+                </div>`;
+            
+            invList.innerHTML += html;
+            if (item.status === 'OUT' || isCnc) outList.innerHTML += html;
+        });
+    }
+
+    function openModal(name, status, loc) {
+        currentItemName = name;
+        document.getElementById('modalItemName').innerText = name;
+        document.getElementById('statusInput').value = status.startsWith('cnc') ? 'OUT' : status;
+        document.getElementById('locationInput').value = loc;
+        document.getElementById('editModal').classList.add('active');
+    }
+
+    function closeModal() {
+        document.getElementById('editModal').classList.remove('active');
+    }
+
+    async function submitUpdate() {
+        const btn = document.getElementById('saveBtn');
+        const locInput = document.getElementById('locationInput').value.trim();
+        const statusInput = document.getElementById('statusInput').value;
+
+        btn.innerText = "Saving...";
+        btn.disabled = true;
+
+        let finalStatus = statusInput;
+        let finalLocation = locInput;
+
+        if (locInput.toLowerCase().startsWith('cnc')) {
+            finalStatus = locInput;
+            finalLocation = null;
+        }
+
+        const payload = {
+            item: currentItemName,
+            status: finalStatus,
+            location: finalLocation,
+            role: "admin"
+        };
+
+        try {
+            await fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                cache: 'no-cache',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            setTimeout(() => {
+                closeModal();
+                btn.innerText = "Save";
+                btn.disabled = false;
+                fetchData();
+            }, 1000);
+        } catch (e) {
+            alert("Error saving update");
+            btn.innerText = "Save";
+            btn.disabled = false;
+        }
+    }
 </script>
+
 </body>
 </html>
