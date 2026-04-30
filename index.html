@@ -3,103 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="COBC Equipment">
-    <meta name="theme-color" content="#1a3a2a">
     <title>Chaverim Equipment Manager</title>
     <style>
-        :root {--green: #1a3a2a; --green-light: #3a8a58; --gold: #c9a84c; --dark-gray: #888; --red: #c0392b; --card-bg: #fff; --shadow: 0 2px 12px rgba(0,0,0,0.12); }
-        * {box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-        body {font-family: -apple-system, "Helvetica Neue", sans-serif; background: #f0ede6; color: #222; min-height: 100vh; padding-bottom: 80px; }
-        .header {background: var(--green); color: #fff; padding: 14px 16px 12px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
-        .header-logo {width: 38px; height: 38px; background: var(--gold); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; color: var(--green); flex-shrink: 0; }
-        .header-title {font-size: 17px; font-weight: 700; line-height: 1.2; }
-        .header-sub {font-size: 11px; opacity: .7; }
-        .header-right {margin-left: auto; }
-        .refresh-btn {background: rgba(255,255,255,0.15); border: none; color: #fff; padding: 7px 12px; border-radius: 8px; font-size: 13px; cursor: pointer; }
-        .tabs {display: flex; background: var(--green); padding: 0 8px 8px; gap: 6px; }
-        .tab {flex: 1; padding: 8px 4px; background: rgba(255,255,255,0.12); border: none; color: rgba(255,255,255,0.7); border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        :root {--green: #1a3a2a; --gold: #c9a84c; --card-bg: #fff; --shadow: 0 2px 12px rgba(0,0,0,0.12); }
+        body {font-family: -apple-system, sans-serif; background: #f0ede6; margin: 0; padding-bottom: 80px; }
+        .header {background: var(--green); color: #fff; padding: 15px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+        .tabs {display: flex; background: var(--green); padding: 0 10px 10px; gap: 5px; }
+        .tab {flex: 1; padding: 10px; background: rgba(255,255,255,0.1); border: none; color: #fff; border-radius: 8px; font-weight: 600; }
         .tab.active {background: var(--gold); color: var(--green); }
-        .page {display: none; padding: 12px; }
+        .page {display: none; padding: 15px; }
         .page.active {display: block; }
-        .card {background: var(--card-bg); border-radius: 14px; box-shadow: var(--shadow); margin-bottom: 12px; overflow: hidden; }
-        .card-header {background: var(--green); color: #fff; padding: 12px 16px; font-size: 14px; font-weight: 700; }
-        .card-body {padding: 14px 16px; }
-        .badge {display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: .5px; }
-        .badge-in { background: #d4edda; color: #155724; }
-        .badge-out { background: #ffeeba; color: #856404; }
-        .badge-cc { background: #cce5ff; color: #004085; }
-        .badge-cnc { background: #f8d7da; color: #721c24; }
-        .equip-item {display: flex; align-items: flex-start; padding: 11px 0; border-bottom: 1px solid #f0ede6; gap: 10px; }
-        .equip-item:last-child {border-bottom: none; }
-        .equip-info {flex: 1; }
-        .equip-name {font-weight: 700; font-size: 15px; margin-bottom: 2px; }
-        .equip-loc {font-size: 13px; color: #666; }
-        .action-btn {background: var(--green); color: white; border: none; padding: 8px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
-        .modal {display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; padding: 20px; align-items: center; justify-content: center; }
+        .card {background: var(--card-bg); border-radius: 12px; box-shadow: var(--shadow); margin-bottom: 15px; overflow: hidden; }
+        .card-header {background: var(--green); color: #fff; padding: 10px 15px; font-weight: 700; }
+        .card-body {padding: 15px; }
+        .equip-item {display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .badge {padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+        .badge-out {background: #ffeeba; color: #856404; }
+        .badge-in {background: #d4edda; color: #155724; }
+        .action-btn {background: var(--green); color: #fff; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; }
+        .modal {display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
         .modal.active {display: flex; }
-        .modal-content {background: #fff; width: 100%; max-width: 400px; border-radius: 20px; padding: 24px; position: relative; }
-        .modal-title {font-size: 18px; font-weight: 800; margin-bottom: 16px; color: var(--green); }
-        .form-group {margin-bottom: 16px; }
-        label {display: block; font-size: 12px; font-weight: 700; color: #666; margin-bottom: 6px; text-transform: uppercase; }
-        input, select {width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; font-family: inherit; }
-        .modal-footer {display: flex; gap: 10px; margin-top: 20px; }
-        .btn-cancel {flex: 1; padding: 14px; background: #eee; border: none; border-radius: 12px; font-weight: 700; }
-        .btn-save {flex: 2; padding: 14px; background: var(--green); color: white; border: none; border-radius: 12px; font-weight: 700; }
-        .lock-overlay {position: fixed; inset: 0; background: #1a3a2a; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
-        .lock-logo { font-size: 64px; margin-bottom: 8px; }
-        .lock-title { color: white; font-size: 26px; font-weight: 800; margin-bottom: 4px; text-align: center; }
-        .lock-sub { color: rgba(255,255,255,0.6); font-size: 14px; margin-bottom: 36px; text-align: center; }
-        .lock-input {width: 100%; max-width: 320px; padding: 18px; border: 2px solid rgba(255,255,255,0.2); border-radius: 14px; background: rgba(255,255,255,0.1); color: white; font-size: 22px; text-align: center; letter-spacing: 4px; outline: none; margin-bottom: 14px; }
-        .lock-btn {width: 100%; max-width: 320px; padding: 18px; background: #3a8a52; border: none; border-radius: 14px; color: white; font-size: 17px; font-weight: 700; cursor: pointer; }
-        .lock-error { color: #ff6b6b; font-size: 14px; margin-top: 10px; height: 20px; }
-        .loading { text-align: center; padding: 20px; color: #666; }
+        .modal-content {background: #fff; width: 100%; max-width: 400px; border-radius: 15px; padding: 20px; }
+        input, select {width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
+        .btn-save {width: 100%; padding: 12px; background: var(--green); color: #fff; border: none; border-radius: 8px; font-weight: 700; margin-top: 10px; }
+        .lock-overlay {position: fixed; inset: 0; background: #1a3a2a; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; color: #fff; }
     </style>
 </head>
 <body>
     <div class="lock-overlay" id="lockOverlay">
-        <div class="lock-logo">🔐</div>
-        <div class="lock-title">Chaverim Equipment</div>
-        <div class="lock-sub">Bergen County COBC · Members Only</div>
-        <input class="lock-input" id="lockInput" type="password" placeholder="Access Code" maxlength="20" autocomplete="off">
-        <button class="lock-btn" onclick="checkLockCode()">Enter</button>
-        <div class="lock-error" id="lockError"></div>
+        <h2>🔐 Chaverim Equipment</h2>
+        <p>Bergen County COBC</p>
+        <input id="lockInput" type="password" placeholder="Access Code" style="text-align:center; width:200px">
+        <button class="btn-save" onclick="checkLockCode()" style="width:200px">Enter</button>
+        <div id="lockError" style="color:#ff6b6b; margin-top:10px"></div>
     </div>
 
     <div class="header">
-        <div class="header-logo">C</div>
-        <div>
-            <div class="header-title">Chaverim Equipment</div>
-            <div class="header-sub">Bergen County COBC</div>
-        </div>
-        <div class="header-right">
-            <button class="refresh-btn" onclick="refreshAll()">↻ Refresh</button>
-        </div>
+        <strong>Chaverim Equipment</strong>
+        <button onclick="fetchData()" style="background:none; border:none; color:#fff; font-size:20px">↻</button>
     </div>
 
     <div class="tabs">
         <button class="tab active" onclick="switchTab('dashboard', this)">Dashboard</button>
-        <button class="tab" onclick="switchTab('checkinout', this)">Check In/Out</button>
         <button class="tab" onclick="switchTab('inventory', this)">Inventory</button>
-        <button class="tab" onclick="switchTab('admin', this)">Admin</button>
     </div>
 
     <div class="page active" id="page-dashboard">
         <div class="card">
-            <div class="card-header">Equipment Stats</div>
-            <div class="card-body" id="dash-stats">Loading...</div>
-        </div>
-        <div class="card">
             <div class="card-header">Currently Out</div>
             <div class="card-body" id="dash-out-list">Loading...</div>
-        </div>
-    </div>
-
-    <div class="page" id="page-checkinout">
-        <div class="card">
-            <div class="card-header">Update Status</div>
-            <div class="card-body" id="checkinout-list">Loading...</div>
         </div>
     </div>
 
@@ -110,48 +62,26 @@
         </div>
     </div>
 
-    <div class="page" id="page-admin">
-        <div class="card">
-            <div class="card-header">Admin Controls</div>
-            <div class="card-body">
-                <p>Role: <span id="user-role-display">Member</span></p>
-                <button class="action-btn" style="margin-top:10px; background:#666" onclick="localStorage.removeItem('chaverim_auth'); location.reload();">Logout</button>
-            </div>
-        </div>
-    </div>
-
     <div class="modal" id="editModal">
         <div class="modal-content">
-            <div class="modal-title" id="modalItemName">Item Name</div>
-            <div class="form-group">
-                <label>Current Status</label>
-                <select id="statusInput">
-                    <option value="IN">IN (Available)</option>
-                    <option value="OUT">OUT (Borrowed)</option>
-                    <option value="CNC">CNC (Wrong Location)</option>
-                    <option value="CC">CC (Needs Repair)</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Member Name / Current Location</label>
-                <input type="text" id="locationInput" placeholder="Who has it?">
-            </div>
-            <div class="modal-footer">
-                <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-                <button class="btn-save" onclick="submitUpdate()">Save Changes</button>
-            </div>
+            <h3 id="modalItemName">Item Name</h3>
+            <select id="statusInput">
+                <option value="IN">IN (Available)</option>
+                <option value="OUT">OUT (Borrowed)</option>
+            </select>
+            <input type="text" id="locationInput" placeholder="Member Name / Current Location">
+            <button class="btn-save" onclick="submitUpdate()">Save Changes</button>
+            <button onclick="closeModal()" style="width:100%; margin-top:10px; border:none; background:none; color:#666">Cancel</button>
         </div>
     </div>
 
     <script>
-        // UPDATED SCRIPT URL VERSION 87
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzRZ2DoNTlmjkTHBcC6AZfDLJ7-ZsKZfaHGem9v3zSgGhqouGi-3gKYBL0w4YGZaKTiIA/exec";
         let allData = [];
         let currentItemName = "";
 
         function checkLockCode() {
-            const code = document.getElementById('lockInput').value;
-            if (code === "COBC2026") {
+            if (document.getElementById('lockInput').value === "COBC2026") {
                 localStorage.setItem('chaverim_auth', 'true');
                 document.getElementById('lockOverlay').style.display = 'none';
                 fetchData();
@@ -161,14 +91,9 @@
         }
 
         async function fetchData() {
-            try {
-                const response = await fetch(SCRIPT_URL);
-                allData = await response.json();
-                renderStats();
-                renderLists();
-            } catch (e) {
-                console.error("Fetch error:", e);
-            }
+            const response = await fetch(SCRIPT_URL);
+            allData = await response.json();
+            renderLists();
         }
 
         function switchTab(tabId, el) {
@@ -178,44 +103,21 @@
             el.classList.add('active');
         }
 
-        function renderStats() {
-            const total = allData.length;
-            const out = allData.filter(i => i.status === 'OUT').length;
-            document.getElementById('dash-stats').innerHTML = `
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
-                    <div class="card" style="margin:0; background:#f8f9fa; padding:10px">
-                        <div style="font-size:12px; color:#666">TOTAL ITEMS</div>
-                        <div style="font-size:20px; font-weight:800">${total}</div>
-                    </div>
-                    <div class="card" style="margin:0; background:#fff4e5; padding:10px">
-                        <div style="font-size:12px; color:#666">CURRENTLY OUT</div>
-                        <div style="font-size:20px; font-weight:800; color:#856404">${out}</div>
-                    </div>
-                </div>
-            `;
-        }
-
         function renderLists() {
             const outList = document.getElementById('dash-out-list');
-            const checkList = document.getElementById('checkinout-list');
             const invList = document.getElementById('inventory-list');
-            
-            outList.innerHTML = '';
-            checkList.innerHTML = '';
-            invList.innerHTML = '';
+            outList.innerHTML = ''; invList.innerHTML = '';
 
             allData.forEach(item => {
                 const html = `
                     <div class="equip-item">
-                        <div class="equip-info">
-                            <div class="equip-name">${item.name}</div>
-                            <div class="equip-loc"><span class="badge badge-${item.status.toLowerCase()}">${item.status}</span> • ${item.location}</div>
+                        <div>
+                            <strong>${item.name}</strong><br>
+                            <span class="badge badge-${item.status.toLowerCase()}">${item.status}</span> • ${item.location}
                         </div>
                         <button class="action-btn" onclick="openModal('${item.name}', '${item.status}', '${item.location}')">Update</button>
-                    </div>
-                `;
+                    </div>`;
                 invList.innerHTML += html;
-                checkList.innerHTML += html;
                 if(item.status === 'OUT') outList.innerHTML += html;
             });
         }
@@ -228,41 +130,17 @@
             document.getElementById('editModal').classList.add('active');
         }
 
-        function closeModal() {
-            document.getElementById('editModal').classList.remove('active');
-        }
+        function closeModal() { document.getElementById('editModal').classList.remove('active'); }
 
-        function submitUpdate() {
-            const status = document.getElementById('statusInput').value;
-            const location = document.getElementById('locationInput').value;
-
+        async function submitUpdate() {
             const payload = {
                 itemName: currentItemName,
-                status: status,
-                location: location
+                status: document.getElementById('statusInput').value,
+                location: document.getElementById('locationInput').value
             };
-
-            const btn = document.querySelector('.btn-save');
-            btn.innerText = "Saving...";
-            btn.disabled = true;
-
-            fetch(SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                cache: 'no-cache',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            }).then(() => {
-                setTimeout(() => {
-                    closeModal();
-                    refreshAll();
-                    btn.innerText = "Save Changes";
-                    btn.disabled = false;
-                }, 1000);
-            });
-        }
-
-        function refreshAll() {
+            
+            await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+            closeModal();
             fetchData();
         }
 
