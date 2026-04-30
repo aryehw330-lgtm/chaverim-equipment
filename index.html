@@ -96,7 +96,7 @@
 
         async function fetchData() {
             try {
-                const response = await fetch(SCRIPT_URL);
+                const response = await fetch(SCRIPT_URL);const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyxAPa9NT83OLGiPml2p4OAiVR7VAqmTz7feenxB-sQfuQLBWppgN2c3RjyhtuhoxXMng/exec";
                 allData = await response.json();
                 renderLists();
             } catch (e) {
