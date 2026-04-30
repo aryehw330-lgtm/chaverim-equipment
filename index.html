@@ -6,80 +6,108 @@
     <title>Chaverim Equipment</title>
     <style>
         :root { --primary: #007bff; --bg: #f4f7f6; --text: #333; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background: var(--bg); color: var(--text); padding-bottom: 70px; }
-        .header { background: #fff; padding: 15px; text-align: center; font-weight: bold; font-size: 1.2rem; border-bottom: 1px solid #ddd; position: sticky; top: 0; z-index: 100; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background: var(--bg); color: var(--text); padding-bottom: 80px; }
+        .header { background: #fff; padding: 20px; text-align: center; font-weight: bold; font-size: 1.4rem; border-bottom: 2px solid var(--primary); position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .container { padding: 15px; }
         .page { display: none; }
         .page.active { display: block; }
-        .equip-item { background: #fff; padding: 12px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
-        .badge { padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
-        .badge-in { background: #d4edda; color: #155724; }
-        .badge-out { background: #f8d7da; color: #721c24; }
+        
+        .equip-item { background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.07); display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #ccc; }
+        .equip-item.item-out { border-left-color: #dc3545; }
+        .equip-item.item-in { border-left-color: #28a745; }
+        .equip-item.item-cnc { border-left-color: #ffc107; }
+
+        .badge { padding: 5px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
+        .badge-in { background: #e8f5e9; color: #2e7d32; }
+        .badge-out { background: #ffebee; color: #c62828; }
         .badge-cnc { background: #fff3cd; color: #856404; }
-        .action-btn { background: var(--primary); color: #fff; border: none; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; cursor: pointer; }
-        .tabs { position: fixed; bottom: 0; width: 100%; background: #fff; display: flex; border-top: 1px solid #ddd; z-index: 1000; }
-        .tab { flex: 1; text-align: center; padding: 12px; font-size: 0.8rem; color: #666; cursor: pointer; }
-        .tab.active { color: var(--primary); font-weight: bold; border-top: 2px solid var(--primary); }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; }
+
+        .action-btn { background: var(--primary); color: #fff; border: none; padding: 10px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        
+        .tabs { position: fixed; bottom: 0; width: 100%; background: #fff; display: flex; border-top: 1px solid #ddd; height: 70px; align-items: center; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 1000; }
+        .tab { flex: 1; text-align: center; font-size: 0.75rem; color: #888; cursor: pointer; padding: 10px 0; }
+        .tab.active { color: var(--primary); font-weight: bold; }
+        .tab-icon { font-size: 1.2rem; display: block; margin-bottom: 4px; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
         .modal.active { display: flex; }
-        .modal-content { background: #fff; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; }
-        input, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1rem; }
-        .modal-btns { display: flex; gap: 10px; margin-top: 10px; }
-        .modal-btns button { flex: 1; padding: 12px; border-radius: 6px; border: none; font-size: 1rem; cursor: pointer; }
-        #saveBtn { background: var(--primary); color: #fff; }
-        #cancelBtn { background: #eee; color: #333; }
-        #lockOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
+        .modal-content { background: #fff; padding: 25px; border-radius: 16px; width: 85%; max-width: 400px; }
+        input, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; }
+        
+        #lockOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; }
     </style>
 </head>
 <body>
 
 <div id="lockOverlay">
-    <h2>Chaverim Equipment</h2>
-    <p>Enter access code to continue:</p>
-    <input type="password" id="lockInput" placeholder="Code">
-    <button class="action-btn" style="width:100%" onclick="checkLock()">Unlock</button>
-    <p id="lockError" style="color:red; margin-top:10px;"></p>
+    <h1 style="color: var(--primary)">Chaverim</h1>
+    <p>Inventory Access Control</p>
+    <input type="password" id="lockInput" placeholder="Access Code" style="text-align: center;">
+    <button class="action-btn" style="width:100%" onclick="checkLock()">Unlock System</button>
+    <p id="lockError" style="color:red; margin-top:15px; font-weight:bold;"></p>
 </div>
 
 <div class="header">Equipment Manager</div>
 
 <div class="container">
     <div id="page-dashboard" class="page active">
-        <h3>Out / CNC Dashboard</h3>
-        <div id="dash-out-list">Loading...</div>
+        <h2 style="margin-top:0">📋 Activity Dashboard</h2>
+        <div id="dash-out-list">Syncing data...</div>
     </div>
 
     <div id="page-inventory" class="page">
-        <h3>Inventory Control</h3>
-        <div id="inventory-list">Loading...</div>
+        <h2 style="margin-top:0">🔄 Check In/Out</h2>
+        <div id="inventory-list">Syncing data...</div>
+    </div>
+
+    <div id="page-checklist" class="page">
+        <h2 style="margin-top:0">✅ Inventory Checklist</h2>
+        <div id="checklist-content">
+            <div id="full-checklist-list"></div>
+        </div>
     </div>
 
     <div id="page-admin" class="page">
-        <h3>Admin Settings</h3>
-        <p>System connected to: [Inventory Sheet](https://docs.google.com/spreadsheets/d/1iOE4c-BBatkH8zljpQTFmrzZZe_Q4uvBDWAQCos51PE/edit)</p>
-        <button class="action-btn" onclick="fetchData()">Force Refresh Data</button>
+        <h2>⚙️ Admin Settings</h2>
+        <div style="background:#fff; padding:20px; border-radius:12px; box-shadow:0 2px 5px rgba(0,0,0,0.05)">
+            <p><strong>Database:</strong> Google Sheets</p>
+            <p><strong>Version:</strong> 91.0 (CNC Enabled)</p>
+            <button class="action-btn" style="width:100%; margin-bottom:10px;" onclick="fetchData()">🔄 Refresh All Data</button>
+            <a href="https://docs.google.com/spreadsheets/d/1iOE4c-BBatkH8zljpQTFmrzZZe_Q4uvBDWAQCos51PE/edit" target="_blank" style="text-decoration:none;">
+                <button class="action-btn" style="width:100%; background:#28a745">📗 Open Spreadsheet</button>
+            </a>
+        </div>
     </div>
 </div>
 
 <div class="tabs">
-    <div class="tab active" onclick="switchTab('dashboard', this)">Dashboard</div>
-    <div class="tab" onclick="switchTab('inventory', this)">Check In/Out</div>
-    <div class="tab" onclick="switchTab('admin', this)">Admin</div>
+    <div class="tab active" onclick="switchTab('dashboard', this)">
+        <span class="tab-icon">🏠</span>Dashboard
+    </div>
+    <div class="tab" onclick="switchTab('inventory', this)">
+        <span class="tab-icon">🔄</span>Check In/Out
+    </div>
+    <div class="tab" onclick="switchTab('checklist', this)">
+        <span class="tab-icon">✅</span>Checklist
+    </div>
+    <div class="tab" onclick="switchTab('admin', this)">
+        <span class="tab-icon">⚙️</span>Admin
+    </div>
 </div>
 
 <div class="modal" id="editModal">
     <div class="modal-content">
-        <h3 id="modalItemName">Item Name</h3>
-        <label>Status</label>
+        <h3 id="modalItemName" style="margin-top:0">Item Name</h3>
+        <label>Current Status</label>
         <select id="statusInput">
-            <option value="IN">IN</option>
-            <option value="OUT">OUT</option>
+            <option value="IN">✅ Mark as IN</option>
+            <option value="OUT">🚩 Mark as OUT</option>
         </select>
-        <label>Location</label>
+        <label>Current Location</label>
         <input type="text" id="locationInput" placeholder="Location">
-        <div class="modal-btns">
-            <button id="cancelBtn" onclick="closeModal()">Cancel</button>
-            <button id="saveBtn" onclick="submitUpdate()">Save</button>
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button style="flex:1; padding:12px; border-radius:8px; border:none;" onclick="closeModal()">Cancel</button>
+            <button id="saveBtn" style="flex:1; padding:12px; border-radius:8px; border:none; background:var(--primary); color:#fff;" onclick="submitUpdate()">Save</button>
         </div>
     </div>
 </div>
@@ -102,7 +130,7 @@
             document.getElementById('lockOverlay').style.display = 'none';
             fetchData();
         } else {
-            document.getElementById('lockError').innerText = "Incorrect Code";
+            document.getElementById('lockError').innerText = "❌ Access Denied";
         }
     }
 
@@ -111,9 +139,7 @@
             const response = await fetch(SCRIPT_URL);
             allData = await response.json();
             renderLists();
-        } catch (e) {
-            console.error("Fetch error:", e);
-        }
+        } catch (e) { console.error(e); }
     }
 
     function switchTab(tabId, el) {
@@ -126,33 +152,47 @@
     function renderLists() {
         const outList = document.getElementById('dash-out-list');
         const invList = document.getElementById('inventory-list');
+        const checklistList = document.getElementById('full-checklist-list');
+        
         outList.innerHTML = '';
         invList.innerHTML = '';
+        checklistList.innerHTML = '';
 
         allData.forEach(item => {
             const isCnc = item.cncStatus && item.cncStatus.toString().toUpperCase() === 'CNC';
-            const isOut = item.status && item.status.toString().toUpperCase() === 'OUT';
+            const status = (item.status || "").toUpperCase();
             
-            const badgeClass = isCnc ? 'badge-cnc' : (item.status === 'IN' ? 'badge-in' : 'badge-out');
-            const displayStatus = isCnc ? 'CNC' : item.status;
+            const cardClass = isCnc ? 'item-cnc' : (status === 'IN' ? 'item-in' : 'item-out');
+            const badgeClass = isCnc ? 'badge-cnc' : (status === 'IN' ? 'badge-in' : 'badge-out');
+            const displayStatus = isCnc ? 'CNC' : status;
             
             const html = `
-                <div class="equip-item">
+                <div class="equip-item ${cardClass}">
                     <div>
-                        <strong>${item.name}</strong><br>
-                        <span class="badge ${badgeClass}">${displayStatus}</span> • ${item.location || 'N/A'}
+                        <strong style="font-size:1.1rem">${item.name}</strong><br>
+                        <div style="margin-top:5px">
+                            <span class="badge ${badgeClass}">${displayStatus}</span> 
+                            <span style="color:#666; font-size:0.9rem"> • ${item.location || 'N/A'}</span>
+                        </div>
                     </div>
-                    <button class="action-btn" onclick="openModal('${item.name.replace(/'/g, "\\'")}', '${item.status}', '${(item.location || "").replace(/'/g, "\\'")}')">Update</button>
+                    <button class="action-btn" onclick="openModal('${item.name.replace(/'/g, "\\'")}', '${status}', '${(item.location || "").replace(/'/g, "\\'")}')">Update</button>
+                </div>`;
+
+            const checklistHtml = `
+                <div style="background:#fff; padding:12px; margin-bottom:8px; border-radius:8px; display:flex; align-items:center; gap:10px; border-bottom:1px solid #eee;">
+                    <input type="checkbox" style="width:20px; height:20px;">
+                    <span style="font-weight:bold;">${item.name}</span>
+                    <span style="font-size:0.8rem; color:#888;">(${item.location || 'No Loc'})</span>
                 </div>`;
 
             invList.innerHTML += html;
-            if (isOut || isCnc) {
+            checklistList.innerHTML += checklistHtml;
+            if (status === 'OUT' || isCnc) {
                 outList.innerHTML += html;
             }
         });
         
-        if (outList.innerHTML === '') outList.innerHTML = '<p>No items currently out.</p>';
-        if (invList.innerHTML === '') invList.innerHTML = '<p>No inventory found.</p>';
+        if (outList.innerHTML === '') outList.innerHTML = '<p style="text-align:center; padding:20px; color:#999">No items out.</p>';
     }
 
     function openModal(name, status, loc) {
@@ -163,40 +203,29 @@
         document.getElementById('editModal').classList.add('active');
     }
 
-    function closeModal() {
-        document.getElementById('editModal').classList.remove('active');
-    }
+    function closeModal() { document.getElementById('editModal').classList.remove('active'); }
 
     async function submitUpdate() {
         const btn = document.getElementById('saveBtn');
-        const locInput = document.getElementById('locationInput').value.trim();
-        const statusInput = document.getElementById('statusInput').value;
-
+        const loc = document.getElementById('locationInput').value.trim();
+        const stat = document.getElementById('statusInput').value;
         btn.innerText = "Saving...";
         btn.disabled = true;
-
-        const payload = {
-            item: currentItemName,
-            status: statusInput,
-            location: locInput
-        };
 
         try {
             await fetch(SCRIPT_URL, {
                 method: 'POST',
                 mode: 'no-cors',
-                cache: 'no-cache',
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ item: currentItemName, status: stat, location: loc })
             });
             setTimeout(() => {
                 closeModal();
                 btn.innerText = "Save";
                 btn.disabled = false;
                 fetchData();
-            }, 1000);
+            }, 8000);
         } catch (e) {
-            alert("Error saving update");
-            btn.innerText = "Save";
+            alert("Error saving");
             btn.disabled = false;
         }
     }
