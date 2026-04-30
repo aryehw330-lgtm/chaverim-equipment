@@ -117,3 +117,161 @@
                 <p>Role: <span id="user-role-display">Member</span></p>
                 <button class="action-btn" style="margin-top:10px; background:#666" onclick="localStorage.removeItem('chaverim_auth'); location.reload();">Logout</button>
             </div>
+        </div>
+    </div>
+
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-title" id="modalItemName">Item Name</div>
+            <div class="form-group">
+                <label>Current Status</label>
+                <select id="statusInput">
+                    <option value="IN">IN (Available)</option>
+                    <option value="OUT">OUT (Borrowed)</option>
+                    <option value="CNC">CNC (Wrong Location)</option>
+                    <option value="CC">CC (Needs Repair)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Member Name / Current Location</label>
+                <input type="text" id="locationInput" placeholder="Who has it?">
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+                <button class="btn-save" onclick="submitUpdate()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // UPDATED SCRIPT URL VERSION 87
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzRZ2DoNTlmjkTHBcC6AZfDLJ7-ZsKZfaHGem9v3zSgGhqouGi-3gKYBL0w4YGZaKTiIA/exec";
+        let allData = [];
+        let currentItemName = "";
+
+        function checkLockCode() {
+            const code = document.getElementById('lockInput').value;
+            if (code === "COBC2026") {
+                localStorage.setItem('chaverim_auth', 'true');
+                document.getElementById('lockOverlay').style.display = 'none';
+                fetchData();
+            } else {
+                document.getElementById('lockError').innerText = "Invalid Access Code";
+            }
+        }
+
+        async function fetchData() {
+            try {
+                const response = await fetch(SCRIPT_URL);
+                allData = await response.json();
+                renderStats();
+                renderLists();
+            } catch (e) {
+                console.error("Fetch error:", e);
+            }
+        }
+
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('page-' + tabId).classList.add('active');
+            el.classList.add('active');
+        }
+
+        function renderStats() {
+            const total = allData.length;
+            const out = allData.filter(i => i.status === 'OUT').length;
+            document.getElementById('dash-stats').innerHTML = `
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+                    <div class="card" style="margin:0; background:#f8f9fa; padding:10px">
+                        <div style="font-size:12px; color:#666">TOTAL ITEMS</div>
+                        <div style="font-size:20px; font-weight:800">${total}</div>
+                    </div>
+                    <div class="card" style="margin:0; background:#fff4e5; padding:10px">
+                        <div style="font-size:12px; color:#666">CURRENTLY OUT</div>
+                        <div style="font-size:20px; font-weight:800; color:#856404">${out}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderLists() {
+            const outList = document.getElementById('dash-out-list');
+            const checkList = document.getElementById('checkinout-list');
+            const invList = document.getElementById('inventory-list');
+            
+            outList.innerHTML = '';
+            checkList.innerHTML = '';
+            invList.innerHTML = '';
+
+            allData.forEach(item => {
+                const html = `
+                    <div class="equip-item">
+                        <div class="equip-info">
+                            <div class="equip-name">${item.name}</div>
+                            <div class="equip-loc"><span class="badge badge-${item.status.toLowerCase()}">${item.status}</span> • ${item.location}</div>
+                        </div>
+                        <button class="action-btn" onclick="openModal('${item.name}', '${item.status}', '${item.location}')">Update</button>
+                    </div>
+                `;
+                invList.innerHTML += html;
+                checkList.innerHTML += html;
+                if(item.status === 'OUT') outList.innerHTML += html;
+            });
+        }
+
+        function openModal(name, status, loc) {
+            currentItemName = name;
+            document.getElementById('modalItemName').innerText = name;
+            document.getElementById('statusInput').value = status;
+            document.getElementById('locationInput').value = loc;
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').classList.remove('active');
+        }
+
+        function submitUpdate() {
+            const status = document.getElementById('statusInput').value;
+            const location = document.getElementById('locationInput').value;
+
+            const payload = {
+                itemName: currentItemName,
+                status: status,
+                location: location
+            };
+
+            const btn = document.querySelector('.btn-save');
+            btn.innerText = "Saving...";
+            btn.disabled = true;
+
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                cache: 'no-cache',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(() => {
+                setTimeout(() => {
+                    closeModal();
+                    refreshAll();
+                    btn.innerText = "Save Changes";
+                    btn.disabled = false;
+                }, 1000);
+            });
+        }
+
+        function refreshAll() {
+            fetchData();
+        }
+
+        window.onload = () => {
+            if (localStorage.getItem('chaverim_auth') === 'true') {
+                document.getElementById('lockOverlay').style.display = 'none';
+                fetchData();
+            }
+        };
+    </script>
+</body>
+</html>
