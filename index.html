@@ -23,7 +23,6 @@
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
         .modal.active { display: flex; }
         .modal-content { background: #fff; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; }
-        .modal-content h3 { margin-top: 0; }
         input, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1rem; }
         .modal-btns { display: flex; gap: 10px; margin-top: 10px; }
         .modal-btns button { flex: 1; padding: 12px; border-radius: 6px; border: none; font-size: 1rem; cursor: pointer; }
@@ -46,10 +45,9 @@
 
 <div class="container">
     <div id="page-dashboard" class="page active">
-        <h3>Out/CNC Items</h3>
+        <h3>Out / CNC Dashboard</h3>
         <div id="dash-out-list">Loading...</div>
     </div>
-
     <div id="page-inventory" class="page">
         <h3>Full Inventory</h3>
         <div id="inventory-list">Loading...</div>
@@ -69,8 +67,8 @@
             <option value="IN">IN</option>
             <option value="OUT">OUT</option>
         </select>
-        <label>Location / CNC Info</label>
-        <input type="text" id="locationInput" placeholder="Location or CNC details">
+        <label>Location</label>
+        <input type="text" id="locationInput" placeholder="Location">
         <div class="modal-btns">
             <button id="cancelBtn" onclick="closeModal()">Cancel</button>
             <button id="saveBtn" onclick="submitUpdate()">Save</button>
@@ -79,7 +77,8 @@
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyWhoiWNGOAem6UJq7LltM17xBEV6VGQutMD1gWZv1wSkjLlF4sYaetTSnGkoE6XTZ30A/exec";
+    // Updated with your Version 91 URL
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxffpnZ8gh9fVx6_VW_8D4PsB6RCSsfmxVnHInZLvn5rfLHtiYQk197CKtpNMaGBoKwig/exec";
     let allData = [];
     let currentItemName = "";
 
@@ -124,27 +123,37 @@
         invList.innerHTML = '';
 
         allData.forEach(item => {
-            const isCnc = item.status.toLowerCase().startsWith('cnc');
+            // Check Column H (cncStatus) for CNC
+            const isCnc = item.cncStatus && item.cncStatus.toString().toUpperCase() === 'CNC';
+            const isOut = item.status === 'OUT';
+            
             const badgeClass = isCnc ? 'badge-cnc' : (item.status === 'IN' ? 'badge-in' : 'badge-out');
+            const displayStatus = isCnc ? 'CNC' : item.status;
             
             const html = `
                 <div class="equip-item">
                     <div>
                         <strong>${item.name}</strong><br>
-                        <span class="badge ${badgeClass}">${item.status}</span> • ${item.location}
+                        <span class="badge ${badgeClass}">${displayStatus}</span> • ${item.location || ''}
                     </div>
-                    <button class="action-btn" onclick="openModal('${item.name.replace(/'/g, "\\'")}', '${item.status}', '${item.location.replace(/'/g, "\\'")}')">Update</button>
+                    <button class="action-btn" onclick="openModal('${item.name.replace(/'/g, "\\'")}', '${item.status}', '${(item.location || "").replace(/'/g, "\\'")}')">Update</button>
                 </div>`;
-            
+
             invList.innerHTML += html;
-            if (item.status === 'OUT' || isCnc) outList.innerHTML += html;
+            
+            // Dashboard Logic: Show if it's OUT OR if it's marked CNC in Col H
+            if (isOut || isCnc) {
+                outList.innerHTML += html;
+            }
         });
+        
+        if (outList.innerHTML === '') outList.innerHTML = '<p>No items currently out.</p>';
     }
 
     function openModal(name, status, loc) {
         currentItemName = name;
         document.getElementById('modalItemName').innerText = name;
-        document.getElementById('statusInput').value = status.startsWith('cnc') ? 'OUT' : status;
+        document.getElementById('statusInput').value = status;
         document.getElementById('locationInput').value = loc;
         document.getElementById('editModal').classList.add('active');
     }
@@ -161,19 +170,10 @@
         btn.innerText = "Saving...";
         btn.disabled = true;
 
-        let finalStatus = statusInput;
-        let finalLocation = locInput;
-
-        if (locInput.toLowerCase().startsWith('cnc')) {
-            finalStatus = locInput;
-            finalLocation = null;
-        }
-
         const payload = {
             item: currentItemName,
-            status: finalStatus,
-            location: finalLocation,
-            role: "admin"
+            status: statusInput,
+            location: locInput
         };
 
         try {
@@ -181,7 +181,6 @@
                 method: 'POST',
                 mode: 'no-cors',
                 cache: 'no-cache',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
             setTimeout(() => {
@@ -197,6 +196,5 @@
         }
     }
 </script>
-
 </body>
 </html>
