@@ -17,10 +17,10 @@
         .badge-out { background: #f8d7da; color: #721c24; }
         .badge-cnc { background: #fff3cd; color: #856404; }
         .action-btn { background: var(--primary); color: #fff; border: none; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; cursor: pointer; }
-        .tabs { position: fixed; bottom: 0; width: 100%; background: #fff; display: flex; border-top: 1px solid #ddd; }
-        .tab { flex: 1; text-align: center; padding: 12px; font-size: 0.9rem; color: #666; cursor: pointer; }
-        .tab.active { color: var(--primary); font-weight: bold; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .tabs { position: fixed; bottom: 0; width: 100%; background: #fff; display: flex; border-top: 1px solid #ddd; z-index: 1000; }
+        .tab { flex: 1; text-align: center; padding: 12px; font-size: 0.8rem; color: #666; cursor: pointer; }
+        .tab.active { color: var(--primary); font-weight: bold; border-top: 2px solid var(--primary); }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; }
         .modal.active { display: flex; }
         .modal-content { background: #fff; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; }
         input, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1rem; }
@@ -28,7 +28,7 @@
         .modal-btns button { flex: 1; padding: 12px; border-radius: 6px; border: none; font-size: 1rem; cursor: pointer; }
         #saveBtn { background: var(--primary); color: #fff; }
         #cancelBtn { background: #eee; color: #333; }
-        #lockOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
+        #lockOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
     </style>
 </head>
 <body>
@@ -48,15 +48,23 @@
         <h3>Out / CNC Dashboard</h3>
         <div id="dash-out-list">Loading...</div>
     </div>
+
     <div id="page-inventory" class="page">
-        <h3>Full Inventory</h3>
+        <h3>Inventory Control</h3>
         <div id="inventory-list">Loading...</div>
+    </div>
+
+    <div id="page-admin" class="page">
+        <h3>Admin Settings</h3>
+        <p>System connected to: [Inventory Sheet](https://docs.google.com/spreadsheets/d/1iOE4c-BBatkH8zljpQTFmrzZZe_Q4uvBDWAQCos51PE/edit)</p>
+        <button class="action-btn" onclick="fetchData()">Force Refresh Data</button>
     </div>
 </div>
 
 <div class="tabs">
     <div class="tab active" onclick="switchTab('dashboard', this)">Dashboard</div>
-    <div class="tab" onclick="switchTab('inventory', this)">Inventory</div>
+    <div class="tab" onclick="switchTab('inventory', this)">Check In/Out</div>
+    <div class="tab" onclick="switchTab('admin', this)">Admin</div>
 </div>
 
 <div class="modal" id="editModal">
@@ -77,7 +85,6 @@
 </div>
 
 <script>
-    // Updated with your Version 91 URL
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxffpnZ8gh9fVx6_VW_8D4PsB6RCSsfmxVnHInZLvn5rfLHtiYQk197CKtpNMaGBoKwig/exec";
     let allData = [];
     let currentItemName = "";
@@ -123,9 +130,8 @@
         invList.innerHTML = '';
 
         allData.forEach(item => {
-            // Check Column H (cncStatus) for CNC
             const isCnc = item.cncStatus && item.cncStatus.toString().toUpperCase() === 'CNC';
-            const isOut = item.status === 'OUT';
+            const isOut = item.status && item.status.toString().toUpperCase() === 'OUT';
             
             const badgeClass = isCnc ? 'badge-cnc' : (item.status === 'IN' ? 'badge-in' : 'badge-out');
             const displayStatus = isCnc ? 'CNC' : item.status;
@@ -134,20 +140,19 @@
                 <div class="equip-item">
                     <div>
                         <strong>${item.name}</strong><br>
-                        <span class="badge ${badgeClass}">${displayStatus}</span> • ${item.location || ''}
+                        <span class="badge ${badgeClass}">${displayStatus}</span> • ${item.location || 'N/A'}
                     </div>
                     <button class="action-btn" onclick="openModal('${item.name.replace(/'/g, "\\'")}', '${item.status}', '${(item.location || "").replace(/'/g, "\\'")}')">Update</button>
                 </div>`;
 
             invList.innerHTML += html;
-            
-            // Dashboard Logic: Show if it's OUT OR if it's marked CNC in Col H
             if (isOut || isCnc) {
                 outList.innerHTML += html;
             }
         });
         
         if (outList.innerHTML === '') outList.innerHTML = '<p>No items currently out.</p>';
+        if (invList.innerHTML === '') invList.innerHTML = '<p>No inventory found.</p>';
     }
 
     function openModal(name, status, loc) {
