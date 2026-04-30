@@ -9,315 +9,55 @@
     <meta name="theme-color" content="#1a3a2a">
     <title>Chaverim Equipment Manager</title>
     <style>
-        :root {
-            --green: #1a3a2a;
-            --green-light: #3a8a58;
-            --gold: #c9a84c;
-            --dark-gray: #888;
-            --red: #c0392b;
-            --card-bg: #fff;
-            --shadow: 0 2px 12px rgba(0,0,0,0.12);
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            font-family: -apple-system, "Helvetica Neue", sans-serif;
-            background: #f0ede6;
-            color: #222;
-            min-height: 100vh;
-            padding-bottom: 80px;
-        }
-
-        .header {
-            background: var(--green);
-            color: #fff;
-            padding: 14px 16px 12px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        }
-
-        .header-logo {
-            width: 38px;
-            height: 38px;
-            background: var(--gold);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            font-weight: 900;
-            color: var(--green);
-            flex-shrink: 0;
-        }
-
-        .header-title {
-            font-size: 17px;
-            font-weight: 700;
-            line-height: 1.2;
-        }
-
-        .header-sub {
-            font-size: 11px;
-            opacity: .7;
-        }
-
-        .header-right {
-            margin-left: auto;
-        }
-
-        .refresh-btn {
-            background: rgba(255,255,255,0.15);
-            border: none;
-            color: #fff;
-            padding: 7px 12px;
-            border-radius: 8px;
-            font-size: 13px;
-            cursor: pointer;
-        }
-
-        .tabs {
-            display: flex;
-            background: var(--green);
-            padding: 0 8px 8px;
-            gap: 6px;
-        }
-
-        .tab {
-            flex: 1;
-            padding: 8px 4px;
-            background: rgba(255,255,255,0.12);
-            border: none;
-            color: rgba(255,255,255,0.7);
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .tab.active {
-            background: var(--gold);
-            color: var(--green);
-        }
-
-        .page {
-            display: none;
-            padding: 12px;
-        }
-
-        .page.active {
-            display: block;
-        }
-
-        .card {
-            background: var(--card-bg);
-            border-radius: 14px;
-            box-shadow: var(--shadow);
-            margin-bottom: 12px;
-            overflow: hidden;
-        }
-
-        .card-header {
-            background: var(--green);
-            color: #fff;
-            padding: 12px 16px;
-            font-size: 14px;
-            font-weight: 700;
-        }
-
-        .card-body {
-            padding: 14px 16px;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: .5px;
-        }
-
+        :root {--green: #1a3a2a; --green-light: #3a8a58; --gold: #c9a84c; --dark-gray: #888; --red: #c0392b; --card-bg: #fff; --shadow: 0 2px 12px rgba(0,0,0,0.12); }
+        * {box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body {font-family: -apple-system, "Helvetica Neue", sans-serif; background: #f0ede6; color: #222; min-height: 100vh; padding-bottom: 80px; }
+        .header {background: var(--green); color: #fff; padding: 14px 16px 12px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .header-logo {width: 38px; height: 38px; background: var(--gold); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; color: var(--green); flex-shrink: 0; }
+        .header-title {font-size: 17px; font-weight: 700; line-height: 1.2; }
+        .header-sub {font-size: 11px; opacity: .7; }
+        .header-right {margin-left: auto; }
+        .refresh-btn {background: rgba(255,255,255,0.15); border: none; color: #fff; padding: 7px 12px; border-radius: 8px; font-size: 13px; cursor: pointer; }
+        .tabs {display: flex; background: var(--green); padding: 0 8px 8px; gap: 6px; }
+        .tab {flex: 1; padding: 8px 4px; background: rgba(255,255,255,0.12); border: none; color: rgba(255,255,255,0.7); border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .tab.active {background: var(--gold); color: var(--green); }
+        .page {display: none; padding: 12px; }
+        .page.active {display: block; }
+        .card {background: var(--card-bg); border-radius: 14px; box-shadow: var(--shadow); margin-bottom: 12px; overflow: hidden; }
+        .card-header {background: var(--green); color: #fff; padding: 12px 16px; font-size: 14px; font-weight: 700; }
+        .card-body {padding: 14px 16px; }
+        .badge {display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: .5px; }
         .badge-in { background: #d4edda; color: #155724; }
         .badge-out { background: #ffeeba; color: #856404; }
         .badge-cc { background: #cce5ff; color: #004085; }
         .badge-cnc { background: #f8d7da; color: #721c24; }
-
-        .equip-item {
-            display: flex;
-            align-items: flex-start;
-            padding: 11px 0;
-            border-bottom: 1px solid #f0ede6;
-            gap: 10px;
-        }
-
-        .equip-item:last-child {
-            border-bottom: none;
-        }
-
-        .equip-info {
-            flex: 1;
-        }
-
-        .equip-name {
-            font-weight: 700;
-            font-size: 15px;
-            margin-bottom: 2px;
-        }
-
-        .equip-loc {
-            font-size: 13px;
-            color: #666;
-        }
-
-        .action-btn {
-            background: var(--green);
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.6);
-            z-index: 1000;
-            padding: 20px;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: #fff;
-            width: 100%;
-            max-width: 400px;
-            border-radius: 20px;
-            padding: 24px;
-            position: relative;
-        }
-
-        .modal-title {
-            font-size: 18px;
-            font-weight: 800;
-            margin-bottom: 16px;
-            color: var(--green);
-        }
-
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        label {
-            display: block;
-            font-size: 12px;
-            font-weight: 700;
-            color: #666;
-            margin-bottom: 6px;
-            text-transform: uppercase;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            font-size: 16px;
-            font-family: inherit;
-        }
-
-        .modal-footer {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .btn-cancel {
-            flex: 1;
-            padding: 14px;
-            background: #eee;
-            border: none;
-            border-radius: 12px;
-            font-weight: 700;
-        }
-
-        .btn-save {
-            flex: 2;
-            padding: 14px;
-            background: var(--green);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-weight: 700;
-        }
-
-        .lock-overlay {
-            position: fixed;
-            inset: 0;
-            background: #1a3a2a;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 30px;
-        }
-
+        .equip-item {display: flex; align-items: flex-start; padding: 11px 0; border-bottom: 1px solid #f0ede6; gap: 10px; }
+        .equip-item:last-child {border-bottom: none; }
+        .equip-info {flex: 1; }
+        .equip-name {font-weight: 700; font-size: 15px; margin-bottom: 2px; }
+        .equip-loc {font-size: 13px; color: #666; }
+        .action-btn {background: var(--green); color: white; border: none; padding: 8px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .modal {display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; padding: 20px; align-items: center; justify-content: center; }
+        .modal.active {display: flex; }
+        .modal-content {background: #fff; width: 100%; max-width: 400px; border-radius: 20px; padding: 24px; position: relative; }
+        .modal-title {font-size: 18px; font-weight: 800; margin-bottom: 16px; color: var(--green); }
+        .form-group {margin-bottom: 16px; }
+        label {display: block; font-size: 12px; font-weight: 700; color: #666; margin-bottom: 6px; text-transform: uppercase; }
+        input, select {width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; font-family: inherit; }
+        .modal-footer {display: flex; gap: 10px; margin-top: 20px; }
+        .btn-cancel {flex: 1; padding: 14px; background: #eee; border: none; border-radius: 12px; font-weight: 700; }
+        .btn-save {flex: 2; padding: 14px; background: var(--green); color: white; border: none; border-radius: 12px; font-weight: 700; }
+        .lock-overlay {position: fixed; inset: 0; background: #1a3a2a; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
         .lock-logo { font-size: 64px; margin-bottom: 8px; }
         .lock-title { color: white; font-size: 26px; font-weight: 800; margin-bottom: 4px; text-align: center; }
         .lock-sub { color: rgba(255,255,255,0.6); font-size: 14px; margin-bottom: 36px; text-align: center; }
-        .lock-input {
-            width: 100%;
-            max-width: 320px;
-            padding: 18px;
-            border: 2px solid rgba(255,255,255,0.2);
-            border-radius: 14px;
-            background: rgba(255,255,255,0.1);
-            color: white;
-            font-size: 22px;
-            text-align: center;
-            letter-spacing: 4px;
-            outline: none;
-            margin-bottom: 14px;
-        }
-        .lock-btn {
-            width: 100%;
-            max-width: 320px;
-            padding: 18px;
-            background: #3a8a52;
-            border: none;
-            border-radius: 14px;
-            color: white;
-            font-size: 17px;
-            font-weight: 700;
-            cursor: pointer;
-        }
+        .lock-input {width: 100%; max-width: 320px; padding: 18px; border: 2px solid rgba(255,255,255,0.2); border-radius: 14px; background: rgba(255,255,255,0.1); color: white; font-size: 22px; text-align: center; letter-spacing: 4px; outline: none; margin-bottom: 14px; }
+        .lock-btn {width: 100%; max-width: 320px; padding: 18px; background: #3a8a52; border: none; border-radius: 14px; color: white; font-size: 17px; font-weight: 700; cursor: pointer; }
         .lock-error { color: #ff6b6b; font-size: 14px; margin-top: 10px; height: 20px; }
-        
         .loading { text-align: center; padding: 20px; color: #666; }
     </style>
 </head>
 <body>
-
     <div class="lock-overlay" id="lockOverlay">
         <div class="lock-logo">🔐</div>
         <div class="lock-title">Chaverim Equipment</div>
@@ -377,48 +117,3 @@
                 <p>Role: <span id="user-role-display">Member</span></p>
                 <button class="action-btn" style="margin-top:10px; background:#666" onclick="localStorage.removeItem('chaverim_auth'); location.reload();">Logout</button>
             </div>
-        </div>
-    </div>
-
-    <div class="modal" id="editModal">
-        <div class="modal-content">
-            <div class="modal-title" id="modalItemName">Item Name</div>
-            <div class="form-group">
-                <label>Current Status</label>
-                <select id="statusInput">
-                    <option value="IN">IN (Available)</option>
-                    <option value="OUT">OUT (Borrowed)</option>
-                    <option value="CNC">CNC (Wrong Location)</option>
-                    <option value="CC">CC (Needs Repair)</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Location / Note (Starts with 'cnc' to bypass)</label>
-                <input type="text" id="locationInput" placeholder="Enter Member Name or CNC reason">
-            </div>
-            <div class="modal-footer">
-                <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-                <button class="btn-save" onclick="submitUpdate()">Save Changes</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwpqykwc_fbEa7DKlw_mqIdcJyNFyKVUlNbUzCyIqEPRkmPb_K5qqzSqzD_lLMxJ19IYQ/exec";
-        
-        let allData = [];
-        let currentItemName = "";
-        let userRole = "Member";
-
-        function checkLockCode() {
-            const code = document.getElementById('lockInput').value;
-            if (code === "COBC2026") { 
-                localStorage.setItem('chaverim_auth', 'true');
-                document.getElementById('lockOverlay').style.display = 'none';
-                fetchData();
-            } else {
-                document.getElementById('lockError').innerText = "Invalid Access Code";
-            }
-        }
-
-        window
