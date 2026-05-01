@@ -5,75 +5,70 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chaverim Equipment Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root { --gold: #d4af37; --dark-blue: #1a2a6c; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #f4f4f9; }
-        .header { background: linear-gradient(135deg, var(--dark-blue), #2a4858); color: white; padding: 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-        .nav-tabs { display: flex; background: white; border-bottom: 1px solid #ddd; position: sticky; top: 0; z-index: 1000; }
-        .tab { flex: 1; padding: 15px; text-align: center; cursor: pointer; font-weight: bold; color: #666; }
-        .tab.active { color: var(--dark-blue); border-bottom: 3px solid var(--gold); }
-        .container { padding: 15px; max-width: 1000px; margin: auto; }
-        .card { background: white; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f4f4f9; }
+        .header { background: linear-gradient(135deg, var(--dark-blue), #2a4858); color: white; padding: 20px; text-align: center; }
+        .container { padding: 15px; max-width: 800px; margin: auto; }
+        .card { background: white; border-radius: 10px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
         .status-in { color: #27ae60; font-weight: bold; background: #e8f5e9; padding: 4px 8px; border-radius: 4px; }
         .status-out { color: #e74c3c; font-weight: bold; background: #ffebee; padding: 4px 8px; border-radius: 4px; }
-        .search-bar { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 25px; box-sizing: border-box; font-size: 16px; }
+        #reader { width: 100%; border-radius: 10px; margin-bottom: 20px; border: none !important; }
+        .search-bar { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 25px; box-sizing: border-box; }
     </style>
 </head>
 <body>
     <div class="header">
         <h1><i class="fas fa-tools"></i> Chaverim Equipment</h1>
     </div>
-
-    <div class="nav-tabs">
-        <div class="tab active" onclick="switchTab('inventory')">Inventory</div>
-        <div class="tab" onclick="switchTab('dashboard')">Dashboard</div>
-    </div>
-
     <div class="container">
+        <div id="reader"></div>
+        
         <input type="text" class="search-bar" id="searchInput" placeholder="Search equipment..." onkeyup="filterItems()">
-        <div id="inventoryContent">
-            <div class="card">Loading Inventory...</div>
-        </div>
+        <div id="inventoryContent"><div class="card">Loading...</div></div>
     </div>
 
     <script>
-        // Updated with your Version 93 URL
-        const AS = 'https://script.google.com/macros/s/AKfycbyE3HLLdFFDBTSldzn-hZ5nOoqjRdeYItureFejafUEhsrunH2-6RJ4SROb3Wxx9SOjvQ/exec';
+        // PASTE YOUR NEW DEPLOYMENT URL HERE
+        const AS = 'https://script.google.com/macros/s/AKfycbyZXbK3d_gcRAH7dsJ-pHyO5HFEEl9aJquZnMTva9tfCggraupSz75140hqLH_TT6GH0Q/exec';
 
         async function loadInventory() {
             try {
-                const response = await fetch(AS + '?action=getInventory');
+                const response = await fetch(AS);
                 const data = await response.json();
                 renderItems(data.items);
-            } catch (e) {
-                document.getElementById('inventoryContent').innerHTML = '<div class="card">Error: Make sure Version 51 is restored in Apps Script.</div>';
-            }
+            } catch (e) { console.error(e); }
         }
 
         function renderItems(items) {
             const container = document.getElementById('inventoryContent');
-            if (!items) {
-                container.innerHTML = '<div class="card">No items found. Check Apps Script code.</div>';
-                return;
-            }
             container.innerHTML = items.map(item => `
                 <div class="card">
                     <div>
-                        <div style="font-weight:bold; font-size:1.1em;">${item.name}</div>
-                        <div style="font-size: 0.85em; color: #666; margin-top: 4px;">
-                            <i class="fas fa-map-marker-alt"></i> ${item.location || 'No Location'}
-                        </div>
+                        <div style="font-weight:bold;">${item.name}</div>
+                        <div style="font-size: 0.8em; color: #666;">CNC: ${item.cnc || 'N/A'}</div>
                     </div>
                     <span class="status-${(item.status || 'OUT').toLowerCase()}">${item.status || 'OUT'}</span>
                 </div>
             `).join('');
         }
 
-        function switchTab(tab) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            event.currentTarget.classList.add('active');
+        function onScanSuccess(decodedText) {
+            // Send the CNC ID to Google Sheets
+            fetch(`${AS}?action=updateStatus&cncId=${decodedText}`)
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    alert(`${data.name} is now ${data.newStatus}`);
+                    loadInventory();
+                }
+            });
         }
 
-        function filterItems() {
-            let input = document.getElementById('searchInput').value.toLowerCase();
-            let
+        let html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+        html5QrcodeScanner.render(onScanSuccess);
+        loadInventory();
+    </script>
+</body>
+</html>
