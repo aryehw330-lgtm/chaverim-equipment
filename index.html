@@ -158,6 +158,7 @@ textarea{resize:vertical;min-height:70px}
 .inv-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .btn-in {width:100%;padding:11px;background:#1a3a5c;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer}
 .btn-out{width:100%;padding:11px;background:#c0392b;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer}
+.btn-reset{width:100%;padding:8px;background:#fff;color:#2e7d32;border:2px solid #2e7d32;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer}
 
 /* CHECKLIST */
 .loc-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;scrollbar-width:none}
@@ -650,8 +651,23 @@ function renderInventory() {
       +'<div class="inv-meta">📍 '+esc(it.homeLocation)+(it.member?' · BC-'+esc(it.member):'')+(it.lastUpdated?' · '+it.lastUpdated:'')+'</div>'
       +(it.isCNC?'<div class="inv-cnc">📍 '+esc(it.cncNote||it.ccnc)+'</div>':'')
       +'<div class="inv-actions"><button class="btn-in" onclick="openCheckout('+it.row+')">✓ Check IN</button><button class="btn-out" onclick="openCheckout('+it.row+', &quot;OUT&quot;)">↓ Check OUT</button></div>'
+      +((['Missing','Damaged','Need More'].indexOf(it.equipStatus)>=0)?'<div style="margin-top:6px"><button class="btn-reset" onclick="resetStatus('+it.row+')">↺ Mark as OK</button></div>':'')
       +'</div>';
   }).join('');
+}
+function resetStatus(row) {
+  if (!confirm('Mark this item as OK?')) return;
+  showLoad(true);
+  postJ({action:'updateEquipmentStatus', row:row, status:'OK'})
+  .then(function(data) {
+    if (data.success) {
+      var idx = items.findIndex(function(i){ return i.row===row; });
+      if (idx>=0) items[idx].equipStatus = 'OK';
+      updateStats(); renderInventory(); renderDashboard();
+      showToast('Item marked as OK');
+    } else { showToast('Error: '+(data.error||'Unknown')); }
+  }).catch(function(){ showToast('Network error'); })
+  .finally(function(){ showLoad(false); });
 }
 function getEB(s) {
   if(!s||s==='OK') return '';
