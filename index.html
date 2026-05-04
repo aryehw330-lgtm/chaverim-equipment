@@ -636,7 +636,7 @@ function renderInventory() {
     if(curFilter==='cnc')     return it.isCNC;
     if(curFilter==='missing') return it.equipStatus==='Missing';
     if(curFilter==='damaged') return it.equipStatus==='Damaged';
-    return true;
+    return it.equipStatus!=='Not Active';
   }).sort(function(a,b){ return ((a.status==='OUT'?0:2)+(a.isCNC?0:1)) - ((b.status==='OUT'?0:2)+(b.isCNC?0:1)); });
   var el = document.getElementById('inv-list');
   if (!filtered.length) { el.innerHTML='<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">No items found</div></div>'; return; }
