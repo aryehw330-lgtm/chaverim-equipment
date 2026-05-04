@@ -705,7 +705,7 @@ function renderChecklist() {
   items.forEach(function(i){if(i.homeLocation&&locs.indexOf(i.homeLocation)<0) locs.push(i.homeLocation);});
   if(!curLoc||locs.indexOf(curLoc)<0) curLoc=locs[0]||null;
   document.getElementById('loc-tabs').innerHTML = locs.map(function(loc){
-    var li=items.filter(function(i){return i.homeLocation===loc;});
+    var li=items.filter(function(i){return i.homeLocation===loc && i.equipStatus!=='Not Active';});
     var iss=li.filter(function(i){return i.isCNC||i.equipStatus==='Missing'||i.equipStatus==='Damaged';}).length;
     return '<button class="ltab '+(loc===curLoc?'active':'')+'" onclick="selLoc(\''+esc(loc)+'\',this)">'+esc(loc)
       +'<span class="lc">'+li.length+'</span>'+(iss>0?'<span class="lc" style="background:#fdecea;color:#c0392b">'+iss+'</span>':'')+'</button>';
@@ -720,7 +720,7 @@ function selLoc(loc,btn) {
 }
 function renderChkItems() {
   if(!curLoc){document.getElementById('chk-list').innerHTML='<div class="empty"><div class="empty-text">No locations found</div></div>';return;}
-  var li=items.filter(function(i){return i.homeLocation===curLoc;});
+  var li=items.filter(function(i){return i.homeLocation===curLoc && i.equipStatus!=='Not Active';});
   var chk=li.filter(function(i){return !!checked[i.row];}).length;
   var iss=li.filter(function(i){return i.isCNC||i.equipStatus==='Missing'||i.equipStatus==='Damaged';}).length;
   document.getElementById('chk-summary').style.display=li.length?'block':'none';
@@ -747,7 +747,7 @@ function toggleChk(row,el) {
 }
 function sendWA() {
   if(!curLoc) return;
-  var li=items.filter(function(i){return i.homeLocation===curLoc;});
+  var li=items.filter(function(i){return i.homeLocation===curLoc && i.equipStatus!=='Not Active';});
   var chk=li.filter(function(i){return !!checked[i.row];});
   var iss=li.filter(function(i){return i.isCNC||i.equipStatus==='Missing'||i.equipStatus==='Damaged';});
   var out=li.filter(function(i){return i.status==='OUT';});
