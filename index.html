@@ -1,74 +1,1229 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <base target="_top">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chaverim Equipment Dashboard</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <style>
-        :root { --gold: #d4af37; --dark-blue: #1a2a6c; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f4f4f9; }
-        .header { background: linear-gradient(135deg, var(--dark-blue), #2a4858); color: white; padding: 20px; text-align: center; }
-        .container { padding: 15px; max-width: 800px; margin: auto; }
-        .card { background: white; border-radius: 10px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
-        .status-in { color: #27ae60; font-weight: bold; background: #e8f5e9; padding: 4px 8px; border-radius: 4px; }
-        .status-out { color: #e74c3c; font-weight: bold; background: #ffebee; padding: 4px 8px; border-radius: 4px; }
-        #reader { width: 100%; border-radius: 10px; margin-bottom: 20px; border: none !important; }
-        .search-bar { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 25px; box-sizing: border-box; }
-    </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="COBC Equipment"/>
+<meta name="theme-color" content="#0b1f3a"/>
+<title>COBC Equipment</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ── Reset & Base ─────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{height:100%;-webkit-tap-highlight-color:transparent}
+body{font-family:'DM Sans',system-ui,sans-serif;background:#07111f;color:#dce8f5;height:100%;overflow:hidden;-webkit-font-smoothing:antialiased}
+
+/* ── CSS Variables ───────────────────────────────── */
+:root{
+  --navy:#0b1f3a;
+  --navy2:#0f2847;
+  --blue:#1a4a8a;
+  --blue2:#1e5fba;
+  --accent:#4d9fff;
+  --red:#d94040;
+  --red2:#b83030;
+  --green:#1f7a4a;
+  --green2:#27a060;
+  --amber:#c07a10;
+  --amber2:#e09020;
+  --teal:#0e6080;
+  --teal2:#1a90c0;
+  --text:#dce8f5;
+  --text2:#8aa8c8;
+  --text3:#4a6a8a;
+  --border:rgba(77,159,255,.12);
+  --border2:rgba(77,159,255,.2);
+  --card:#0d1e33;
+  --card2:#0f2540;
+  --radius:14px;
+  --radius2:10px;
+  --shadow:0 4px 24px rgba(0,0,0,.4);
+}
+
+/* ── App Shell ───────────────────────────────────── */
+#app{display:flex;flex-direction:column;height:100dvh}
+
+/* ── PIN Gate ────────────────────────────────────── */
+#pin-gate{
+  position:fixed;inset:0;background:#07111f;z-index:9999;
+  display:flex;align-items:center;justify-content:center;
+  transition:opacity .3s;
+}
+#pin-gate.hidden{opacity:0;pointer-events:none}
+.pin-card{
+  background:var(--card);border:1px solid var(--border2);
+  border-radius:20px;padding:2.5rem 2rem;width:min(340px,90vw);
+  text-align:center;box-shadow:var(--shadow);
+}
+.pin-logo{
+  width:56px;height:56px;background:linear-gradient(135deg,var(--blue),var(--blue2));
+  border-radius:16px;display:flex;align-items:center;justify-content:center;
+  font-size:24px;margin:0 auto 1.25rem;box-shadow:0 4px 16px rgba(30,95,186,.4);
+}
+.pin-title{font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px}
+.pin-sub{font-size:13px;color:var(--text2);margin-bottom:1.5rem}
+#pin-input{
+  width:100%;background:#07111f;border:2px solid var(--border2);color:var(--text);
+  border-radius:12px;padding:14px;font-size:28px;text-align:center;
+  letter-spacing:12px;outline:none;font-family:'DM Mono',monospace;
+  transition:border-color .2s;margin-bottom:10px;
+}
+#pin-input:focus{border-color:var(--accent)}
+#pin-error{color:var(--red);font-size:13px;height:18px;margin-bottom:10px;font-weight:500}
+#pin-btn{
+  width:100%;padding:14px;background:var(--blue2);color:#fff;border:none;
+  border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:background .15s;
+}
+#pin-btn:active{background:var(--blue)}
+
+/* ── Header ──────────────────────────────────────── */
+#header{
+  background:var(--navy);border-bottom:1px solid var(--border);
+  padding:10px 16px;display:flex;align-items:center;
+  justify-content:space-between;flex-shrink:0;z-index:10;
+  min-height:56px;
+}
+.h-left{display:flex;align-items:center;gap:10px}
+.h-logo{
+  width:34px;height:34px;background:linear-gradient(135deg,var(--blue),var(--blue2));
+  border-radius:10px;display:flex;align-items:center;justify-content:center;
+  font-size:16px;font-weight:900;color:#fff;flex-shrink:0;
+}
+.h-title{font-size:15px;font-weight:700;color:var(--text);line-height:1.2}
+.h-sub{font-size:10px;color:var(--text2);font-weight:500;letter-spacing:.04em;text-transform:uppercase}
+.h-right{display:flex;align-items:center;gap:8px}
+#sync-btn{
+  background:rgba(77,159,255,.1);border:1px solid var(--border2);
+  color:var(--accent);border-radius:8px;padding:6px 11px;font-size:12px;
+  font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;
+  transition:all .15s;white-space:nowrap;
+}
+#sync-btn:active{background:rgba(77,159,255,.2)}
+#sync-btn.spin{opacity:.5;pointer-events:none}
+.h-stats{display:flex;gap:6px}
+.stat-chip{
+  background:rgba(77,159,255,.08);border:1px solid var(--border);
+  border-radius:6px;padding:3px 8px;font-size:11px;font-weight:600;
+  color:var(--text2);display:flex;align-items:center;gap:4px;
+}
+.stat-chip .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.dot-out{background:var(--red)}
+.dot-cnc{background:var(--amber2)}
+.dot-dmg{background:var(--amber)}
+
+/* ── Tab Bar ─────────────────────────────────────── */
+#tabbar{
+  display:flex;background:#070f1c;border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.tab{
+  flex:1;padding:10px 4px 8px;border:none;background:none;
+  color:var(--text3);font-size:9.5px;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;cursor:pointer;display:flex;flex-direction:column;
+  align-items:center;gap:3px;position:relative;transition:color .15s;
+  font-family:'DM Sans',sans-serif;
+}
+.tab .ti{font-size:19px;line-height:1}
+.tab.active{color:var(--accent)}
+.tab.active::after{
+  content:'';position:absolute;bottom:0;left:25%;right:25%;
+  height:2px;background:var(--accent);border-radius:2px 2px 0 0;
+}
+.tab-badge{
+  position:absolute;top:5px;right:calc(50% - 20px);
+  background:var(--red);color:#fff;font-size:9px;font-weight:700;
+  min-width:15px;height:15px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;padding:0 3px;
+}
+
+/* ── Content Area ────────────────────────────────── */
+#content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.page{display:none;padding:14px;animation:fadeUp .18s ease}
+.page.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Common Components ───────────────────────────── */
+.section-label{
+  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text3);margin-bottom:8px;margin-top:18px;
+}
+.section-label:first-child{margin-top:0}
+
+.card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:13px;margin-bottom:9px;
+}
+.card-row{display:flex;align-items:flex-start;gap:10px}
+.card-info{flex:1;min-width:0}
+.card-name{
+  font-size:14px;font-weight:600;color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.card-meta{font-size:11px;color:var(--text2);margin-top:2px;line-height:1.4}
+.card-actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+
+/* Badges */
+.badge{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:3px 8px;border-radius:20px;font-size:10.5px;font-weight:700;
+  white-space:nowrap;flex-shrink:0;
+}
+.badge-in   {background:rgba(31,122,74,.2); color:#4dd890;border:1px solid rgba(31,122,74,.35)}
+.badge-out  {background:rgba(217,64,64,.2); color:#ff7070;border:1px solid rgba(217,64,64,.35)}
+.badge-ok   {background:rgba(31,122,74,.15);color:#4dd890;border:1px solid rgba(31,122,74,.3)}
+.badge-miss {background:rgba(217,64,64,.2); color:#ff8080;border:1px solid rgba(217,64,64,.35)}
+.badge-dmg  {background:rgba(192,122,16,.2);color:#ffb840;border:1px solid rgba(192,122,16,.35)}
+.badge-more {background:rgba(14,96,128,.2); color:#60c0e0;border:1px solid rgba(14,96,128,.35)}
+.badge-na   {background:rgba(74,106,138,.15);color:var(--text2);border:1px solid rgba(74,106,138,.3)}
+.badge-cnc  {background:rgba(192,122,16,.15);color:var(--amber2);border:1px solid rgba(192,122,16,.3)}
+
+/* Inputs */
+.field-label{
+  font-size:11px;font-weight:600;color:var(--text2);
+  margin-bottom:5px;display:block;text-transform:uppercase;letter-spacing:.04em;
+}
+input,select,textarea{
+  width:100%;background:#07111f;border:1.5px solid var(--border2);
+  color:var(--text);border-radius:var(--radius2);padding:11px 13px;
+  font-size:15px;outline:none;-webkit-appearance:none;
+  transition:border-color .15s;font-family:'DM Sans',sans-serif;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+input::placeholder{color:var(--text3)}
+select option{background:var(--card);color:var(--text)}
+textarea{resize:vertical;min-height:64px}
+.input-group{margin-bottom:13px}
+
+/* Buttons */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  gap:6px;padding:11px 16px;border:none;border-radius:var(--radius2);
+  font-size:13px;font-weight:700;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:all .15s;
+}
+.btn-full{width:100%}
+.btn-primary{background:var(--blue2);color:#fff}
+.btn-primary:active{background:var(--blue)}
+.btn-success{background:var(--green);color:#fff}
+.btn-success:active{background:#155a35}
+.btn-danger{background:var(--red2);color:#fff}
+.btn-danger:active{background:#902020}
+.btn-ghost{background:rgba(77,159,255,.08);color:var(--accent);border:1px solid var(--border2)}
+.btn-ghost:active{background:rgba(77,159,255,.16)}
+.btn-amber{background:rgba(192,122,16,.2);color:var(--amber2);border:1px solid rgba(192,122,16,.3)}
+.btn-sm{padding:7px 12px;font-size:12px;border-radius:8px}
+.btn-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.btn:disabled{opacity:.35;pointer-events:none}
+
+/* Search */
+.search-wrap{position:relative;margin-bottom:12px}
+.search-wrap input{padding-left:36px;padding-right:32px}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:16px;pointer-events:none}
+.search-clear{
+  position:absolute;right:10px;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:var(--text3);font-size:16px;
+  cursor:pointer;padding:2px;line-height:1;
+}
+
+/* ═══════════════════════════════════════════════════
+   PAGE 1 — INVENTORY (Check In/Out)
+═══════════════════════════════════════════════════ */
+#inv-search-wrap{margin-bottom:12px}
+#inv-filter-row{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+#inv-filter-row::-webkit-scrollbar{display:none}
+.filter-chip{
+  flex-shrink:0;padding:5px 12px;border-radius:20px;
+  background:rgba(77,159,255,.06);border:1.5px solid var(--border);
+  color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;
+  transition:all .15s;white-space:nowrap;font-family:'DM Sans',sans-serif;
+}
+.filter-chip.active{background:rgba(77,159,255,.18);border-color:var(--accent);color:var(--accent)}
+
+.inv-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:12px;margin-bottom:8px;
+  transition:border-color .15s;
+}
+.inv-card.cnc-flag{border-left:3px solid var(--amber2)}
+.inv-card.missing-flag{border-left:3px solid var(--red)}
+.inv-card.damaged-flag{border-left:3px solid var(--amber)}
+.inv-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.inv-card-name{font-size:14px;font-weight:600;color:var(--text);flex:1;min-width:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inv-card-badges{display:flex;gap:4px;flex-shrink:0;align-items:center}
+.inv-card-meta{font-size:11px;color:var(--text2);margin-top:3px;line-height:1.4}
+.inv-card-cnc{
+  font-size:11px;color:var(--amber2);margin-top:4px;
+  background:rgba(192,122,16,.1);border-radius:6px;padding:4px 8px;
+}
+.inv-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}
+.btn-in{background:rgba(30,95,186,.25);color:#70b8ff;border:1px solid rgba(30,95,186,.4);
+  border-radius:9px;padding:10px;font-size:13px;font-weight:700;
+  cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;}
+.btn-out{background:rgba(184,48,48,.25);color:#ff8080;border:1px solid rgba(184,48,48,.4);
+  border-radius:9px;padding:10px;font-size:13px;font-weight:700;
+  cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;}
+.btn-in:active{background:rgba(30,95,186,.45)}
+.btn-out:active{background:rgba(184,48,48,.45)}
+
+/* Checkout Modal */
+.modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);
+  z-index:500;align-items:flex-end;justify-content:center;
+}
+.modal-overlay.open{display:flex}
+.modal-sheet{
+  background:var(--navy2);border-radius:20px 20px 0 0;
+  padding:1.5rem 1.25rem 2rem;width:100%;max-width:500px;
+  max-height:85dvh;overflow-y:auto;
+  animation:slideUp .2s ease;
+}
+@keyframes slideUp{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 1.25rem}
+.modal-title{font-size:17px;font-weight:700;color:var(--text);margin-bottom:4px}
+.modal-item{font-size:13px;color:var(--text2);margin-bottom:1.25rem}
+.modal-close{
+  position:absolute;top:1rem;right:1rem;background:rgba(77,159,255,.1);
+  border:none;color:var(--text2);border-radius:50%;width:30px;height:30px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  font-size:16px;
+}
+.modal-footer{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+
+/* ═══════════════════════════════════════════════════
+   PAGE 2 — CHECKLIST
+═══════════════════════════════════════════════════ */
+#loc-tabs{
+  display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;
+  margin-bottom:12px;scrollbar-width:none;
+}
+#loc-tabs::-webkit-scrollbar{display:none}
+.loc-tab{
+  flex-shrink:0;padding:6px 13px;border-radius:20px;
+  background:rgba(77,159,255,.06);border:1.5px solid var(--border);
+  color:var(--text2);font-size:11.5px;font-weight:600;cursor:pointer;
+  transition:all .15s;white-space:nowrap;font-family:'DM Sans',sans-serif;
+}
+.loc-tab.active{background:rgba(77,159,255,.2);border-color:var(--accent);color:var(--accent)}
+.loc-tab .lc{
+  display:inline-flex;align-items:center;justify-content:center;
+  background:rgba(77,159,255,.2);border-radius:10px;padding:0 5px;
+  font-size:10px;margin-left:4px;min-width:18px;height:16px;
+}
+
+.chk-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:11px 12px;margin-bottom:7px;
+  display:flex;align-items:center;gap:10px;
+}
+.chk-check{
+  width:22px;height:22px;border-radius:6px;border:2px solid var(--border2);
+  flex-shrink:0;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;transition:all .15s;background:transparent;
+}
+.chk-check.checked{background:var(--green);border-color:var(--green)}
+.chk-check.checked::after{content:'✓';color:#fff;font-size:13px;font-weight:700}
+.chk-info{flex:1;min-width:0}
+.chk-name{font-size:13px;font-weight:600;color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chk-meta{font-size:11px;color:var(--text2);margin-top:1px}
+.chk-badges{display:flex;gap:4px;align-items:center;flex-shrink:0}
+
+.chk-summary{
+  background:var(--card2);border:1px solid var(--border2);
+  border-radius:var(--radius);padding:12px;margin-bottom:12px;
+}
+.chk-summary-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.chk-summary-row:last-child{margin-bottom:0}
+.chk-summary-label{font-size:12px;color:var(--text2)}
+.chk-summary-val{font-size:13px;font-weight:700;color:var(--text)}
+
+.wa-btn{
+  width:100%;padding:13px;background:#1a7a35;color:#fff;border:none;
+  border-radius:var(--radius2);font-size:14px;font-weight:700;
+  cursor:pointer;font-family:'DM Sans',sans-serif;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  margin-top:8px;transition:background .15s;
+}
+.wa-btn:active{background:#155a28}
+
+/* ═══════════════════════════════════════════════════
+   PAGE 3 — REPORT
+═══════════════════════════════════════════════════ */
+.report-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.report-type-btn{
+  padding:14px 10px;border-radius:var(--radius);border:2px solid var(--border);
+  background:var(--card);color:var(--text2);font-size:12px;font-weight:600;
+  cursor:pointer;text-align:center;transition:all .15s;
+  font-family:'DM Sans',sans-serif;
+}
+.report-type-btn .rt-icon{font-size:22px;display:block;margin-bottom:5px}
+.report-type-btn.selected{border-color:var(--accent);color:var(--accent);background:rgba(77,159,255,.1)}
+.report-type-btn:active{background:rgba(77,159,255,.1)}
+
+/* ═══════════════════════════════════════════════════
+   PAGE 4 — ADMIN
+═══════════════════════════════════════════════════ */
+.admin-section{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:14px;margin-bottom:10px;
+}
+.admin-section-title{
+  font-size:13px;font-weight:700;color:var(--text);
+  margin-bottom:12px;display:flex;align-items:center;gap:7px;
+}
+.admin-section-title .icon{font-size:16px}
+
+.member-row{
+  display:flex;align-items:center;gap:10px;padding:8px 0;
+  border-bottom:1px solid var(--border);
+}
+.member-row:last-child{border-bottom:none}
+.member-num{
+  width:36px;height:36px;background:rgba(77,159,255,.1);border:1px solid var(--border2);
+  border-radius:9px;display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;color:var(--accent);flex-shrink:0;
+}
+.member-info{flex:1;min-width:0}
+.member-name{font-size:13px;font-weight:600;color:var(--text)}
+.member-phone{font-size:11px;color:var(--text2)}
+
+/* ═══════════════════════════════════════════════════
+   SUCCESS TOAST
+═══════════════════════════════════════════════════ */
+#toast{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:#1a3a5c;color:#fff;padding:10px 18px;border-radius:10px;
+  font-size:13px;font-weight:600;z-index:9999;opacity:0;
+  transition:all .25s;pointer-events:none;white-space:nowrap;
+  border:1px solid var(--border2);box-shadow:var(--shadow);
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ═══════════════════════════════════════════════════
+   LOADING
+═══════════════════════════════════════════════════ */
+#loading{
+  position:fixed;inset:0;background:rgba(7,17,31,.8);
+  z-index:400;display:flex;align-items:center;justify-content:center;
+  backdrop-filter:blur(4px);
+}
+#loading.hidden{display:none}
+.spinner{
+  width:36px;height:36px;border:3px solid var(--border2);
+  border-top-color:var(--accent);border-radius:50%;
+  animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ═══════════════════════════════════════════════════
+   EMPTY STATE
+═══════════════════════════════════════════════════ */
+.empty{text-align:center;padding:2.5rem 1rem;color:var(--text3)}
+.empty-icon{font-size:36px;margin-bottom:10px}
+.empty-text{font-size:14px;font-weight:500}
+.empty-sub{font-size:12px;margin-top:4px}
+</style>
 </head>
 <body>
-    <div class="header">
-        <h1><i class="fas fa-tools"></i> Chaverim Equipment</h1>
+
+<!-- PIN GATE -->
+<div id="pin-gate">
+  <div class="pin-card">
+    <div class="pin-logo">🔒</div>
+    <div class="pin-title">Bergen County Chaverim</div>
+    <div class="pin-sub">Equipment Dashboard — Enter PIN</div>
+    <input id="pin-input" type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••"/>
+    <div id="pin-error"></div>
+    <button id="pin-btn" onclick="checkPin()">Enter</button>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div id="loading"><div class="spinner"></div></div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- CHECKOUT MODAL -->
+<div class="modal-overlay" id="checkout-modal">
+  <div class="modal-sheet" style="position:relative">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-title">Check In/Out</div>
+    <div class="modal-item" id="modal-item-name"></div>
+    <div class="input-group">
+      <label class="field-label">Your BC Member #</label>
+      <input id="modal-member" type="text" inputmode="numeric" placeholder="e.g. 38"/>
     </div>
-    <div class="container">
-        <div id="reader"></div>
-        
-        <input type="text" class="search-bar" id="searchInput" placeholder="Search equipment..." onkeyup="filterItems()">
-        <div id="inventoryContent"><div class="card">Loading...</div></div>
+    <div class="input-group">
+      <label class="field-label">Call Number</label>
+      <input id="modal-call" type="text" inputmode="numeric" placeholder="Dispatched call #"/>
+    </div>
+    <div class="input-group">
+      <label class="field-label">CC or CNC?</label>
+      <select id="modal-ccnc" onchange="toggleCNCNote()">
+        <option value="">-- Select --</option>
+        <option value="CC">CC — Correct location</option>
+        <option value="CNC">CNC — Wrong location</option>
+      </select>
+    </div>
+    <div class="input-group" id="cnc-note-group" style="display:none">
+      <label class="field-label">CNC Note — where is the item?</label>
+      <input id="modal-cnc-note" type="text" placeholder="e.g. Left at Teaneck Garage"/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-success" onclick="submitCheckout('IN')">✓ Check IN</button>
+      <button class="btn btn-danger" onclick="submitCheckout('OUT')">↓ Check OUT</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+
+  <!-- HEADER -->
+  <div id="header">
+    <div class="h-left">
+      <div class="h-logo">BC</div>
+      <div>
+        <div class="h-title">COBC Equipment</div>
+        <div class="h-sub">Dashboard</div>
+      </div>
+    </div>
+    <div class="h-right">
+      <div class="h-stats">
+        <div class="stat-chip"><span class="dot dot-out"></span><span id="stat-out">0</span> Out</div>
+        <div class="stat-chip" id="stat-cnc-chip" style="display:none"><span class="dot dot-cnc"></span><span id="stat-cnc">0</span> CNC</div>
+      </div>
+      <button id="sync-btn" onclick="loadData()">↻ Sync</button>
+    </div>
+  </div>
+
+  <!-- TAB BAR -->
+  <div id="tabbar">
+    <button class="tab active" onclick="showPage('inventory',this)" data-page="inventory">
+      <span class="ti">📦</span>Inventory
+    </button>
+    <button class="tab" onclick="showPage('checklist',this)" data-page="checklist">
+      <span class="ti">✅</span>Checklist
+      <span class="tab-badge" id="issues-badge" style="display:none">0</span>
+    </button>
+    <button class="tab" onclick="showPage('report',this)" data-page="report">
+      <span class="ti">🚨</span>Report
+    </button>
+    <button class="tab" onclick="showPage('admin',this)" data-page="admin">
+      <span class="ti">⚙️</span>Admin
+    </button>
+  </div>
+
+  <!-- CONTENT -->
+  <div id="content">
+
+    <!-- ── PAGE: INVENTORY ── -->
+    <div class="page active" id="page-inventory">
+      <div class="search-wrap" id="inv-search-wrap">
+        <span class="search-icon">🔍</span>
+        <input id="inv-search" type="text" placeholder="Search items..." oninput="renderInventory()" style="padding-left:36px"/>
+        <button class="search-clear" onclick="clearSearch()" style="display:none" id="inv-clear">✕</button>
+      </div>
+      <div id="inv-filter-row">
+        <button class="filter-chip active" onclick="setFilter('all',this)">All</button>
+        <button class="filter-chip" onclick="setFilter('out',this)">Out</button>
+        <button class="filter-chip" onclick="setFilter('in',this)">In</button>
+        <button class="filter-chip" onclick="setFilter('cnc',this)">CNC</button>
+        <button class="filter-chip" onclick="setFilter('missing',this)">Missing</button>
+        <button class="filter-chip" onclick="setFilter('damaged',this)">Damaged</button>
+      </div>
+      <div id="inv-list"></div>
     </div>
 
-    <script>
-        // PASTE YOUR NEW DEPLOYMENT URL HERE
-        const AS = 'https://script.google.com/macros/s/AKfycbyZXbK3d_gcRAH7dsJ-pHyO5HFEEl9aJquZnMTva9tfCggraupSz75140hqLH_TT6GH0Q/exec';
+    <!-- ── PAGE: CHECKLIST ── -->
+    <div class="page" id="page-checklist">
+      <div id="loc-tabs"></div>
+      <div id="chk-summary" class="chk-summary" style="display:none">
+        <div class="chk-summary-row">
+          <span class="chk-summary-label">Items checked</span>
+          <span class="chk-summary-val" id="chk-checked-count">0 / 0</span>
+        </div>
+        <div class="chk-summary-row">
+          <span class="chk-summary-label">Issues flagged</span>
+          <span class="chk-summary-val" id="chk-issues-count">0</span>
+        </div>
+      </div>
+      <div id="chk-list"></div>
+      <button class="wa-btn" id="wa-btn" onclick="sendWhatsApp()" style="display:none">
+        📲 Send WhatsApp Summary
+      </button>
+    </div>
 
-        async function loadInventory() {
-            try {
-                const response = await fetch(AS);
-                const data = await response.json();
-                renderItems(data.items);
-            } catch (e) { console.error(e); }
-        }
+    <!-- ── PAGE: REPORT ── -->
+    <div class="page" id="page-report">
+      <div class="section-label">Report Type</div>
+      <div class="report-type-grid">
+        <button class="report-type-btn" onclick="selectReportType('Missing',this)">
+          <span class="rt-icon">🔍</span>Missing Item
+        </button>
+        <button class="report-type-btn" onclick="selectReportType('Damaged',this)">
+          <span class="rt-icon">🔧</span>Damaged Item
+        </button>
+        <button class="report-type-btn" onclick="selectReportType('Need More',this)">
+          <span class="rt-icon">📦</span>Need More
+        </button>
+        <button class="report-type-btn" onclick="selectReportType('Other',this)">
+          <span class="rt-icon">📝</span>Other Issue
+        </button>
+      </div>
+      <div class="section-label">Item</div>
+      <div class="input-group">
+        <select id="report-item">
+          <option value="">-- Select item --</option>
+        </select>
+      </div>
+      <div class="section-label">Your BC Member #</div>
+      <div class="input-group">
+        <input id="report-member" type="text" inputmode="numeric" placeholder="e.g. 38"/>
+      </div>
+      <div class="section-label">Notes</div>
+      <div class="input-group">
+        <textarea id="report-note" placeholder="Describe the issue..."></textarea>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="submitReport()">Submit Report</button>
+    </div>
 
-        function renderItems(items) {
-            const container = document.getElementById('inventoryContent');
-            container.innerHTML = items.map(item => `
-                <div class="card">
-                    <div>
-                        <div style="font-weight:bold;">${item.name}</div>
-                        <div style="font-size: 0.8em; color: #666;">CNC: ${item.cnc || 'N/A'}</div>
-                    </div>
-                    <span class="status-${(item.status || 'OUT').toLowerCase()}">${item.status || 'OUT'}</span>
-                </div>
-            `).join('');
-        }
+    <!-- ── PAGE: ADMIN ── -->
+    <div class="page" id="page-admin">
 
-        function onScanSuccess(decodedText) {
-            // Send the CNC ID to Google Sheets
-            fetch(`${AS}?action=updateStatus&cncId=${decodedText}`)
-            .then(res => res.json())
-            .then(data => {
-                if(data.success) {
-                    alert(`${data.name} is now ${data.newStatus}`);
-                    loadInventory();
-                }
-            });
-        }
+      <!-- Add Item -->
+      <div class="admin-section">
+        <div class="admin-section-title"><span class="icon">➕</span> Add New Item</div>
+        <div class="input-group">
+          <label class="field-label">Item Name</label>
+          <input id="add-name" type="text" placeholder="e.g. Fan 21"/>
+        </div>
+        <div class="input-group">
+          <label class="field-label">Home Location</label>
+          <select id="add-location">
+            <option value="COBC">COBC</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="addItem()">Add Item + Generate QR</button>
+      </div>
 
-        let html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
-        html5QrcodeScanner.render(onScanSuccess);
-        loadInventory();
-    </script>
+      <!-- Manage Locations -->
+      <div class="admin-section">
+        <div class="admin-section-title"><span class="icon">📍</span> Manage Locations</div>
+        <div id="locations-list" style="margin-bottom:10px"></div>
+        <div style="display:flex;gap:8px">
+          <input id="new-location" type="text" placeholder="New location name" style="flex:1"/>
+          <button class="btn btn-ghost btn-sm" onclick="addLocation()">Add</button>
+        </div>
+      </div>
+
+      <!-- Add Member -->
+      <div class="admin-section">
+        <div class="admin-section-title"><span class="icon">👤</span> Add Member</div>
+        <div class="input-group">
+          <label class="field-label">BC # (Unit)</label>
+          <input id="add-mid" type="text" inputmode="numeric" placeholder="e.g. 42"/>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="input-group">
+            <label class="field-label">First Name</label>
+            <input id="add-fname" type="text" placeholder="First"/>
+          </div>
+          <div class="input-group">
+            <label class="field-label">Last Name</label>
+            <input id="add-lname" type="text" placeholder="Last"/>
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="field-label">Phone</label>
+          <input id="add-phone" type="tel" placeholder="555-000-0000"/>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="addMember()">Add Member</button>
+      </div>
+
+      <!-- Members List -->
+      <div class="admin-section">
+        <div class="admin-section-title"><span class="icon">👥</span> Members (<span id="member-count">0</span>)</div>
+        <div id="members-list"></div>
+      </div>
+
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /app -->
+
+<script>
+// ── Config ──────────────────────────────────────────
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbyXwNBWlifFTPzWdQycpC27fTUsn956KPn9MbrPDM9kXqrFYrqdYqvN_8a1WDmN92OMsQ/exec';
+const PIN = '4357';
+
+// ── State ────────────────────────────────────────────
+let items = [], members = [], locations = ['COBC'];
+let currentFilter = 'all';
+let currentPage = 'inventory';
+let currentLoc = null;
+let checkedItems = {};
+let reportType = '';
+let modalItem = null, modalAction = '';
+
+// ── PIN ──────────────────────────────────────────────
+function checkPin() {
+  const v = document.getElementById('pin-input').value;
+  if (v === PIN) {
+    localStorage.setItem('cobc_pin_ok','1');
+    document.getElementById('pin-gate').classList.add('hidden');
+    document.getElementById('app').style.display = 'flex';
+    loadData();
+  } else {
+    document.getElementById('pin-error').textContent = '✕ Incorrect PIN';
+    document.getElementById('pin-input').value = '';
+    document.getElementById('pin-input').focus();
+    setTimeout(() => document.getElementById('pin-error').textContent = '', 2000);
+  }
+}
+document.getElementById('pin-input').addEventListener('keydown', e => { if(e.key==='Enter') checkPin(); });
+
+// Auto-login if already authenticated
+(function(){
+  if (localStorage.getItem('cobc_pin_ok') === '1') {
+    document.getElementById('pin-gate').classList.add('hidden');
+    document.getElementById('app').style.display = 'flex';
+    loadData();
+  }
+})();
+
+// ── Data Loading ─────────────────────────────────────
+async function loadData() {
+  showLoading(true);
+  document.getElementById('sync-btn').classList.add('spin');
+  try {
+    const [invRes, memRes, locRes] = await Promise.all([
+      fetch(BASE_URL + '?action=getInventory'),
+      fetch(BASE_URL + '?action=getMembers'),
+      fetch(BASE_URL + '?action=getLocations')
+    ]);
+    const invData = await invRes.json();
+    const memData = await memRes.json();
+    const locData = await locRes.json();
+
+    items = invData.items || [];
+    members = memData.members || [];
+    if (locData.locations && locData.locations.length) {
+      locations = locData.locations;
+    }
+    // Derive unique locations from items too
+    items.forEach(it => {
+      if (it.homeLocation && !locations.includes(it.homeLocation)) {
+        locations.push(it.homeLocation);
+      }
+    });
+
+    updateStats();
+    renderInventory();
+    renderChecklist();
+    renderAdmin();
+    populateReportItems();
+  } catch(err) {
+    showToast('⚠️ Failed to load data');
+  } finally {
+    showLoading(false);
+    document.getElementById('sync-btn').classList.remove('spin');
+  }
+}
+
+// ── Stats ─────────────────────────────────────────────
+function updateStats() {
+  const out = items.filter(i => i.status === 'OUT').length;
+  const cnc = items.filter(i => i.isCNC).length;
+  const issues = items.filter(i => i.isCNC || i.equipStatus === 'Missing' || i.equipStatus === 'Damaged').length;
+  document.getElementById('stat-out').textContent = out;
+  document.getElementById('stat-cnc').textContent = cnc;
+  document.getElementById('stat-cnc-chip').style.display = cnc > 0 ? 'flex' : 'none';
+  const badge = document.getElementById('issues-badge');
+  if (issues > 0) { badge.textContent = issues; badge.style.display = 'flex'; }
+  else { badge.style.display = 'none'; }
+}
+
+// ── Pages ─────────────────────────────────────────────
+function showPage(page, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  if (btn) btn.classList.add('active');
+  currentPage = page;
+}
+
+// ── Filter ────────────────────────────────────────────
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderInventory();
+}
+
+function clearSearch() {
+  document.getElementById('inv-search').value = '';
+  document.getElementById('inv-clear').style.display = 'none';
+  renderInventory();
+}
+
+// ── Inventory Render ──────────────────────────────────
+function renderInventory() {
+  const q = document.getElementById('inv-search').value.toLowerCase().trim();
+  document.getElementById('inv-clear').style.display = q ? 'block' : 'none';
+
+  let filtered = items.filter(it => {
+    if (q && !it.name.toLowerCase().includes(q) && !it.homeLocation.toLowerCase().includes(q)) return false;
+    if (currentFilter === 'out') return it.status === 'OUT';
+    if (currentFilter === 'in') return it.status === 'IN';
+    if (currentFilter === 'cnc') return it.isCNC;
+    if (currentFilter === 'missing') return it.equipStatus === 'Missing';
+    if (currentFilter === 'damaged') return it.equipStatus === 'Damaged';
+    return true;
+  });
+
+  // Sort: OUT first, then CNC/issues, then IN
+  filtered.sort((a, b) => {
+    const aScore = (a.status==='OUT'?0:2) + (a.isCNC?0:1);
+    const bScore = (b.status==='OUT'?0:2) + (b.isCNC?0:1);
+    return aScore - bScore;
+  });
+
+  const list = document.getElementById('inv-list');
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">No items found</div></div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(it => {
+    const statusBadge = it.status === 'OUT'
+      ? `<span class="badge badge-out">OUT</span>`
+      : `<span class="badge badge-in">IN</span>`;
+    const equipBadge = getEquipBadge(it.equipStatus);
+    const cncBadge = it.isCNC ? `<span class="badge badge-cnc">CNC</span>` : '';
+    const cncNote = it.isCNC ? `<div class="inv-card-cnc">📍 ${esc(it.cncNote || it.ccnc)}</div>` : '';
+    const borderClass = it.equipStatus==='Missing' ? 'missing-flag' : it.equipStatus==='Damaged' ? 'damaged-flag' : it.isCNC ? 'cnc-flag' : '';
+    const lastUp = it.lastUpdated ? `· ${it.lastUpdated}` : '';
+    const memberStr = it.member ? `BC-${it.member}` : '';
+
+    return `<div class="inv-card ${borderClass}">
+      <div class="inv-card-top">
+        <div class="inv-card-name">${esc(it.name)}</div>
+        <div class="inv-card-badges">${statusBadge}${equipBadge}${cncBadge}</div>
+      </div>
+      <div class="inv-card-meta">📍 ${esc(it.homeLocation)} ${memberStr ? '· ' + memberStr : ''} ${lastUp}</div>
+      ${cncNote}
+      <div class="inv-actions">
+        <button class="btn-in" onclick="openCheckout(${it.row},'IN')">✓ Check IN</button>
+        <button class="btn-out" onclick="openCheckout(${it.row},'OUT')">↓ Check OUT</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function getEquipBadge(status) {
+  if (!status || status === 'OK') return '';
+  const map = {
+    'Missing': 'badge-miss',
+    'Damaged': 'badge-dmg',
+    'Need More': 'badge-more',
+    'Not Active': 'badge-na'
+  };
+  return `<span class="badge ${map[status]||''}">${esc(status)}</span>`;
+}
+
+// ── Checkout Modal ────────────────────────────────────
+function openCheckout(row, action) {
+  const item = items.find(i => i.row === row);
+  if (!item) return;
+  modalItem = item;
+  modalAction = action;
+  document.getElementById('modal-title').textContent = action === 'IN' ? 'Check IN' : 'Check OUT';
+  document.getElementById('modal-item-name').textContent = item.name + ' · ' + item.homeLocation;
+  document.getElementById('modal-member').value = '';
+  document.getElementById('modal-call').value = '';
+  document.getElementById('modal-ccnc').value = '';
+  document.getElementById('modal-cnc-note').value = '';
+  document.getElementById('cnc-note-group').style.display = 'none';
+  document.getElementById('checkout-modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('checkout-modal').classList.remove('open');
+  modalItem = null;
+}
+
+function toggleCNCNote() {
+  const v = document.getElementById('modal-ccnc').value;
+  document.getElementById('cnc-note-group').style.display = v === 'CNC' ? 'block' : 'none';
+}
+
+async function submitCheckout(action) {
+  if (!modalItem) return;
+  const member = document.getElementById('modal-member').value.trim();
+  const call   = document.getElementById('modal-call').value.trim();
+  const ccSel  = document.getElementById('modal-ccnc').value;
+  const cncNote= document.getElementById('modal-cnc-note').value.trim();
+  if (!member) { alert('Please enter your BC member number.'); return; }
+  if (!call)   { alert('Please enter the call number.'); return; }
+  if (!ccSel)  { alert('Please select CC or CNC.'); return; }
+  if (ccSel === 'CNC' && !cncNote) { alert('Please describe where the item is.'); return; }
+
+  closeModal();
+  showLoading(true);
+  try {
+    const res = await fetch(BASE_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        action: 'checkInOut',
+        row: modalItem.row,
+        status: action,
+        member, call: call,
+        ccSel, cncNote
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      // Optimistic update
+      const idx = items.findIndex(i => i.row === modalItem.row);
+      if (idx >= 0) {
+        items[idx].status = action;
+        items[idx].member = member;
+        items[idx].call = call;
+        items[idx].isCNC = ccSel === 'CNC';
+        items[idx].cncNote = cncNote;
+        items[idx].ccnc = ccSel === 'CNC' ? 'CNC - ' + cncNote : 'CC';
+      }
+      updateStats();
+      renderInventory();
+      showToast(`✓ ${modalItem ? modalItem.name : 'Item'} checked ${action}`);
+    } else {
+      showToast('⚠️ Error: ' + (data.error || 'Unknown'));
+    }
+  } catch(e) {
+    showToast('⚠️ Network error');
+  } finally {
+    showLoading(false);
+    modalItem = null;
+  }
+}
+
+// ── Checklist ─────────────────────────────────────────
+function renderChecklist() {
+  // Build location tabs
+  const locs = [...new Set(items.map(i => i.homeLocation).filter(Boolean))];
+  if (!currentLoc || !locs.includes(currentLoc)) currentLoc = locs[0] || null;
+
+  const tabsEl = document.getElementById('loc-tabs');
+  tabsEl.innerHTML = locs.map(loc => {
+    const locItems = items.filter(i => i.homeLocation === loc);
+    const issues = locItems.filter(i => i.isCNC || i.equipStatus === 'Missing' || i.equipStatus === 'Damaged').length;
+    return `<button class="loc-tab ${loc===currentLoc?'active':''}" onclick="selectLoc('${esc(loc)}',this)">
+      ${esc(loc)}<span class="lc">${locItems.length}</span>
+      ${issues > 0 ? `<span class="lc" style="background:rgba(217,64,64,.25);color:#ff8080">${issues}</span>` : ''}
+    </button>`;
+  }).join('');
+
+  renderChecklistItems();
+}
+
+function selectLoc(loc, btn) {
+  currentLoc = loc;
+  document.querySelectorAll('.loc-tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderChecklistItems();
+}
+
+function renderChecklistItems() {
+  if (!currentLoc) {
+    document.getElementById('chk-list').innerHTML = `<div class="empty"><div class="empty-icon">📍</div><div class="empty-text">No locations found</div></div>`;
+    return;
+  }
+  const locItems = items.filter(i => i.homeLocation === currentLoc);
+  const checkedCount = locItems.filter(i => checkedItems[i.row]).length;
+  const issues = locItems.filter(i => i.isCNC || i.equipStatus === 'Missing' || i.equipStatus === 'Damaged').length;
+
+  // Summary
+  const sumEl = document.getElementById('chk-summary');
+  if (locItems.length > 0) {
+    sumEl.style.display = 'block';
+    document.getElementById('chk-checked-count').textContent = `${checkedCount} / ${locItems.length}`;
+    document.getElementById('chk-issues-count').textContent = issues;
+  } else {
+    sumEl.style.display = 'none';
+  }
+
+  document.getElementById('wa-btn').style.display = checkedCount > 0 ? 'flex' : 'none';
+
+  document.getElementById('chk-list').innerHTML = locItems.map(it => {
+    const isChecked = !!checkedItems[it.row];
+    const statusBadge = it.status === 'OUT' ? `<span class="badge badge-out">OUT</span>` : '';
+    const equipBadge = getEquipBadge(it.equipStatus);
+    const cncBadge = it.isCNC ? `<span class="badge badge-cnc">CNC</span>` : '';
+
+    return `<div class="chk-card">
+      <div class="chk-check ${isChecked?'checked':''}" onclick="toggleCheck(${it.row},this)"></div>
+      <div class="chk-info">
+        <div class="chk-name">${esc(it.name)}</div>
+        <div class="chk-meta">${it.isCNC ? '📍 ' + esc(it.cncNote || it.ccnc) : (it.lastUpdated || 'Not yet checked')}</div>
+      </div>
+      <div class="chk-badges">${statusBadge}${equipBadge}${cncBadge}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleCheck(row, el) {
+  checkedItems[row] = !checkedItems[row];
+  el.classList.toggle('checked', !!checkedItems[row]);
+  renderChecklistItems();
+}
+
+function sendWhatsApp() {
+  if (!currentLoc) return;
+  const locItems = items.filter(i => i.homeLocation === currentLoc);
+  const checked = locItems.filter(i => checkedItems[i.row]);
+  const issues = locItems.filter(i => i.isCNC || i.equipStatus === 'Missing' || i.equipStatus === 'Damaged');
+
+  let msg = `*COBC Equipment Check — ${currentLoc}*\n`;
+  msg += `📅 ${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}\n\n`;
+  msg += `✅ *Checked:* ${checked.length}/${locItems.length} items\n`;
+
+  if (issues.length > 0) {
+    msg += `\n⚠️ *Issues (${issues.length}):*\n`;
+    issues.forEach(it => {
+      if (it.equipStatus === 'Missing') msg += `• ${it.name} — MISSING\n`;
+      else if (it.equipStatus === 'Damaged') msg += `• ${it.name} — DAMAGED\n`;
+      else if (it.isCNC) msg += `• ${it.name} — CNC: ${it.cncNote || it.ccnc}\n`;
+    });
+  } else {
+    msg += `\n✅ No issues found`;
+  }
+
+  const out = locItems.filter(i => i.status === 'OUT');
+  if (out.length > 0) {
+    msg += `\n\n📤 *Currently OUT (${out.length}):*\n`;
+    out.forEach(it => msg += `• ${it.name}${it.member ? ' (BC-'+it.member+')' : ''}\n`);
+  }
+
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+}
+
+// ── Report ────────────────────────────────────────────
+function selectReportType(type, btn) {
+  reportType = type;
+  document.querySelectorAll('.report-type-btn').forEach(b => b.classList.remove('selected'));
+  if (btn) btn.classList.add('selected');
+}
+
+function populateReportItems() {
+  const sel = document.getElementById('report-item');
+  sel.innerHTML = '<option value="">-- Select item --</option>' +
+    items.map(it => `<option value="${esc(it.name)}">${esc(it.name)} (${esc(it.homeLocation)})</option>`).join('');
+}
+
+async function submitReport() {
+  const item   = document.getElementById('report-item').value;
+  const member = document.getElementById('report-member').value.trim();
+  const note   = document.getElementById('report-note').value.trim();
+  if (!reportType) { alert('Please select a report type.'); return; }
+  if (!item)        { alert('Please select an item.'); return; }
+  if (!member)      { alert('Please enter your BC member number.'); return; }
+
+  showLoading(true);
+  try {
+    const it = items.find(i => i.name === item);
+    const res = await fetch(BASE_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        action:'submitReport',
+        type: reportType,
+        item, location: it ? it.homeLocation : '',
+        note, member
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      // Also update equipment status in sheet if relevant
+      if (it && (reportType === 'Missing' || reportType === 'Damaged' || reportType === 'Need More')) {
+        await fetch(BASE_URL, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            action:'updateEquipmentStatus',
+            row: it.row,
+            status: reportType,
+            note
+          })
+        });
+        const idx = items.findIndex(i => i.row === it.row);
+        if (idx >= 0) items[idx].equipStatus = reportType;
+        updateStats();
+        renderInventory();
+      }
+      showToast('✓ Report submitted');
+      document.getElementById('report-item').value = '';
+      document.getElementById('report-member').value = '';
+      document.getElementById('report-note').value = '';
+      document.querySelectorAll('.report-type-btn').forEach(b => b.classList.remove('selected'));
+      reportType = '';
+    } else {
+      showToast('⚠️ ' + (data.error || 'Error'));
+    }
+  } catch(e) {
+    showToast('⚠️ Network error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+// ── Admin ─────────────────────────────────────────────
+function renderAdmin() {
+  // Locations
+  const locList = document.getElementById('locations-list');
+  locList.innerHTML = locations.map((loc,i) =>
+    `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:13px;color:var(--text)">${esc(loc)}</span>
+      <button class="btn btn-ghost btn-sm" onclick="removeLocation(${i})" style="padding:4px 8px;font-size:11px">✕</button>
+    </div>`
+  ).join('');
+
+  // Location dropdown for add item
+  const addLocSel = document.getElementById('add-location');
+  addLocSel.innerHTML = locations.map(l => `<option value="${esc(l)}">${esc(l)}</option>`).join('');
+
+  // Members
+  document.getElementById('member-count').textContent = members.length;
+  const memList = document.getElementById('members-list');
+  if (!members.length) {
+    memList.innerHTML = `<div class="empty" style="padding:1rem 0"><div class="empty-text">No members loaded</div></div>`;
+    return;
+  }
+  memList.innerHTML = members.slice(0,50).map(m =>
+    `<div class="member-row">
+      <div class="member-num">${esc(m.unit || m.id)}</div>
+      <div class="member-info">
+        <div class="member-name">${esc(m.name || m.firstName + ' ' + m.lastName)}</div>
+        <div class="member-phone">${esc(m.phone || '')}</div>
+      </div>
+    </div>`
+  ).join('');
+  if (members.length > 50) {
+    memList.innerHTML += `<div style="text-align:center;padding:8px;font-size:12px;color:var(--text2)">+${members.length-50} more</div>`;
+  }
+}
+
+async function addItem() {
+  const name = document.getElementById('add-name').value.trim();
+  const loc  = document.getElementById('add-location').value;
+  if (!name) { alert('Please enter an item name.'); return; }
+  showLoading(true);
+  try {
+    const res = await fetch(BASE_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({action:'addItem', name, location:loc})
+    });
+    const data = await res.json();
+    if (data.success) {
+      items.push({row:data.row, name, homeLocation:loc, status:'IN', equipStatus:'OK', isCNC:false, cncNote:'', ccnc:'CC', member:'', call:'', lastUpdated:''});
+      document.getElementById('add-name').value = '';
+      updateStats();
+      renderInventory();
+      populateReportItems();
+      showToast('✓ Item added + QR generated');
+    } else {
+      showToast('⚠️ ' + (data.error || 'Error'));
+    }
+  } catch(e) {
+    showToast('⚠️ Network error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+async function addLocation() {
+  const val = document.getElementById('new-location').value.trim();
+  if (!val || locations.includes(val)) return;
+  locations.push(val);
+  document.getElementById('new-location').value = '';
+  await saveLocations();
+  renderAdmin();
+}
+
+async function removeLocation(idx) {
+  locations.splice(idx, 1);
+  await saveLocations();
+  renderAdmin();
+}
+
+async function saveLocations() {
+  try {
+    await fetch(BASE_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({action:'updateLocations', locations})
+    });
+  } catch(e) {}
+}
+
+async function addMember() {
+  const memberId  = document.getElementById('add-mid').value.trim();
+  const firstName = document.getElementById('add-fname').value.trim();
+  const lastName  = document.getElementById('add-lname').value.trim();
+  const phone     = document.getElementById('add-phone').value.trim();
+  if (!memberId || !firstName || !lastName) { alert('Please fill in BC#, first and last name.'); return; }
+  showLoading(true);
+  try {
+    const res = await fetch(BASE_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({action:'addMember', memberId, firstName, lastName, phone})
+    });
+    const data = await res.json();
+    if (data.success) {
+      members.push({id:memberId, unit:memberId, firstName, lastName, name:firstName+' '+lastName, phone});
+      document.getElementById('add-mid').value = '';
+      document.getElementById('add-fname').value = '';
+      document.getElementById('add-lname').value = '';
+      document.getElementById('add-phone').value = '';
+      renderAdmin();
+      showToast('✓ Member added');
+    } else {
+      showToast('⚠️ ' + (data.error || 'Error'));
+    }
+  } catch(e) {
+    showToast('⚠️ Network error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+// ── Utilities ─────────────────────────────────────────
+function showLoading(v) { document.getElementById('loading').classList.toggle('hidden', !v); }
+
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+function esc(v) {
+  return (v||'').toString()
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
 </body>
 </html>
