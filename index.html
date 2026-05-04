@@ -704,14 +704,11 @@ async function loadData() {
   showLoading(true);
   document.getElementById('sync-btn').classList.add('spin');
   try {
-    const [invRes, memRes, locRes] = await Promise.all([
-      fetch(BASE_URL + '?action=getInventory'),
-      fetch(BASE_URL + '?action=getMembers'),
-      fetch(BASE_URL + '?action=getLocations')
+    const [invData, memData, locData] = await Promise.all([
+      fetchJSON(BASE_URL + '?action=getInventory'),
+      fetchJSON(BASE_URL + '?action=getMembers'),
+      fetchJSON(BASE_URL + '?action=getLocations')
     ]);
-    const invData = await invRes.json();
-    const memData = await memRes.json();
-    const locData = await locRes.json();
 
     items = invData.items || [];
     members = memData.members || [];
@@ -881,7 +878,7 @@ async function submitCheckout(action) {
   try {
     const res = await fetch(BASE_URL, {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      headers: {'Content-Type':'text/plain;charset=utf-8'},
       body: JSON.stringify({
         action: 'checkInOut',
         row: modalItem.row,
@@ -1041,8 +1038,12 @@ async function submitReport() {
   try {
     const it = items.find(i => i.name === item);
     const res = await fetch(BASE_URL, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
+      method:'POST',redirect:'follow',
+      credentials:'omit',
+      
+      redirect:'follow',
+      credentials:'omit',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
       body: JSON.stringify({
         action:'submitReport',
         type: reportType,
@@ -1056,7 +1057,7 @@ async function submitReport() {
       if (it && (reportType === 'Missing' || reportType === 'Damaged' || reportType === 'Need More')) {
         await fetch(BASE_URL, {
           method:'POST',
-          headers:{'Content-Type':'application/json'},
+          headers:{'Content-Type':'text/plain;charset=utf-8'},
           body: JSON.stringify({
             action:'updateEquipmentStatus',
             row: it.row,
@@ -1128,8 +1129,12 @@ async function addItem() {
   showLoading(true);
   try {
     const res = await fetch(BASE_URL, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
+      method:'POST',redirect:'follow',
+      credentials:'omit',
+      
+      redirect:'follow',
+      credentials:'omit',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
       body: JSON.stringify({action:'addItem', name, location:loc})
     });
     const data = await res.json();
@@ -1169,7 +1174,7 @@ async function saveLocations() {
   try {
     await fetch(BASE_URL, {
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
       body: JSON.stringify({action:'updateLocations', locations})
     });
   } catch(e) {}
@@ -1184,8 +1189,12 @@ async function addMember() {
   showLoading(true);
   try {
     const res = await fetch(BASE_URL, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
+      method:'POST',redirect:'follow',
+      credentials:'omit',
+      
+      redirect:'follow',
+      credentials:'omit',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
       body: JSON.stringify({action:'addMember', memberId, firstName, lastName, phone})
     });
     const data = await res.json();
@@ -1208,6 +1217,26 @@ async function addMember() {
 }
 
 // ── Utilities ─────────────────────────────────────────
+
+// Apps Script requires redirect:follow and credentials:omit
+async function fetchJSON(url) {
+  const res = await fetch(url, {redirect:'follow', credentials:'omit'});
+  return res.json();
+}
+
+async function postJSON(body) {
+  const res = await fetch(BASE_URL, {
+    method:'POST',redirect:'follow',
+      credentials:'omit',
+      
+    redirect:'follow',
+    credentials:'omit',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify(body)
+  });
+  return res.json();
+}
+
 function showLoading(v) { document.getElementById('loading').classList.toggle('hidden', !v); }
 
 let toastTimer;
