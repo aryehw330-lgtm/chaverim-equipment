@@ -4,251 +4,225 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="COBC Equipment"/>
-<meta name="theme-color" content="#0b1f3a"/>
+<meta name="theme-color" content="#1a3a5c"/>
 <title>COBC Equipment</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{height:100%;-webkit-tap-highlight-color:transparent}
-body{font-family:'DM Sans',system-ui,sans-serif;background:#07111f;color:#dce8f5;height:100%;overflow:hidden;-webkit-font-smoothing:antialiased}
-:root{
-  --navy:#0b1f3a;--navy2:#0f2847;--blue:#1a4a8a;--blue2:#1e5fba;
-  --accent:#4d9fff;--red:#d94040;--red2:#b83030;--green:#1f7a4a;
-  --green2:#27a060;--amber:#c07a10;--amber2:#e09020;
-  --text:#dce8f5;--text2:#8aa8c8;--text3:#4a6a8a;
-  --border:rgba(77,159,255,.12);--border2:rgba(77,159,255,.2);
-  --card:#0d1e33;--card2:#0f2540;--radius:14px;--radius2:10px;
-  --shadow:0 4px 24px rgba(0,0,0,.4);
-}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#f4f6f9;color:#1a1a1a;-webkit-tap-highlight-color:transparent}
 #app{display:flex;flex-direction:column;height:100dvh}
 
 /* PIN GATE */
-#pin-gate{position:fixed;inset:0;background:#07111f;z-index:9999;display:flex;align-items:center;justify-content:center;transition:opacity .3s}
-#pin-gate.hidden{opacity:0;pointer-events:none}
-.pin-card{background:var(--card);border:1px solid var(--border2);border-radius:20px;padding:2.5rem 2rem;width:min(340px,90vw);text-align:center;box-shadow:var(--shadow)}
-.pin-logo{width:56px;height:56px;background:linear-gradient(135deg,var(--blue),var(--blue2));border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 1.25rem;box-shadow:0 4px 16px rgba(30,95,186,.4)}
-.pin-title{font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px}
-.pin-sub{font-size:13px;color:var(--text2);margin-bottom:1.5rem}
-.pin-inp{width:100%;background:#07111f;border:2px solid var(--border2);color:var(--text);border-radius:12px;padding:14px;font-size:28px;text-align:center;letter-spacing:12px;outline:none;font-family:'DM Mono',monospace;transition:border-color .2s;margin-bottom:10px}
-.pin-inp:focus{border-color:var(--accent)}
-.pin-err{color:var(--red);font-size:13px;height:18px;margin-bottom:10px;font-weight:500}
-.pin-btn{width:100%;padding:14px;background:var(--blue2);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif}
+#pin-gate{position:fixed;inset:0;background:#1a3a5c;z-index:9999;display:flex;align-items:center;justify-content:center}
+#pin-gate.hidden{display:none}
+.pin-card{background:#fff;border-radius:16px;padding:2rem 1.5rem;width:min(320px,90vw);text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+.pin-logo{font-size:40px;margin-bottom:12px}
+.pin-title{font-size:20px;font-weight:700;color:#1a3a5c;margin-bottom:4px}
+.pin-sub{font-size:14px;color:#666;margin-bottom:20px}
+.pin-inp{width:100%;border:2px solid #ddd;border-radius:10px;padding:12px;font-size:28px;text-align:center;letter-spacing:10px;outline:none;margin-bottom:8px}
+.pin-inp:focus{border-color:#1a3a5c}
+.pin-err{color:#c0392b;font-size:13px;height:18px;margin-bottom:8px}
+.pin-btn{width:100%;padding:13px;background:#1a3a5c;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer}
 
-/* SEC PIN OVERLAY */
-#sec-gate{display:none;position:fixed;inset:0;background:rgba(7,17,31,.93);z-index:800;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
+/* SEC PIN */
+#sec-gate{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:800;align-items:center;justify-content:center}
 #sec-gate.open{display:flex}
-.sec-card{background:var(--card);border:1px solid var(--border2);border-radius:20px;padding:2.5rem 2rem;width:min(320px,88vw);text-align:center;box-shadow:var(--shadow)}
-.sec-icon{font-size:38px;margin-bottom:10px}
-.sec-title{font-size:17px;font-weight:700;color:var(--text);margin-bottom:4px}
-.sec-sub{font-size:12px;color:var(--text2);margin-bottom:1.25rem}
-.sec-inp{width:100%;background:#07111f;border:2px solid var(--border2);color:var(--text);border-radius:12px;padding:12px;font-size:20px;text-align:center;letter-spacing:6px;outline:none;font-family:'DM Mono',monospace;transition:border-color .2s;margin-bottom:8px}
-.sec-inp:focus{border-color:var(--accent)}
-.sec-err{color:var(--red);font-size:12px;height:16px;margin-bottom:8px;font-weight:500}
+.sec-card{background:#fff;border-radius:16px;padding:2rem 1.5rem;width:min(300px,88vw);text-align:center}
+.sec-icon{font-size:32px;margin-bottom:8px}
+.sec-title{font-size:17px;font-weight:700;color:#1a3a5c;margin-bottom:4px}
+.sec-sub{font-size:13px;color:#666;margin-bottom:16px}
+.sec-inp{width:100%;border:2px solid #ddd;border-radius:10px;padding:11px;font-size:18px;text-align:center;letter-spacing:4px;outline:none;margin-bottom:8px}
+.sec-inp:focus{border-color:#1a3a5c}
+.sec-err{color:#c0392b;font-size:12px;height:16px;margin-bottom:8px}
 .sec-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.sec-ok{padding:12px;background:var(--blue2);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif}
-.sec-cancel{padding:12px;background:rgba(77,159,255,.08);color:var(--text2);border:1px solid var(--border2);border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.sec-ok{padding:11px;background:#1a3a5c;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer}
+.sec-cancel{padding:11px;background:#f0f0f0;color:#444;border:none;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer}
 
 /* HEADER */
-#header{background:var(--navy);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;min-height:56px}
-.h-left{display:flex;align-items:center;gap:10px}
-.h-logo{width:34px;height:34px;background:linear-gradient(135deg,var(--blue),var(--blue2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:#fff;flex-shrink:0}
-.h-title{font-size:15px;font-weight:700;color:var(--text);line-height:1.2}
-.h-sub{font-size:10px;color:var(--text2);font-weight:500;letter-spacing:.04em;text-transform:uppercase}
-.h-right{display:flex;align-items:center;gap:7px}
-#sync-btn{background:rgba(77,159,255,.1);border:1px solid var(--border2);color:var(--accent);border-radius:8px;padding:6px 11px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap}
-#sync-btn.spin{opacity:.4;pointer-events:none}
-.h-stats{display:flex;gap:5px}
-.stat-chip{background:rgba(77,159,255,.08);border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:11px;font-weight:600;color:var(--text2);display:flex;align-items:center;gap:4px}
-.sdot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.sdot-out{background:var(--red)}.sdot-cnc{background:var(--amber2)}
+#header{background:#1a3a5c;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.h-title{font-size:16px;font-weight:700;color:#fff}
+.h-sub{font-size:11px;color:#a0bcd8;margin-top:1px}
+.h-right{display:flex;align-items:center;gap:8px}
+.stat-pill{background:rgba(255,255,255,.15);color:#fff;border-radius:20px;padding:4px 10px;font-size:12px;font-weight:600}
+.stat-pill.red{background:#c0392b}
+#sync-btn{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer}
 
 /* TABBAR */
-#tabbar{display:flex;background:#070f1c;border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;scrollbar-width:none}
+#tabbar{display:flex;background:#fff;border-bottom:2px solid #e0e6ed;flex-shrink:0;overflow-x:auto;scrollbar-width:none}
 #tabbar::-webkit-scrollbar{display:none}
-.tab{flex:1;min-width:52px;padding:10px 4px 8px;border:none;background:none;color:var(--text3);font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;position:relative;transition:color .15s;font-family:'DM Sans',sans-serif;white-space:nowrap}
-.tab .ti{font-size:18px;line-height:1}
-.tab.active{color:var(--accent)}
-.tab.active::after{content:'';position:absolute;bottom:0;left:20%;right:20%;height:2px;background:var(--accent);border-radius:2px 2px 0 0}
-.tab-badge{position:absolute;top:5px;right:calc(50% - 20px);background:var(--red);color:#fff;font-size:9px;font-weight:700;min-width:15px;height:15px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px}
+.tab{flex:1;min-width:52px;padding:10px 4px 8px;border:none;background:none;color:#888;font-size:10px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;position:relative;border-bottom:3px solid transparent;margin-bottom:-2px}
+.tab .ti{font-size:18px}
+.tab.active{color:#1a3a5c;border-bottom-color:#1a3a5c}
+.tab-badge{position:absolute;top:4px;right:calc(50% - 18px);background:#c0392b;color:#fff;font-size:9px;font-weight:700;min-width:15px;height:15px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px}
 
 /* CONTENT */
-#content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
-.page{display:none;padding:14px;animation:fadeUp .18s ease}
+#content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.page{display:none;padding:14px}
 .page.active{display:block}
-@keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 
-/* COMMON */
-.section-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;margin-top:18px}
+/* CARDS */
+.section-label{font-size:12px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;margin-top:18px}
 .section-label:first-child{margin-top:0}
-.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:13px;margin-bottom:9px}
-.badge{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:20px;font-size:10.5px;font-weight:700;white-space:nowrap;flex-shrink:0}
-.badge-in{background:rgba(31,122,74,.2);color:#4dd890;border:1px solid rgba(31,122,74,.35)}
-.badge-out{background:rgba(217,64,64,.2);color:#ff7070;border:1px solid rgba(217,64,64,.35)}
-.badge-ok{background:rgba(31,122,74,.15);color:#4dd890;border:1px solid rgba(31,122,74,.3)}
-.badge-miss{background:rgba(217,64,64,.2);color:#ff8080;border:1px solid rgba(217,64,64,.35)}
-.badge-dmg{background:rgba(192,122,16,.2);color:#ffb840;border:1px solid rgba(192,122,16,.35)}
-.badge-more{background:rgba(14,96,128,.2);color:#60c0e0;border:1px solid rgba(14,96,128,.35)}
-.badge-na{background:rgba(74,106,138,.15);color:var(--text2);border:1px solid rgba(74,106,138,.3)}
-.badge-cnc{background:rgba(192,122,16,.15);color:var(--amber2);border:1px solid rgba(192,122,16,.3)}
-.field-label{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:5px;display:block;text-transform:uppercase;letter-spacing:.04em}
-input,select,textarea{width:100%;background:#07111f;border:1.5px solid var(--border2);color:var(--text);border-radius:var(--radius2);padding:11px 13px;font-size:15px;outline:none;-webkit-appearance:none;transition:border-color .15s;font-family:'DM Sans',sans-serif}
-input:focus,select:focus,textarea:focus{border-color:var(--accent)}
-input::placeholder{color:var(--text3)}
-select option{background:var(--card);color:var(--text)}
-textarea{resize:vertical;min-height:64px}
+.card{background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+
+/* BADGES */
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.badge-in {background:#e8f5e9;color:#2e7d32}
+.badge-out{background:#fdecea;color:#c0392b}
+.badge-cnc{background:#fff3e0;color:#e65100}
+.badge-miss{background:#fdecea;color:#c0392b}
+.badge-dmg{background:#fff8e1;color:#f57f17}
+.badge-more{background:#e3f2fd;color:#1565c0}
+.badge-na{background:#f5f5f5;color:#666}
+
+/* INPUTS */
+.field-label{font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px}
+input,select,textarea{width:100%;border:1.5px solid #ddd;border-radius:9px;padding:11px 12px;font-size:15px;outline:none;background:#fff;color:#1a1a1a;font-family:inherit;-webkit-appearance:none}
+input:focus,select:focus,textarea:focus{border-color:#1a3a5c}
+textarea{resize:vertical;min-height:70px}
 .input-group{margin-bottom:13px}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 16px;border:none;border-radius:var(--radius2);font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
-.btn-full{width:100%}
-.btn-primary{background:var(--blue2);color:#fff}
-.btn-primary:active{background:var(--blue)}
-.btn-success{background:var(--green);color:#fff}
-.btn-danger{background:var(--red2);color:#fff}
-.btn-ghost{background:rgba(77,159,255,.08);color:var(--accent);border:1px solid var(--border2)}
-.btn-sm{padding:7px 12px;font-size:12px;border-radius:8px}
-.btn:disabled{opacity:.35;pointer-events:none}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 16px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;width:100%;font-family:inherit}
+.btn-primary{background:#1a3a5c;color:#fff}
+.btn-primary:active{background:#0f2540}
+.btn-success{background:#2e7d32;color:#fff}
+.btn-danger {background:#c0392b;color:#fff}
+.btn-ghost  {background:#f0f0f0;color:#333;border:1px solid #ddd}
+.btn-sm{padding:7px 12px;font-size:12px;border-radius:8px;width:auto}
+.btn-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+
+/* SEARCH */
 .search-wrap{position:relative;margin-bottom:12px}
-.search-wrap input{padding-left:36px;padding-right:32px}
-.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:16px;pointer-events:none}
-.search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;padding:2px}
-.empty{text-align:center;padding:2.5rem 1rem;color:var(--text3)}
-.empty-icon{font-size:36px;margin-bottom:10px}
-.empty-text{font-size:14px;font-weight:500}
+.search-wrap input{padding-left:36px}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#aaa;font-size:16px;pointer-events:none}
 
 /* LOADING */
-#loading{position:fixed;inset:0;background:rgba(7,17,31,.8);z-index:400;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
-#loading.hidden{display:none}
-.spinner{width:36px;height:36px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+#loading{display:none;position:fixed;inset:0;background:rgba(255,255,255,.8);z-index:400;align-items:center;justify-content:center}
+#loading.show{display:flex}
+.spinner{width:36px;height:36px;border:4px solid #e0e0e0;border-top-color:#1a3a5c;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* TOAST */
-#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a3a5c;color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;z-index:9998;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap;border:1px solid var(--border2);box-shadow:var(--shadow)}
+#toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a3a5c;color:#fff;padding:10px 20px;border-radius:10px;font-size:14px;font-weight:600;z-index:9998;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* CHECKOUT MODAL */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;align-items:flex-end;justify-content:center}
-.modal-overlay.open{display:flex}
-.modal-sheet{background:var(--navy2);border-radius:20px 20px 0 0;padding:1.5rem 1.25rem 2rem;width:100%;max-width:500px;max-height:85dvh;overflow-y:auto;animation:slideUp .2s ease;position:relative}
-@keyframes slideUp{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
-.modal-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 1.25rem}
-.modal-title{font-size:17px;font-weight:700;color:var(--text);margin-bottom:4px}
-.modal-item{font-size:13px;color:var(--text2);margin-bottom:1.25rem}
-.modal-close{position:absolute;top:1rem;right:1rem;background:rgba(77,159,255,.1);border:none;color:var(--text2);border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px}
-.modal-footer{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:flex-end;justify-content:center}
+.modal-bg.open{display:flex}
+.modal-box{background:#fff;border-radius:20px 20px 0 0;padding:1.5rem 1.25rem 2rem;width:100%;max-width:500px;max-height:85dvh;overflow-y:auto;position:relative}
+.modal-bar{width:36px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 1.25rem}
+.modal-close{position:absolute;top:1rem;right:1rem;background:#f0f0f0;border:none;border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer;color:#666}
+.modal-title{font-size:17px;font-weight:700;color:#1a3a5c;margin-bottom:4px}
+.modal-sub{font-size:13px;color:#666;margin-bottom:16px}
+.modal-footer{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
 
 /* DASHBOARD */
-.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:14px}
-.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:11px 8px;text-align:center}
-.kpi.kpi-out{border-color:rgba(217,64,64,.3);background:rgba(217,64,64,.08)}
-.kpi.kpi-iss{border-color:rgba(192,122,16,.3);background:rgba(192,122,16,.08)}
-.kpi.kpi-cnc{border-color:rgba(192,122,16,.2);background:rgba(192,122,16,.06)}
-.kpi-val{font-size:24px;font-weight:700;color:var(--text);line-height:1;font-family:'DM Mono',monospace}
-.kpi-out .kpi-val{color:#ff7070}.kpi-iss .kpi-val{color:var(--amber2)}.kpi-cnc .kpi-val{color:var(--amber)}
-.kpi-label{font-size:10px;font-weight:600;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:.04em}
-.alert-card{background:rgba(192,122,16,.1);border:1px solid rgba(192,122,16,.3);border-radius:var(--radius2);padding:10px 12px;margin-bottom:7px}
-.alert-card.a-miss{background:rgba(217,64,64,.1);border-color:rgba(217,64,64,.3)}
-.alert-card.a-dmg{background:rgba(192,122,16,.1);border-color:rgba(192,122,16,.3)}
-.alert-name{font-size:13px;font-weight:700;color:var(--text)}
-.alert-detail{font-size:11px;color:var(--text2);margin-top:2px}
-.out-card{background:var(--card);border:1px solid rgba(217,64,64,.25);border-radius:var(--radius2);padding:10px 12px;margin-bottom:7px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
-.out-left{flex:1;min-width:0}
-.out-name{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.out-meta{font-size:11px;color:var(--text2);margin-top:2px;line-height:1.5}
-.out-right{flex-shrink:0;text-align:right}
-.out-time{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace}
-.recent-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius2);padding:10px 12px;margin-bottom:7px;display:flex;align-items:flex-start;gap:10px}
-.rdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
-.rdot-in{background:var(--green2)}.rdot-out{background:var(--red)}
-.r-info{flex:1;min-width:0}
-.r-name{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.r-detail{font-size:11px;color:var(--text2);margin-top:2px;line-height:1.5}
-.r-time{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;white-space:nowrap;flex-shrink:0}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.kpi{background:#fff;border-radius:12px;padding:12px 8px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.kpi-val{font-size:26px;font-weight:800;color:#1a3a5c;line-height:1}
+.kpi-out .kpi-val{color:#c0392b}
+.kpi-iss .kpi-val{color:#e65100}
+.kpi-cnc .kpi-val{color:#f57f17}
+.kpi-label{font-size:10px;font-weight:600;color:#888;margin-top:3px;text-transform:uppercase}
+.alert-card{background:#fff3e0;border-left:4px solid #e65100;border-radius:8px;padding:10px 12px;margin-bottom:8px}
+.alert-card.red{background:#fdecea;border-left-color:#c0392b}
+.alert-name{font-size:13px;font-weight:700;color:#1a1a1a}
+.alert-detail{font-size:12px;color:#666;margin-top:2px}
+.out-card{background:#fff;border-radius:10px;padding:11px 13px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.out-name{font-size:14px;font-weight:700;color:#1a1a1a}
+.out-meta{font-size:12px;color:#666;margin-top:2px;line-height:1.5}
+.out-time{font-size:11px;color:#999;white-space:nowrap;flex-shrink:0}
+.recent-card{background:#fff;border-radius:10px;padding:11px 13px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);display:flex;align-items:flex-start;gap:10px}
+.rdot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.rdot-in{background:#2e7d32}.rdot-out{background:#c0392b}
+.r-name{font-size:14px;font-weight:600;color:#1a1a1a}
+.r-detail{font-size:12px;color:#555;margin-top:2px;line-height:1.5}
+.r-time{font-size:11px;color:#999;white-space:nowrap;flex-shrink:0}
 
 /* INVENTORY */
-#inv-filter-row{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
-#inv-filter-row::-webkit-scrollbar{display:none}
-.fchip{flex-shrink:0;padding:5px 12px;border-radius:20px;background:rgba(77,159,255,.06);border:1.5px solid var(--border);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
-.fchip.active{background:rgba(77,159,255,.18);border-color:var(--accent);color:var(--accent)}
-.inv-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px}
-.inv-card.fl-cnc{border-left:3px solid var(--amber2)}
-.inv-card.fl-miss{border-left:3px solid var(--red)}
-.inv-card.fl-dmg{border-left:3px solid var(--amber)}
-.inv-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
-.inv-name{font-size:14px;font-weight:600;color:var(--text);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.inv-badges{display:flex;gap:4px;flex-shrink:0;align-items:center}
-.inv-meta{font-size:11px;color:var(--text2);margin-top:3px}
-.inv-cnc{font-size:11px;color:var(--amber2);margin-top:4px;background:rgba(192,122,16,.1);border-radius:6px;padding:4px 8px}
-.inv-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}
-.btn-in{background:rgba(30,95,186,.25);color:#70b8ff;border:1px solid rgba(30,95,186,.4);border-radius:9px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif}
-.btn-out{background:rgba(184,48,48,.25);color:#ff8080;border:1px solid rgba(184,48,48,.4);border-radius:9px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif}
+.filter-row{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.filter-row::-webkit-scrollbar{display:none}
+.fchip{flex-shrink:0;padding:6px 14px;border-radius:20px;background:#fff;border:1.5px solid #ddd;color:#555;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+.fchip.active{background:#1a3a5c;border-color:#1a3a5c;color:#fff}
+.inv-card{background:#fff;border-radius:12px;padding:13px;margin-bottom:9px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.inv-card.fl-cnc{border-left:4px solid #e65100}
+.inv-card.fl-miss{border-left:4px solid #c0392b}
+.inv-card.fl-dmg{border-left:4px solid #f57f17}
+.inv-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.inv-name{font-size:15px;font-weight:700;color:#1a1a1a;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inv-badges{display:flex;gap:4px;flex-shrink:0}
+.inv-meta{font-size:12px;color:#666;margin-top:3px}
+.inv-cnc{font-size:12px;color:#e65100;margin-top:4px;background:#fff3e0;border-radius:6px;padding:4px 8px}
+.inv-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.btn-in {width:100%;padding:11px;background:#1a3a5c;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer}
+.btn-out{width:100%;padding:11px;background:#c0392b;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer}
 
 /* CHECKLIST */
-#loc-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;scrollbar-width:none}
-#loc-tabs::-webkit-scrollbar{display:none}
-.ltab{flex-shrink:0;padding:6px 13px;border-radius:20px;background:rgba(77,159,255,.06);border:1.5px solid var(--border);color:var(--text2);font-size:11.5px;font-weight:600;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
-.ltab.active{background:rgba(77,159,255,.2);border-color:var(--accent);color:var(--accent)}
-.ltab .lc{display:inline-flex;align-items:center;justify-content:center;background:rgba(77,159,255,.2);border-radius:10px;padding:0 5px;font-size:10px;margin-left:4px;min-width:18px;height:16px}
-.chk-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:11px 12px;margin-bottom:7px;display:flex;align-items:center;gap:10px}
-.chk-box{width:22px;height:22px;border-radius:6px;border:2px solid var(--border2);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
-.chk-box.checked{background:var(--green);border-color:var(--green)}
-.chk-box.checked::after{content:'V';color:#fff;font-size:13px;font-weight:700}
-.chk-info{flex:1;min-width:0}
-.chk-name{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.chk-meta{font-size:11px;color:var(--text2);margin-top:1px}
-.chk-badges{display:flex;gap:4px;flex-shrink:0}
-.chk-summary{background:var(--card2);border:1px solid var(--border2);border-radius:var(--radius);padding:12px;margin-bottom:12px}
-.chk-sum-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.loc-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;scrollbar-width:none}
+.loc-tabs::-webkit-scrollbar{display:none}
+.ltab{flex-shrink:0;padding:7px 14px;border-radius:20px;background:#fff;border:1.5px solid #ddd;color:#555;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+.ltab.active{background:#1a3a5c;border-color:#1a3a5c;color:#fff}
+.ltab .lc{background:rgba(255,255,255,.3);border-radius:10px;padding:0 5px;font-size:10px;margin-left:4px}
+.ltab:not(.active) .lc{background:#e0e6ed;color:#555}
+.chk-card{background:#fff;border-radius:10px;padding:12px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.07);display:flex;align-items:center;gap:12px}
+.chk-box{width:24px;height:24px;border-radius:6px;border:2px solid #ccc;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff}
+.chk-box.checked{background:#2e7d32;border-color:#2e7d32}
+.chk-name{font-size:14px;font-weight:600;color:#1a1a1a}
+.chk-meta{font-size:12px;color:#666;margin-top:1px}
+.chk-summary{background:#e8f4fd;border-radius:10px;padding:12px;margin-bottom:12px}
+.chk-sum-row{display:flex;justify-content:space-between;font-size:13px;color:#333;margin-bottom:4px}
 .chk-sum-row:last-child{margin-bottom:0}
-.wa-btn{width:100%;padding:13px;background:#1a7a35;color:#fff;border:none;border-radius:var(--radius2);font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px}
+.chk-sum-val{font-weight:700;color:#1a3a5c}
+.wa-btn{width:100%;padding:13px;background:#25d366;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;margin-top:10px}
 
 /* REPORT */
-.rt-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
-.rt-btn{padding:14px 10px;border-radius:var(--radius);border:2px solid var(--border);background:var(--card);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;text-align:center;transition:all .15s;font-family:'DM Sans',sans-serif}
-.rt-btn .ri{font-size:22px;display:block;margin-bottom:5px}
-.rt-btn.sel{border-color:var(--accent);color:var(--accent);background:rgba(77,159,255,.1)}
+.rt-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.rt-btn{padding:14px 10px;border-radius:12px;border:2px solid #ddd;background:#fff;color:#555;font-size:13px;font-weight:600;cursor:pointer;text-align:center}
+.rt-btn .ri{font-size:24px;display:block;margin-bottom:5px}
+.rt-btn.sel{border-color:#1a3a5c;color:#1a3a5c;background:#eef3f8}
 
 /* MEMBERS */
-.mem-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
-.mem-av{width:42px;height:42px;background:linear-gradient(135deg,var(--blue),var(--blue2));border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;font-family:'DM Mono',monospace;border:1px solid rgba(77,159,255,.2)}
-.mem-info{flex:1;min-width:0}
-.mem-name{font-size:14px;font-weight:700;color:var(--text)}
-.mem-sub{font-size:12px;color:var(--text2);margin-top:2px}
-.mem-call{width:40px;height:40px;background:rgba(39,160,96,.15);border:1px solid rgba(39,160,96,.3);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;text-decoration:none;transition:background .15s}
-.mem-call:active{background:rgba(39,160,96,.35)}
+.mem-card{background:#fff;border-radius:12px;padding:13px;margin-bottom:9px;box-shadow:0 1px 4px rgba(0,0,0,.08);display:flex;align-items:center;gap:12px}
+.mem-av{width:44px;height:44px;background:#1a3a5c;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+.mem-name{font-size:15px;font-weight:700;color:#1a1a1a}
+.mem-sub{font-size:12px;color:#666;margin-top:2px}
+.mem-call{width:40px;height:40px;background:#e8f5e9;border:1.5px solid #a5d6a7;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;text-decoration:none;flex-shrink:0}
 
 /* ADMIN */
-.adm-sec{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px}
-.adm-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:7px}
-.adm-title .ai{font-size:16px}
-.mem-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.adm-sec{background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.adm-title{font-size:14px;font-weight:700;color:#1a3a5c;margin-bottom:12px}
+.mem-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f0f0f0}
 .mem-row:last-child{border-bottom:none}
-.mem-num{width:36px;height:36px;background:rgba(77,159,255,.1);border:1px solid var(--border2);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--accent);flex-shrink:0}
+.mem-num{width:36px;height:36px;background:#eef3f8;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#1a3a5c;flex-shrink:0}
+
+.empty{text-align:center;padding:3rem 1rem;color:#aaa}
+.empty-icon{font-size:40px;margin-bottom:10px}
+.empty-text{font-size:15px;font-weight:500;color:#888}
 </style>
 </head>
 <body>
 
-<!-- MAIN PIN GATE -->
+<!-- PIN GATE -->
 <div id="pin-gate">
   <div class="pin-card">
-    <div class="pin-logo">[lock]</div>
+    <div class="pin-logo">🔒</div>
     <div class="pin-title">Bergen County Chaverim</div>
-    <div class="pin-sub">Equipment Dashboard - Enter PIN</div>
-    <input id="pin-input" class="pin-inp" type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="****"/>
+    <div class="pin-sub">Equipment Dashboard</div>
+    <input id="pin-input" class="pin-inp" type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="PIN"/>
     <div id="pin-error" class="pin-err"></div>
     <button class="pin-btn" onclick="checkPin()">Enter</button>
   </div>
 </div>
 
-<!-- SECONDARY PIN GATE (Admin / Checklist) -->
+<!-- SEC PIN -->
 <div id="sec-gate">
   <div class="sec-card">
-    <div id="sec-icon" class="sec-icon">[key]</div>
+    <div id="sec-icon" class="sec-icon">🔐</div>
     <div id="sec-title" class="sec-title">Restricted Access</div>
     <div id="sec-sub" class="sec-sub">Enter the section password</div>
-    <input id="sec-input" class="sec-inp" type="password" autocomplete="off" placeholder="********"/>
+    <input id="sec-input" class="sec-inp" type="password" autocomplete="off" placeholder="Password"/>
     <div id="sec-error" class="sec-err"></div>
     <div class="sec-btns">
       <button class="sec-cancel" onclick="cancelSec()">Cancel</button>
@@ -264,14 +238,14 @@ textarea{resize:vertical;min-height:64px}
 <div id="toast"></div>
 
 <!-- CHECKOUT MODAL -->
-<div class="modal-overlay" id="checkout-modal">
-  <div class="modal-sheet">
-    <button class="modal-close" onclick="closeModal()">?</button>
-    <div class="modal-handle"></div>
-    <div class="modal-title" id="modal-title">Check In/Out</div>
-    <div class="modal-item" id="modal-item-name"></div>
+<div class="modal-bg" id="checkout-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-bar"></div>
+    <div class="modal-title" id="modal-title">Check In / Out</div>
+    <div class="modal-sub" id="modal-item-name"></div>
     <div class="input-group">
-      <label class="field-label">Your BC Member #</label>
+      <label class="field-label">BC Member #</label>
       <input id="modal-member" type="text" inputmode="numeric" placeholder="e.g. 38"/>
     </div>
     <div class="input-group">
@@ -282,47 +256,55 @@ textarea{resize:vertical;min-height:64px}
       <label class="field-label">CC or CNC?</label>
       <select id="modal-ccnc" onchange="toggleCNCNote()">
         <option value="">-- Select --</option>
-        <option value="CC">CC - Correct location</option>
-        <option value="CNC">CNC - Wrong location</option>
+        <option value="CC">CC — Correct location</option>
+        <option value="CNC">CNC — Wrong location</option>
       </select>
     </div>
     <div class="input-group" id="cnc-note-group" style="display:none">
-      <label class="field-label">CNC Note - where is the item?</label>
+      <label class="field-label">Where is the item? (CNC Note)</label>
       <input id="modal-cnc-note" type="text" placeholder="e.g. Left at Teaneck Garage"/>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-success" onclick="submitCheckout('IN')">V Check IN</button>
-      <button class="btn btn-danger" onclick="submitCheckout('OUT')">v Check OUT</button>
+      <button class="btn btn-success" onclick="submitCheckout('IN')">✓ Check IN</button>
+      <button class="btn btn-danger"  onclick="submitCheckout('OUT')">↓ Check OUT</button>
     </div>
   </div>
 </div>
 
 <!-- APP -->
 <div id="app" style="display:none">
+
   <div id="header">
-    <div class="h-left">
-      <div class="h-logo">BC</div>
-      <div>
-        <div class="h-title">COBC Equipment</div>
-        <div class="h-sub">Dashboard</div>
-      </div>
+    <div>
+      <div class="h-title">COBC Equipment</div>
+      <div class="h-sub">Bergen County Chaverim</div>
     </div>
     <div class="h-right">
-      <div class="h-stats">
-        <div class="stat-chip"><span class="sdot sdot-out"></span><span id="stat-out">0</span> Out</div>
-        <div class="stat-chip" id="stat-cnc-chip" style="display:none"><span class="sdot sdot-cnc"></span><span id="stat-cnc">0</span> CNC</div>
-      </div>
-      <button id="sync-btn" onclick="loadData()">? Sync</button>
+      <span class="stat-pill" id="stat-out-pill" style="display:none"></span>
+      <button id="sync-btn" onclick="loadData()">↻ Sync</button>
     </div>
   </div>
 
   <div id="tabbar">
-    <button class="tab active" data-page="dashboard" onclick="showPage('dashboard',this)"><span class="ti">[D]</span>Dash</button>
-    <button class="tab" data-page="inventory" onclick="showPage('inventory',this)"><span class="ti">[I]</span>Inventory</button>
-    <button class="tab" data-page="checklist" onclick="showPage('checklist',this)"><span class="ti">[C]</span>Checklist<span class="tab-badge" id="issues-badge" style="display:none">0</span></button>
-    <button class="tab" data-page="report" onclick="showPage('report',this)"><span class="ti">[R]</span>Report</button>
-    <button class="tab" data-page="members" onclick="showPage('members',this)"><span class="ti">[M]</span>Members</button>
-    <button class="tab" data-page="admin" onclick="showPage('admin',this)"><span class="ti">[A]</span>Admin</button>
+    <button class="tab active" data-page="dashboard" onclick="showPage('dashboard',this)">
+      <span class="ti">📊</span>Dash
+    </button>
+    <button class="tab" data-page="inventory" onclick="showPage('inventory',this)">
+      <span class="ti">📦</span>Inventory
+    </button>
+    <button class="tab" data-page="checklist" onclick="showPage('checklist',this)">
+      <span class="ti">✅</span>Checklist
+      <span class="tab-badge" id="issues-badge" style="display:none">0</span>
+    </button>
+    <button class="tab" data-page="report" onclick="showPage('report',this)">
+      <span class="ti">🚨</span>Report
+    </button>
+    <button class="tab" data-page="members" onclick="showPage('members',this)">
+      <span class="ti">👥</span>Members
+    </button>
+    <button class="tab" data-page="admin" onclick="showPage('admin',this)">
+      <span class="ti">⚙️</span>Admin
+    </button>
   </div>
 
   <div id="content">
@@ -331,30 +313,29 @@ textarea{resize:vertical;min-height:64px}
     <div class="page active" id="page-dashboard">
       <div class="kpi-row">
         <div class="kpi"><div class="kpi-val" id="kpi-total">0</div><div class="kpi-label">Total</div></div>
-        <div class="kpi kpi-out"><div class="kpi-val" id="kpi-out">0</div><div class="kpi-label">Out Now</div></div>
+        <div class="kpi kpi-out"><div class="kpi-val" id="kpi-out">0</div><div class="kpi-label">Out</div></div>
         <div class="kpi kpi-iss"><div class="kpi-val" id="kpi-iss">0</div><div class="kpi-label">Issues</div></div>
         <div class="kpi kpi-cnc"><div class="kpi-val" id="kpi-cnc">0</div><div class="kpi-label">CNC</div></div>
       </div>
       <div id="dash-alerts-wrap" style="display:none">
-        <div class="section-label">[!] Active Alerts</div>
+        <div class="section-label">⚠️ Active Alerts</div>
         <div id="dash-alerts"></div>
       </div>
       <div id="dash-out-wrap" style="display:none">
-        <div class="section-label">[out] Currently Out</div>
+        <div class="section-label">📤 Currently Out</div>
         <div id="dash-out"></div>
       </div>
-      <div class="section-label">[time] Recent Activity</div>
+      <div class="section-label">🕐 Recent Activity</div>
       <div id="dash-recent"></div>
     </div>
 
     <!-- INVENTORY -->
     <div class="page" id="page-inventory">
       <div class="search-wrap">
-        <span class="search-icon">[search]</span>
-        <input id="inv-search" type="text" placeholder="Search items..." oninput="renderInventory()"/>
-        <button class="search-clear" id="inv-clear" onclick="clearInvSearch()" style="display:none">?</button>
+        <span class="search-icon">🔍</span>
+        <input id="inv-search" type="text" placeholder="Search items..." oninput="renderInventory()" style="padding-left:36px"/>
       </div>
-      <div id="inv-filter-row">
+      <div class="filter-row">
         <button class="fchip active" onclick="setFilter('all',this)">All</button>
         <button class="fchip" onclick="setFilter('out',this)">Out</button>
         <button class="fchip" onclick="setFilter('in',this)">In</button>
@@ -367,53 +348,65 @@ textarea{resize:vertical;min-height:64px}
 
     <!-- CHECKLIST -->
     <div class="page" id="page-checklist">
-      <div id="loc-tabs"></div>
+      <div class="loc-tabs" id="loc-tabs"></div>
       <div id="chk-summary" class="chk-summary" style="display:none">
-        <div class="chk-sum-row"><span style="font-size:12px;color:var(--text2)">Items checked</span><span id="chk-checked" style="font-size:13px;font-weight:700">0/0</span></div>
-        <div class="chk-sum-row"><span style="font-size:12px;color:var(--text2)">Issues flagged</span><span id="chk-issues" style="font-size:13px;font-weight:700">0</span></div>
+        <div class="chk-sum-row"><span>Items checked</span><span class="chk-sum-val" id="chk-checked">0/0</span></div>
+        <div class="chk-sum-row"><span>Issues flagged</span><span class="chk-sum-val" id="chk-issues">0</span></div>
       </div>
       <div id="chk-list"></div>
-      <button class="wa-btn" id="wa-btn" onclick="sendWA()" style="display:none">[WA] Send WhatsApp Summary</button>
+      <button class="wa-btn" id="wa-btn" onclick="sendWA()" style="display:none">📲 Send WhatsApp Summary</button>
     </div>
 
     <!-- REPORT -->
     <div class="page" id="page-report">
       <div class="section-label">Report Type</div>
       <div class="rt-grid">
-        <button class="rt-btn" onclick="selRT('Missing',this)"><span class="ri">[search]</span>Missing Item</button>
-        <button class="rt-btn" onclick="selRT('Damaged',this)"><span class="ri">[fix]</span>Damaged Item</button>
-        <button class="rt-btn" onclick="selRT('Need More',this)"><span class="ri">[I]</span>Need More</button>
-        <button class="rt-btn" onclick="selRT('Other',this)"><span class="ri">[note]</span>Other Issue</button>
+        <button class="rt-btn" onclick="selRT('Missing',this)"><span class="ri">🔍</span>Missing Item</button>
+        <button class="rt-btn" onclick="selRT('Damaged',this)"><span class="ri">🔧</span>Damaged Item</button>
+        <button class="rt-btn" onclick="selRT('Need More',this)"><span class="ri">📦</span>Need More</button>
+        <button class="rt-btn" onclick="selRT('Other',this)"><span class="ri">📝</span>Other Issue</button>
       </div>
-      <div class="section-label">Item</div>
-      <div class="input-group"><select id="rpt-item"><option value="">-- Select item --</option></select></div>
-      <div class="section-label">Your BC Member #</div>
-      <div class="input-group"><input id="rpt-member" type="text" inputmode="numeric" placeholder="e.g. 38"/></div>
-      <div class="section-label">Notes</div>
-      <div class="input-group"><textarea id="rpt-note" placeholder="Describe the issue..."></textarea></div>
-      <button class="btn btn-primary btn-full" onclick="submitReport()">Submit Report</button>
+      <div class="input-group">
+        <label class="field-label">Item</label>
+        <select id="rpt-item"><option value="">-- Select item --</option></select>
+      </div>
+      <div class="input-group">
+        <label class="field-label">Your BC Member #</label>
+        <input id="rpt-member" type="text" inputmode="numeric" placeholder="e.g. 38"/>
+      </div>
+      <div class="input-group">
+        <label class="field-label">Notes</label>
+        <textarea id="rpt-note" placeholder="Describe the issue..."></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="submitReport()">Submit Report</button>
     </div>
 
     <!-- MEMBERS -->
     <div class="page" id="page-members">
       <div class="search-wrap">
-        <span class="search-icon">[search]</span>
-        <input id="mem-search" type="text" placeholder="Search by name, BC#, phone..." oninput="renderMembers()"/>
+        <span class="search-icon">🔍</span>
+        <input id="mem-search" type="text" placeholder="Search name, BC#, phone..." oninput="renderMembers()" style="padding-left:36px"/>
       </div>
-      <div id="mem-count" style="font-size:12px;color:var(--text2);margin-bottom:10px"></div>
+      <div id="mem-count" style="font-size:13px;color:#666;margin-bottom:10px"></div>
       <div id="mem-list"></div>
     </div>
 
     <!-- ADMIN -->
     <div class="page" id="page-admin">
       <div class="adm-sec">
-        <div class="adm-title"><span class="ai">[+]</span> Add New Item</div>
-        <div class="input-group"><label class="field-label">Item Name</label><input id="add-name" type="text" placeholder="e.g. Fan 21"/></div>
-        <div class="input-group"><label class="field-label">Home Location</label><select id="add-loc"><option value="COBC">COBC</option></select></div>
-        <button class="btn btn-primary btn-full" onclick="addItem()">Add Item + Generate QR</button>
+        <div class="adm-title">➕ Add New Item</div>
+        <div class="input-group">
+          <label class="field-label">Item Name</label>
+          <input id="add-name" type="text" placeholder="e.g. Fan 21"/>
+        </div>
+        <div class="input-group">
+          <label class="field-label">Home Location</label>
+          <select id="add-loc"><option value="COBC">COBC</option></select>
+        </div>
+        <button class="btn btn-primary" onclick="addItem()">Add Item + Generate QR</button>
       </div>
       <div class="adm-sec">
-        <div class="adm-title"><span class="ai">[loc]</span> Manage Locations</div>
+        <div class="adm-title">📍 Manage Locations</div>
         <div id="loc-list" style="margin-bottom:10px"></div>
         <div style="display:flex;gap:8px">
           <input id="new-loc" type="text" placeholder="New location name" style="flex:1"/>
@@ -421,17 +414,29 @@ textarea{resize:vertical;min-height:64px}
         </div>
       </div>
       <div class="adm-sec">
-        <div class="adm-title"><span class="ai">[user]</span> Add Member</div>
-        <div class="input-group"><label class="field-label">BC # (Unit)</label><input id="add-mid" type="text" inputmode="numeric" placeholder="e.g. 42"/></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div class="input-group"><label class="field-label">First Name</label><input id="add-fname" type="text" placeholder="First"/></div>
-          <div class="input-group"><label class="field-label">Last Name</label><input id="add-lname" type="text" placeholder="Last"/></div>
+        <div class="adm-title">👤 Add Member</div>
+        <div class="input-group">
+          <label class="field-label">BC # (Unit)</label>
+          <input id="add-mid" type="text" inputmode="numeric" placeholder="e.g. 42"/>
         </div>
-        <div class="input-group"><label class="field-label">Phone</label><input id="add-phone" type="tel" placeholder="555-000-0000"/></div>
-        <button class="btn btn-primary btn-full" onclick="addMember()">Add Member</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="input-group">
+            <label class="field-label">First Name</label>
+            <input id="add-fname" type="text" placeholder="First"/>
+          </div>
+          <div class="input-group">
+            <label class="field-label">Last Name</label>
+            <input id="add-lname" type="text" placeholder="Last"/>
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="field-label">Phone</label>
+          <input id="add-phone" type="tel" placeholder="555-000-0000"/>
+        </div>
+        <button class="btn btn-primary" onclick="addMember()">Add Member</button>
       </div>
       <div class="adm-sec">
-        <div class="adm-title"><span class="ai">[M]</span> Members (<span id="adm-mem-count">0</span>)</div>
+        <div class="adm-title">👥 Members (<span id="adm-mem-count">0</span>)</div>
         <div id="adm-mem-list"></div>
       </div>
     </div>
@@ -440,19 +445,17 @@ textarea{resize:vertical;min-height:64px}
 </div>
 
 <script>
-// ?? Config ??????????????????????????????????????????????????????
 const BASE_URL   = 'https://script.google.com/macros/s/AKfycbx8EflC0HozxcGzWBKjXD6FYT7o7RrzAlYlHCTdoemz04qr1Bbgw46vQu0rDBsWD8SFzw/exec';
 const MAIN_PIN   = '4357';
 const ADMIN_PASS = 'cobc2026';
 
-// ?? State ????????????????????????????????????????????????????????
 var items=[], members=[], locations=['COBC'];
 var curFilter='all', curPage='dashboard', curLoc=null;
 var checked={}, rptType='', modalItem=null;
 var secTarget=null, secPrevPage='dashboard';
 var secUnlocked={admin:false, checklist:false};
 
-// ?? Main PIN ?????????????????????????????????????????????????????
+// PIN
 function checkPin() {
   var v = document.getElementById('pin-input').value;
   if (v === MAIN_PIN) {
@@ -461,519 +464,407 @@ function checkPin() {
     document.getElementById('app').style.display = 'flex';
     loadData();
   } else {
-    document.getElementById('pin-error').textContent = '? Incorrect PIN';
+    document.getElementById('pin-error').textContent = '✕ Incorrect PIN';
     document.getElementById('pin-input').value = '';
     setTimeout(function(){ document.getElementById('pin-error').textContent=''; }, 2000);
   }
 }
 document.getElementById('pin-input').addEventListener('keydown', function(e){ if(e.key==='Enter') checkPin(); });
 
-// ?? Secondary PIN (Admin / Checklist) ????????????????????????????
+// SEC PIN
 function requireSec(page, icon, title, sub) {
   if (secUnlocked[page]) { doShowPage(page); return; }
-  secTarget   = page;
-  secPrevPage = curPage;
+  secTarget = page; secPrevPage = curPage;
   document.getElementById('sec-icon').textContent  = icon;
   document.getElementById('sec-title').textContent = title;
   document.getElementById('sec-sub').textContent   = sub;
-  document.getElementById('sec-input').value       = '';
+  document.getElementById('sec-input').value = '';
   document.getElementById('sec-error').textContent = '';
   document.getElementById('sec-gate').classList.add('open');
-  setTimeout(function(){ document.getElementById('sec-input').focus(); }, 120);
+  setTimeout(function(){ document.getElementById('sec-input').focus(); }, 100);
 }
 function checkSec() {
   var v = document.getElementById('sec-input').value;
   if (v === ADMIN_PASS) {
     secUnlocked[secTarget] = true;
     document.getElementById('sec-gate').classList.remove('open');
-    doShowPage(secTarget);
-    secTarget = null;
+    doShowPage(secTarget); secTarget = null;
   } else {
-    document.getElementById('sec-error').textContent = '? Incorrect password';
+    document.getElementById('sec-error').textContent = '✕ Incorrect password';
     document.getElementById('sec-input').value = '';
-    setTimeout(function(){ document.getElementById('sec-error').textContent=''; }, 2200);
+    setTimeout(function(){ document.getElementById('sec-error').textContent=''; }, 2000);
   }
 }
 function cancelSec() {
-  document.getElementById('sec-gate').classList.remove('open');
-  secTarget = null;
+  document.getElementById('sec-gate').classList.remove('open'); secTarget = null;
   document.querySelectorAll('.tab').forEach(function(t){ t.classList.toggle('active', t.dataset.page===secPrevPage); });
 }
 document.getElementById('sec-input').addEventListener('keydown', function(e){ if(e.key==='Enter') checkSec(); });
 
-// ?? Page Navigation ??????????????????????????????????????????????
+// PAGES
 function showPage(page, btn) {
-  if (page==='admin'     && !secUnlocked.admin)     { requireSec('admin',    '[A]','Admin Access',    'Enter the admin password'); return; }
-  if (page==='checklist' && !secUnlocked.checklist) { requireSec('checklist','[C]','Checklist Access', 'Enter the password to access checklists'); return; }
+  if (page==='admin'     && !secUnlocked.admin)     { requireSec('admin','⚙️','Admin Access','Enter the admin password'); return; }
+  if (page==='checklist' && !secUnlocked.checklist) { requireSec('checklist','✅','Checklist Access','Enter the password to continue'); return; }
   doShowPage(page);
 }
 function doShowPage(page) {
   document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
   document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
   document.getElementById('page-'+page).classList.add('active');
-  var tab = document.querySelector('.tab[data-page="'+page+'"]');
-  if (tab) tab.classList.add('active');
+  var t = document.querySelector('.tab[data-page="'+page+'"]');
+  if (t) t.classList.add('active');
   curPage = page;
   if (page==='dashboard') renderDashboard();
   if (page==='members')   renderMembers();
   if (page==='checklist') renderChecklist();
 }
 
-// ?? Data ?????????????????????????????????????????????????????????
-function fetchJ(url) {
-  return fetch(url, {redirect:'follow', credentials:'omit'}).then(function(r){ return r.json(); });
-}
+// DATA
+function fetchJ(url) { return fetch(url,{redirect:'follow',credentials:'omit'}).then(function(r){return r.json();}); }
 function postJ(body) {
-  return fetch(BASE_URL, {
-    method:'POST', redirect:'follow', credentials:'omit',
-    headers:{'Content-Type':'text/plain;charset=utf-8'},
-    body: JSON.stringify(body)
-  }).then(function(r){ return r.json(); });
+  return fetch(BASE_URL,{method:'POST',redirect:'follow',credentials:'omit',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)
+  }).then(function(r){return r.json();});
 }
-
 function loadData() {
   showLoad(true);
-  document.getElementById('sync-btn').classList.add('spin');
+  document.getElementById('sync-btn').textContent = '...';
   Promise.all([
     fetchJ(BASE_URL+'?action=getInventory'),
     fetchJ(BASE_URL+'?action=getMembers'),
     fetchJ(BASE_URL+'?action=getLocations')
-  ]).then(function(results) {
-    items   = results[0].items   || [];
-    members = results[1].members || [];
-    var locs = results[2].locations || [];
+  ]).then(function(res) {
+    items   = res[0].items   || [];
+    members = res[1].members || [];
+    var locs = res[2].locations || [];
     if (locs.length) locations = locs;
     items.forEach(function(it){ if(it.homeLocation && locations.indexOf(it.homeLocation)<0) locations.push(it.homeLocation); });
-    updateStats();
-    renderDashboard();
-    renderInventory();
-    populateRptItems();
-    renderAdmin();
-    renderMembers();
-  }).catch(function(err) {
-    showToast('[!] Failed to load data');
-  }).finally(function() {
-    showLoad(false);
-    document.getElementById('sync-btn').classList.remove('spin');
-  });
+    updateStats(); renderDashboard(); renderInventory(); populateRptItems(); renderAdmin(); renderMembers();
+  }).catch(function(){ showToast('Failed to load — check connection'); })
+  .finally(function(){ showLoad(false); document.getElementById('sync-btn').textContent='↻ Sync'; });
 }
 
-// ?? Stats ????????????????????????????????????????????????????????
+// STATS
 function updateStats() {
-  var out    = items.filter(function(i){ return i.status==='OUT'; }).length;
-  var cnc    = items.filter(function(i){ return i.isCNC; }).length;
-  var issues = items.filter(function(i){ return i.isCNC||i.equipStatus==='Missing'||i.equipStatus==='Damaged'; }).length;
-  document.getElementById('stat-out').textContent = out;
-  document.getElementById('stat-cnc').textContent = cnc;
-  document.getElementById('stat-cnc-chip').style.display = cnc>0 ? 'flex' : 'none';
+  var out    = items.filter(function(i){return i.status==='OUT';}).length;
+  var cnc    = items.filter(function(i){return i.isCNC;}).length;
+  var issues = items.filter(function(i){return i.isCNC||i.equipStatus==='Missing'||i.equipStatus==='Damaged';}).length;
+  document.getElementById('kpi-total').textContent = items.length;
+  document.getElementById('kpi-out').textContent   = out;
+  document.getElementById('kpi-iss').textContent   = issues;
+  document.getElementById('kpi-cnc').textContent   = cnc;
+  var pill = document.getElementById('stat-out-pill');
+  if (out > 0) { pill.textContent = out+' OUT'; pill.style.display='inline'; pill.className='stat-pill red'; }
+  else { pill.style.display='none'; }
   var badge = document.getElementById('issues-badge');
-  badge.textContent    = issues;
-  badge.style.display  = issues>0 ? 'flex' : 'none';
+  badge.textContent = issues; badge.style.display = issues>0?'flex':'none';
 }
 
-// ?? Dashboard ????????????????????????????????????????????????????
+// DASHBOARD
 function renderDashboard() {
-  var out    = items.filter(function(i){ return i.status==='OUT'; });
-  var cnc    = items.filter(function(i){ return i.isCNC; });
-  var alerts = items.filter(function(i){ return i.isCNC||i.equipStatus==='Missing'||i.equipStatus==='Damaged'; });
-  document.getElementById('kpi-total').textContent = items.length;
-  document.getElementById('kpi-out').textContent   = out.length;
-  document.getElementById('kpi-iss').textContent   = alerts.length;
-  document.getElementById('kpi-cnc').textContent   = cnc.length;
+  var out    = items.filter(function(i){return i.status==='OUT';});
+  var alerts = items.filter(function(i){return i.isCNC||i.equipStatus==='Missing'||i.equipStatus==='Damaged';});
 
   var aw = document.getElementById('dash-alerts-wrap');
   aw.style.display = alerts.length ? 'block' : 'none';
-  if (alerts.length) {
-    document.getElementById('dash-alerts').innerHTML = alerts.map(function(it) {
-      var cls = it.equipStatus==='Missing' ? 'a-miss' : it.equipStatus==='Damaged' ? 'a-dmg' : '';
-      var icon = it.equipStatus==='Missing' ? '[search]' : it.equipStatus==='Damaged' ? '[fix]' : '[loc]';
-      var detail = it.equipStatus==='Missing' ? 'MISSING' : it.equipStatus==='Damaged' ? 'DAMAGED' : 'CNC: '+esc(it.cncNote||it.ccnc);
-      return '<div class="alert-card '+cls+'"><div class="alert-name">'+icon+' '+esc(it.name)+'</div><div class="alert-detail">'+esc(it.homeLocation)+(it.member?' ? BC-'+esc(it.member):'')+' ? '+detail+'</div></div>';
-    }).join('');
-  }
+  document.getElementById('dash-alerts').innerHTML = alerts.map(function(it) {
+    var cls = (it.equipStatus==='Missing'||it.equipStatus==='Damaged') ? 'red' : '';
+    var detail = it.equipStatus==='Missing'?'MISSING':it.equipStatus==='Damaged'?'DAMAGED':'CNC: '+(it.cncNote||it.ccnc);
+    return '<div class="alert-card '+cls+'"><div class="alert-name">'+esc(it.name)+'</div><div class="alert-detail">'+esc(it.homeLocation)+(it.member?' · BC-'+esc(it.member):'')+' · '+detail+'</div></div>';
+  }).join('');
 
   var ow = document.getElementById('dash-out-wrap');
   ow.style.display = out.length ? 'block' : 'none';
-  if (out.length) {
-    document.getElementById('dash-out').innerHTML = out.map(function(it) {
-      var mn = getMemberName(it.member);
-      var ccBadge = it.isCNC ? '<span class="badge badge-cnc">CNC</span>' : '<span class="badge badge-in" style="font-size:10px">CC</span>';
-      return '<div class="out-card"><div class="out-left"><div class="out-name">'+esc(it.name)+'</div>'
-        +'<div class="out-meta">[loc] '+esc(it.homeLocation)+(it.member?' ? <b style="color:var(--accent)">BC-'+esc(it.member)+'</b>':'')+( mn?' '+esc(mn):'')+( it.call?' ? Call #'+esc(it.call):'')+'</div>'
-        +(it.isCNC?'<div class="out-meta" style="color:var(--amber2)">[loc] '+esc(it.cncNote||it.ccnc)+'</div>':'')
-        +'</div><div class="out-right">'+ccBadge+'<div class="out-time">'+fmtTime(it.lastUpdated)+'</div></div></div>';
-    }).join('');
-  }
+  document.getElementById('dash-out').innerHTML = out.map(function(it) {
+    var mn = getMemberName(it.member);
+    var cc = it.isCNC ? '<span class="badge badge-cnc">CNC</span>' : '<span class="badge badge-in">CC</span>';
+    return '<div class="out-card"><div style="flex:1;min-width:0"><div class="out-name">'+esc(it.name)+'</div>'
+      +'<div class="out-meta">'+esc(it.homeLocation)+(it.member?' · BC-'+esc(it.member):'')+(mn?' '+esc(mn):'')+(it.call?' · Call #'+esc(it.call):'')+'</div>'
+      +(it.isCNC?'<div class="out-meta" style="color:#e65100">'+esc(it.cncNote||it.ccnc)+'</div>':'')
+      +'</div><div style="text-align:right">'+cc+'<div class="out-time">'+fmtTime(it.lastUpdated)+'</div></div></div>';
+  }).join('');
 
-  var recent = items.filter(function(i){ return !!i.lastUpdated; })
-    .sort(function(a,b){ return parseTs(b.lastUpdated)-parseTs(a.lastUpdated); })
-    .slice(0,20);
+  var recent = items.filter(function(i){return !!i.lastUpdated;})
+    .sort(function(a,b){return parseTs(b.lastUpdated)-parseTs(a.lastUpdated);}).slice(0,20);
   var rel = document.getElementById('dash-recent');
   if (!recent.length) {
-    rel.innerHTML = '<div class="empty"><div class="empty-icon">[list]</div><div class="empty-text">No activity yet</div></div>';
+    rel.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">No activity yet</div></div>';
   } else {
     rel.innerHTML = recent.map(function(it) {
       var isOut = it.status==='OUT';
       var mn = getMemberName(it.member);
-      var ccLbl = it.isCNC ? '[!] CNC: '+esc(it.cncNote||it.ccnc) : 'V CC';
       return '<div class="recent-card"><div class="rdot '+(isOut?'rdot-out':'rdot-in')+'"></div>'
-        +'<div class="r-info"><div class="r-name">'+esc(it.name)+'</div>'
-        +'<div class="r-detail">'+(isOut?'[out] Checked OUT':'[in] Checked IN')
-        +(it.member?' ? <b style="color:var(--accent)">BC-'+esc(it.member)+'</b>':'')+( mn?' '+esc(mn):'')
-        +( it.call?' ? Call #'+esc(it.call):'')+'<br/>'+ccLbl+' ? [loc] '+esc(it.homeLocation)+'</div></div>'
+        +'<div style="flex:1;min-width:0"><div class="r-name">'+esc(it.name)+'</div>'
+        +'<div class="r-detail">'+(isOut?'Checked OUT':'Checked IN')
+        +(it.member?' · BC-'+esc(it.member):'')+(mn?' '+esc(mn):'')
+        +(it.call?' · Call #'+esc(it.call):'')
+        +(it.isCNC?' · CNC: '+esc(it.cncNote||it.ccnc):' · CC')
+        +' · '+esc(it.homeLocation)+'</div></div>'
         +'<div class="r-time">'+fmtTime(it.lastUpdated)+'</div></div>';
     }).join('');
   }
 }
-
-function getMemberName(bcNum) {
-  if (!bcNum) return '';
-  var m = members.find(function(m){ return String(m.id)===String(bcNum)||String(m.unit)===String(bcNum); });
+function getMemberName(bc) {
+  if (!bc) return '';
+  var m = members.find(function(m){return String(m.id)===String(bc)||String(m.unit)===String(bc);});
   return m ? (m.firstName||m.name||'') : '';
 }
-function parseTs(s) {
-  if (!s) return 0;
-  try { var d=new Date(s); return isNaN(d)?0:d.getTime(); } catch(e){ return 0; }
-}
+function parseTs(s) { try{var d=new Date(s);return isNaN(d)?0:d.getTime();}catch(e){return 0;} }
 function fmtTime(s) {
-  if (!s) return '';
   try {
     var d=new Date(s); if(isNaN(d)) return s;
     var diff=Date.now()-d, m=Math.floor(diff/60000), h=Math.floor(diff/3600000), dy=Math.floor(diff/86400000);
-    if(m<2) return 'just now';
-    if(m<60) return m+'m ago';
-    if(h<24) return h+'h ago';
+    if(m<2) return 'just now'; if(m<60) return m+'m ago'; if(h<24) return h+'h ago';
     if(dy<7) return dy+'d ago';
     return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-  } catch(e){ return s; }
+  } catch(e){return s;}
 }
 
-// ?? Inventory ????????????????????????????????????????????????????
-function setFilter(f, btn) {
-  curFilter = f;
-  document.querySelectorAll('.fchip').forEach(function(c){ c.classList.remove('active'); });
-  if (btn) btn.classList.add('active');
-  renderInventory();
-}
-function clearInvSearch() {
-  document.getElementById('inv-search').value='';
-  document.getElementById('inv-clear').style.display='none';
+// INVENTORY
+function setFilter(f,btn) {
+  curFilter=f;
+  document.querySelectorAll('.fchip').forEach(function(c){c.classList.remove('active');});
+  if(btn) btn.classList.add('active');
   renderInventory();
 }
 function renderInventory() {
   var q = document.getElementById('inv-search').value.toLowerCase().trim();
-  document.getElementById('inv-clear').style.display = q ? 'block' : 'none';
   var filtered = items.filter(function(it) {
-    if (q && it.name.toLowerCase().indexOf(q)<0 && it.homeLocation.toLowerCase().indexOf(q)<0) return false;
-    if (curFilter==='out')     return it.status==='OUT';
-    if (curFilter==='in')      return it.status==='IN';
-    if (curFilter==='cnc')     return it.isCNC;
-    if (curFilter==='missing') return it.equipStatus==='Missing';
-    if (curFilter==='damaged') return it.equipStatus==='Damaged';
+    if(q && it.name.toLowerCase().indexOf(q)<0 && it.homeLocation.toLowerCase().indexOf(q)<0) return false;
+    if(curFilter==='out')     return it.status==='OUT';
+    if(curFilter==='in')      return it.status==='IN';
+    if(curFilter==='cnc')     return it.isCNC;
+    if(curFilter==='missing') return it.equipStatus==='Missing';
+    if(curFilter==='damaged') return it.equipStatus==='Damaged';
     return true;
-  });
-  filtered.sort(function(a,b){
-    var as=(a.status==='OUT'?0:2)+(a.isCNC?0:1);
-    var bs=(b.status==='OUT'?0:2)+(b.isCNC?0:1);
-    return as-bs;
-  });
+  }).sort(function(a,b){ return ((a.status==='OUT'?0:2)+(a.isCNC?0:1)) - ((b.status==='OUT'?0:2)+(b.isCNC?0:1)); });
   var el = document.getElementById('inv-list');
-  if (!filtered.length) { el.innerHTML='<div class="empty"><div class="empty-icon">?</div><div class="empty-text">No items found</div></div>'; return; }
+  if (!filtered.length) { el.innerHTML='<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">No items found</div></div>'; return; }
   el.innerHTML = filtered.map(function(it) {
-    var sb = it.status==='OUT' ? '<span class="badge badge-out">OUT</span>' : '<span class="badge badge-in">IN</span>';
-    var eb = getEquipBadge(it.equipStatus);
-    var cb = it.isCNC ? '<span class="badge badge-cnc">CNC</span>' : '';
+    var sb = it.status==='OUT'?'<span class="badge badge-out">OUT</span>':'<span class="badge badge-in">IN</span>';
+    var eb = getEB(it.equipStatus);
+    var cb = it.isCNC?'<span class="badge badge-cnc">CNC</span>':'';
     var fl = it.equipStatus==='Missing'?'fl-miss':it.equipStatus==='Damaged'?'fl-dmg':it.isCNC?'fl-cnc':'';
-    var lu = it.lastUpdated ? '? '+it.lastUpdated : '';
     return '<div class="inv-card '+fl+'">'
       +'<div class="inv-top"><div class="inv-name">'+esc(it.name)+'</div><div class="inv-badges">'+sb+eb+cb+'</div></div>'
-      +'<div class="inv-meta">[loc] '+esc(it.homeLocation)+(it.member?' ? BC-'+esc(it.member):'')+' '+lu+'</div>'
-      +(it.isCNC?'<div class="inv-cnc">[loc] '+esc(it.cncNote||it.ccnc)+'</div>':'')
-      +'<div class="inv-actions"><button class="btn-in" onclick="openCheckout('+it.row+')">V Check IN</button><button class="btn-out" onclick="openCheckout('+it.row+',\'OUT\')">v Check OUT</button></div>'
+      +'<div class="inv-meta">📍 '+esc(it.homeLocation)+(it.member?' · BC-'+esc(it.member):'')+(it.lastUpdated?' · '+it.lastUpdated:'')+'</div>'
+      +(it.isCNC?'<div class="inv-cnc">📍 '+esc(it.cncNote||it.ccnc)+'</div>':'')
+      +'<div class="inv-actions"><button class="btn-in" onclick="openCheckout('+it.row+')">✓ Check IN</button><button class="btn-out" onclick="openCheckout('+it.row+",\\'OUT\\')"+'" >↓ Check OUT</button></div>'
       +'</div>';
   }).join('');
 }
-function getEquipBadge(s) {
-  if (!s||s==='OK') return '';
+function getEB(s) {
+  if(!s||s==='OK') return '';
   var m={'Missing':'badge-miss','Damaged':'badge-dmg','Need More':'badge-more','Not Active':'badge-na'};
   return '<span class="badge '+(m[s]||'')+'">'+esc(s)+'</span>';
 }
 
-// ?? Checkout Modal ????????????????????????????????????????????????
+// CHECKOUT
 function openCheckout(row, action) {
-  var it = items.find(function(i){ return i.row===row; });
-  if (!it) return;
+  var it = items.find(function(i){return i.row===row;});
+  if(!it) return;
   modalItem = it;
-  var act = action || 'IN';
-  document.getElementById('modal-title').textContent    = act==='IN' ? 'Check IN' : 'Check OUT';
-  document.getElementById('modal-item-name').textContent= it.name+' ? '+it.homeLocation;
-  document.getElementById('modal-member').value  = '';
-  document.getElementById('modal-call').value    = '';
-  document.getElementById('modal-ccnc').value    = '';
-  document.getElementById('modal-cnc-note').value= '';
-  document.getElementById('cnc-note-group').style.display = 'none';
+  document.getElementById('modal-title').textContent     = (action||'IN')==='IN'?'Check IN':'Check OUT';
+  document.getElementById('modal-item-name').textContent = it.name+' — '+it.homeLocation;
+  document.getElementById('modal-member').value='';
+  document.getElementById('modal-call').value='';
+  document.getElementById('modal-ccnc').value='';
+  document.getElementById('modal-cnc-note').value='';
+  document.getElementById('cnc-note-group').style.display='none';
   document.getElementById('checkout-modal').classList.add('open');
 }
 function closeModal() { document.getElementById('checkout-modal').classList.remove('open'); modalItem=null; }
 function toggleCNCNote() {
-  var v = document.getElementById('modal-ccnc').value;
-  document.getElementById('cnc-note-group').style.display = v==='CNC' ? 'block' : 'none';
+  document.getElementById('cnc-note-group').style.display = document.getElementById('modal-ccnc').value==='CNC'?'block':'none';
 }
 function submitCheckout(action) {
-  if (!modalItem) return;
-  var member  = document.getElementById('modal-member').value.trim();
-  var call    = document.getElementById('modal-call').value.trim();
-  var ccSel   = document.getElementById('modal-ccnc').value;
-  var cncNote = document.getElementById('modal-cnc-note').value.trim();
-  if (!member) { alert('Please enter your BC member number.'); return; }
-  if (!call)   { alert('Please enter the call number.'); return; }
-  if (!ccSel)  { alert('Please select CC or CNC.'); return; }
-  if (ccSel==='CNC' && !cncNote) { alert('Please describe where the item is.'); return; }
-  var item = modalItem;
-  closeModal();
-  showLoad(true);
-  postJ({action:'checkInOut', row:item.row, status:action, member:member, call:call, ccSel:ccSel, cncNote:cncNote})
-  .then(function(data) {
-    if (data.success) {
-      var idx = items.findIndex(function(i){ return i.row===item.row; });
-      if (idx>=0) {
-        items[idx].status=action; items[idx].member=member; items[idx].call=call;
-        items[idx].isCNC=ccSel==='CNC'; items[idx].cncNote=cncNote;
-        items[idx].ccnc=ccSel==='CNC'?'CNC - '+cncNote:'CC';
-        items[idx].lastUpdated=new Date().toLocaleString();
-      }
-      updateStats(); renderInventory(); renderDashboard();
-      showToast('V '+item.name+' checked '+action);
-    } else { showToast('[!] '+(data.error||'Error')); }
-  }).catch(function(){ showToast('[!] Network error'); })
-  .finally(function(){ showLoad(false); });
+  if(!modalItem) return;
+  var member=document.getElementById('modal-member').value.trim();
+  var call=document.getElementById('modal-call').value.trim();
+  var ccSel=document.getElementById('modal-ccnc').value;
+  var cncNote=document.getElementById('modal-cnc-note').value.trim();
+  if(!member){alert('Please enter your BC member number.');return;}
+  if(!call){alert('Please enter the call number.');return;}
+  if(!ccSel){alert('Please select CC or CNC.');return;}
+  if(ccSel==='CNC'&&!cncNote){alert('Please describe where the item is.');return;}
+  var item=modalItem; closeModal(); showLoad(true);
+  postJ({action:'checkInOut',row:item.row,status:action,member:member,call:call,ccSel:ccSel,cncNote:cncNote})
+  .then(function(data){
+    if(data.success){
+      var idx=items.findIndex(function(i){return i.row===item.row;});
+      if(idx>=0){items[idx].status=action;items[idx].member=member;items[idx].call=call;items[idx].isCNC=ccSel==='CNC';items[idx].cncNote=cncNote;items[idx].lastUpdated=new Date().toLocaleString();}
+      updateStats();renderInventory();renderDashboard();
+      showToast(item.name+' checked '+action);
+    } else {showToast('Error: '+(data.error||'Unknown'));}
+  }).catch(function(){showToast('Network error');}).finally(function(){showLoad(false);});
 }
 
-// ?? Checklist ????????????????????????????????????????????????????
+// CHECKLIST
 function renderChecklist() {
-  var locs = [];
-  items.forEach(function(i){ if(i.homeLocation && locs.indexOf(i.homeLocation)<0) locs.push(i.homeLocation); });
-  if (!curLoc || locs.indexOf(curLoc)<0) curLoc = locs[0]||null;
-  var tabs = document.getElementById('loc-tabs');
-  tabs.innerHTML = locs.map(function(loc) {
-    var li  = items.filter(function(i){ return i.homeLocation===loc; });
-    var iss = li.filter(function(i){ return i.isCNC||i.equipStatus==='Missing'||i.equipStatus==='Damaged'; }).length;
+  var locs=[];
+  items.forEach(function(i){if(i.homeLocation&&locs.indexOf(i.homeLocation)<0) locs.push(i.homeLocation);});
+  if(!curLoc||locs.indexOf(curLoc)<0) curLoc=locs[0]||null;
+  document.getElementById('loc-tabs').innerHTML = locs.map(function(loc){
+    var li=items.filter(function(i){return i.homeLocation===loc;});
+    var iss=li.filter(function(i){return i.isCNC||i.equipStatus==='Missing'||i.equipStatus==='Damaged';}).length;
     return '<button class="ltab '+(loc===curLoc?'active':'')+'" onclick="selLoc(\''+esc(loc)+'\',this)">'+esc(loc)
-      +'<span class="lc">'+li.length+'</span>'
-      +(iss>0?'<span class="lc" style="background:rgba(217,64,64,.25);color:#ff8080">'+iss+'</span>':'')
-      +'</button>';
+      +'<span class="lc">'+li.length+'</span>'+(iss>0?'<span class="lc" style="background:#fdecea;color:#c0392b">'+iss+'</span>':'')+'</button>';
   }).join('');
   renderChkItems();
 }
-function selLoc(loc, btn) {
-  curLoc = loc;
-  document.querySelectorAll('.ltab').forEach(function(t){ t.classList.remove('active'); });
-  if (btn) btn.classList.add('active');
+function selLoc(loc,btn) {
+  curLoc=loc;
+  document.querySelectorAll('.ltab').forEach(function(t){t.classList.remove('active');});
+  if(btn) btn.classList.add('active');
   renderChkItems();
 }
 function renderChkItems() {
-  if (!curLoc) { document.getElementById('chk-list').innerHTML='<div class="empty"><div class="empty-icon">[loc]</div><div class="empty-text">No locations</div></div>'; return; }
-  var li  = items.filter(function(i){ return i.homeLocation===curLoc; });
-  var chk = li.filter(function(i){ return !!checked[i.row]; }).length;
-  var iss = li.filter(function(i){ return i.isCNC||i.equipStatus==='Missing'||i.equipStatus==='Damaged'; }).length;
-  var sum = document.getElementById('chk-summary');
-  sum.style.display = li.length ? 'block' : 'none';
-  document.getElementById('chk-checked').textContent = chk+'/'+li.length;
-  document.getElementById('chk-issues').textContent  = iss;
-  document.getElementById('wa-btn').style.display    = chk>0 ? 'flex' : 'none';
-  document.getElementById('chk-list').innerHTML = li.map(function(it) {
-    var isC = !!checked[it.row];
-    var sb  = it.status==='OUT' ? '<span class="badge badge-out">OUT</span>' : '';
-    var eb  = getEquipBadge(it.equipStatus);
-    var cb  = it.isCNC ? '<span class="badge badge-cnc">CNC</span>' : '';
+  if(!curLoc){document.getElementById('chk-list').innerHTML='<div class="empty"><div class="empty-text">No locations found</div></div>';return;}
+  var li=items.filter(function(i){return i.homeLocation===curLoc;});
+  var chk=li.filter(function(i){return !!checked[i.row];}).length;
+  var iss=li.filter(function(i){return i.isCNC||i.equipStatus==='Missing'||i.equipStatus==='Damaged';}).length;
+  document.getElementById('chk-summary').style.display=li.length?'block':'none';
+  document.getElementById('chk-checked').textContent=chk+'/'+li.length;
+  document.getElementById('chk-issues').textContent=iss;
+  document.getElementById('wa-btn').style.display=chk>0?'block':'none';
+  document.getElementById('chk-list').innerHTML=li.map(function(it){
+    var isC=!!checked[it.row];
+    var sb=it.status==='OUT'?'<span class="badge badge-out">OUT</span>':'';
+    var eb=getEB(it.equipStatus);
+    var cb=it.isCNC?'<span class="badge badge-cnc">CNC</span>':'';
     return '<div class="chk-card">'
-      +'<div class="chk-box '+(isC?'checked':'')+'" onclick="toggleChk('+it.row+',this)"></div>'
-      +'<div class="chk-info"><div class="chk-name">'+esc(it.name)+'</div>'
-      +'<div class="chk-meta">'+(it.isCNC?'[loc] '+esc(it.cncNote||it.ccnc):(it.lastUpdated||'Not checked'))+'</div></div>'
-      +'<div class="chk-badges">'+sb+eb+cb+'</div></div>';
+      +'<div class="chk-box '+(isC?'checked':'')+'" onclick="toggleChk('+it.row+',this)">'+(isC?'✓':'')+'</div>'
+      +'<div style="flex:1;min-width:0"><div class="chk-name">'+esc(it.name)+'</div>'
+      +'<div class="chk-meta">'+(it.isCNC?'📍 '+esc(it.cncNote||it.ccnc):(it.lastUpdated||'Not yet checked'))+'</div></div>'
+      +'<div style="display:flex;gap:4px">'+sb+eb+cb+'</div></div>';
   }).join('');
 }
-function toggleChk(row, el) {
-  checked[row] = !checked[row];
-  el.classList.toggle('checked', !!checked[row]);
+function toggleChk(row,el) {
+  checked[row]=!checked[row];
+  el.classList.toggle('checked',!!checked[row]);
+  el.textContent=checked[row]?'✓':'';
   renderChkItems();
 }
 function sendWA() {
-  if (!curLoc) return;
-  var li  = items.filter(function(i){ return i.homeLocation===curLoc; });
-  var chk = li.filter(function(i){ return !!checked[i.row]; });
-  var iss = li.filter(function(i){ return i.isCNC||i.equipStatus==='Missing'||i.equipStatus==='Damaged'; });
-  var out = li.filter(function(i){ return i.status==='OUT'; });
-  var msg = '*COBC Equipment Check - '+curLoc+'*\n';
-  msg += '? '+new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+'\n\n';
-  msg += '[C] *Checked:* '+chk.length+'/'+li.length+' items\n';
-  if (iss.length) {
-    msg += '\n[!] *Issues ('+iss.length+'):*\n';
-    iss.forEach(function(it){
-      if (it.equipStatus==='Missing') msg += '* '+it.name+' - MISSING\n';
-      else if (it.equipStatus==='Damaged') msg += '* '+it.name+' - DAMAGED\n';
-      else if (it.isCNC) msg += '* '+it.name+' - CNC: '+(it.cncNote||it.ccnc)+'\n';
-    });
-  } else { msg += '\n[C] No issues found'; }
-  if (out.length) {
-    msg += '\n\n[out] *Currently OUT ('+out.length+'):*\n';
-    out.forEach(function(it){ msg += '* '+it.name+(it.member?' (BC-'+it.member+')':'')+'\n'; });
-  }
+  if(!curLoc) return;
+  var li=items.filter(function(i){return i.homeLocation===curLoc;});
+  var chk=li.filter(function(i){return !!checked[i.row];});
+  var iss=li.filter(function(i){return i.isCNC||i.equipStatus==='Missing'||i.equipStatus==='Damaged';});
+  var out=li.filter(function(i){return i.status==='OUT';});
+  var msg='*COBC Equipment Check — '+curLoc+'*\n';
+  msg+='📅 '+new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+'\n\n';
+  msg+='✅ *Checked:* '+chk.length+'/'+li.length+' items\n';
+  if(iss.length){msg+='\n⚠️ *Issues ('+iss.length+'):*\n';iss.forEach(function(it){msg+='• '+it.name+' — '+(it.equipStatus==='Missing'?'MISSING':it.equipStatus==='Damaged'?'DAMAGED':'CNC: '+(it.cncNote||it.ccnc))+'\n';});}
+  else{msg+='\n✅ No issues found';}
+  if(out.length){msg+='\n\n📤 *Currently OUT ('+out.length+'):*\n';out.forEach(function(it){msg+='• '+it.name+(it.member?' (BC-'+it.member+')':'')+'\n';});}
   window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
 }
 
-// ?? Report ???????????????????????????????????????????????????????
-function selRT(type, btn) {
-  rptType = type;
-  document.querySelectorAll('.rt-btn').forEach(function(b){ b.classList.remove('sel'); });
-  if (btn) btn.classList.add('sel');
-}
-function populateRptItems() {
-  var sel = document.getElementById('rpt-item');
-  sel.innerHTML = '<option value="">-- Select item --</option>'
-    +items.map(function(it){ return '<option value="'+esc(it.name)+'">'+esc(it.name)+' ('+esc(it.homeLocation)+')</option>'; }).join('');
-}
-function submitReport() {
-  var item   = document.getElementById('rpt-item').value;
-  var member = document.getElementById('rpt-member').value.trim();
-  var note   = document.getElementById('rpt-note').value.trim();
-  if (!rptType) { alert('Please select a report type.'); return; }
-  if (!item)    { alert('Please select an item.'); return; }
-  if (!member)  { alert('Please enter your BC member number.'); return; }
-  var it = items.find(function(i){ return i.name===item; });
+// REPORT
+function selRT(type,btn){rptType=type;document.querySelectorAll('.rt-btn').forEach(function(b){b.classList.remove('sel');});if(btn)btn.classList.add('sel');}
+function populateRptItems(){var sel=document.getElementById('rpt-item');sel.innerHTML='<option value="">-- Select item --</option>'+items.map(function(it){return '<option value="'+esc(it.name)+'">'+esc(it.name)+' ('+esc(it.homeLocation)+')</option>';}).join('');}
+function submitReport(){
+  var item=document.getElementById('rpt-item').value;
+  var member=document.getElementById('rpt-member').value.trim();
+  var note=document.getElementById('rpt-note').value.trim();
+  if(!rptType){alert('Please select a report type.');return;}
+  if(!item){alert('Please select an item.');return;}
+  if(!member){alert('Please enter your BC member number.');return;}
+  var it=items.find(function(i){return i.name===item;});
   showLoad(true);
-  postJ({action:'submitReport', type:rptType, item:item, location:it?it.homeLocation:'', note:note, member:member})
-  .then(function(data) {
-    if (data.success) {
-      if (it && (rptType==='Missing'||rptType==='Damaged'||rptType==='Need More')) {
-        postJ({action:'updateEquipmentStatus', row:it.row, status:rptType, note:note});
-        var idx=items.findIndex(function(i){ return i.row===it.row; });
+  postJ({action:'submitReport',type:rptType,item:item,location:it?it.homeLocation:'',note:note,member:member})
+  .then(function(data){
+    if(data.success){
+      if(it&&(rptType==='Missing'||rptType==='Damaged'||rptType==='Need More')){
+        postJ({action:'updateEquipmentStatus',row:it.row,status:rptType,note:note});
+        var idx=items.findIndex(function(i){return i.row===it.row;});
         if(idx>=0) items[idx].equipStatus=rptType;
-        updateStats(); renderInventory();
+        updateStats();renderInventory();
       }
-      showToast('V Report submitted');
-      document.getElementById('rpt-item').value='';
-      document.getElementById('rpt-member').value='';
-      document.getElementById('rpt-note').value='';
-      document.querySelectorAll('.rt-btn').forEach(function(b){ b.classList.remove('sel'); });
-      rptType='';
-    } else { showToast('[!] '+(data.error||'Error')); }
-  }).catch(function(){ showToast('[!] Network error'); })
-  .finally(function(){ showLoad(false); });
+      showToast('Report submitted');
+      document.getElementById('rpt-item').value='';document.getElementById('rpt-member').value='';document.getElementById('rpt-note').value='';
+      document.querySelectorAll('.rt-btn').forEach(function(b){b.classList.remove('sel');});rptType='';
+    } else{showToast('Error: '+(data.error||'Unknown'));}
+  }).catch(function(){showToast('Network error');}).finally(function(){showLoad(false);});
 }
 
-// ?? Members ??????????????????????????????????????????????????????
-function renderMembers() {
-  var q = (document.getElementById('mem-search').value||'').toLowerCase().trim();
-  var filtered = members.filter(function(m) {
-    if (!q) return true;
-    return (m.name||'').toLowerCase().indexOf(q)>=0
-      ||(m.firstName||'').toLowerCase().indexOf(q)>=0
-      ||(m.lastName||'').toLowerCase().indexOf(q)>=0
-      ||String(m.id||'').indexOf(q)>=0
-      ||(m.phone||'').indexOf(q)>=0;
-  }).sort(function(a,b){ return parseInt(a.unit||a.id||0)-parseInt(b.unit||b.id||0); });
-  document.getElementById('mem-count').textContent = filtered.length+' member'+(filtered.length!==1?'s':'');
-  var el = document.getElementById('mem-list');
-  if (!filtered.length) { el.innerHTML='<div class="empty"><div class="empty-icon">[user]</div><div class="empty-text">No members found</div></div>'; return; }
-  el.innerHTML = filtered.map(function(m) {
-    var unit  = m.unit||m.id||'?';
-    var name  = m.name||((m.firstName||'')+' '+(m.lastName||'')).trim()||'Unknown';
-    var phone = m.phone||'';
-    var digits= phone.replace(/\D/g,'');
-    var href  = digits ? 'tel:+1'+digits : '#';
+// MEMBERS
+function renderMembers(){
+  var q=(document.getElementById('mem-search').value||'').toLowerCase().trim();
+  var filtered=members.filter(function(m){
+    if(!q) return true;
+    return (m.name||'').toLowerCase().indexOf(q)>=0||(m.firstName||'').toLowerCase().indexOf(q)>=0||(m.lastName||'').toLowerCase().indexOf(q)>=0||String(m.id||'').indexOf(q)>=0||(m.phone||'').indexOf(q)>=0;
+  }).sort(function(a,b){return parseInt(a.unit||a.id||0)-parseInt(b.unit||b.id||0);});
+  document.getElementById('mem-count').textContent=filtered.length+' member'+(filtered.length!==1?'s':'');
+  var el=document.getElementById('mem-list');
+  if(!filtered.length){el.innerHTML='<div class="empty"><div class="empty-icon">👤</div><div class="empty-text">No members found</div></div>';return;}
+  el.innerHTML=filtered.map(function(m){
+    var unit=m.unit||m.id||'?';
+    var name=m.name||((m.firstName||'')+' '+(m.lastName||'')).trim()||'Unknown';
+    var phone=m.phone||'';
+    var digits=phone.replace(/\D/g,'');
     return '<div class="mem-card">'
       +'<div class="mem-av">'+esc(String(unit).padStart(2,'0'))+'</div>'
-      +'<div class="mem-info"><div class="mem-name">'+esc(name)+'</div><div class="mem-sub">BC-'+esc(unit)+(phone?' ? '+esc(phone):'')+'</div></div>'
-      +(phone?'<a class="mem-call" href="'+href+'">[call]</a>':'')
+      +'<div style="flex:1;min-width:0"><div class="mem-name">'+esc(name)+'</div><div class="mem-sub">BC-'+esc(unit)+(phone?' · '+esc(phone):'')+'</div></div>'
+      +(phone?'<a class="mem-call" href="tel:+1'+digits+'">📞</a>':'')
       +'</div>';
   }).join('');
 }
 
-// ?? Admin ????????????????????????????????????????????????????????
-function renderAdmin() {
-  var ll = document.getElementById('loc-list');
-  ll.innerHTML = locations.map(function(loc,i) {
-    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">'
-      +'<span style="font-size:13px;color:var(--text)">'+esc(loc)+'</span>'
-      +'<button class="btn btn-ghost btn-sm" onclick="removeLoc('+i+')" style="padding:4px 8px;font-size:11px">?</button></div>';
+// ADMIN
+function renderAdmin(){
+  document.getElementById('loc-list').innerHTML=locations.map(function(loc,i){
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f0f0f0">'
+      +'<span style="font-size:14px">'+esc(loc)+'</span>'
+      +'<button class="btn btn-ghost btn-sm" onclick="removeLoc('+i+')" style="padding:4px 10px;font-size:12px">Remove</button></div>';
   }).join('');
-  var al = document.getElementById('add-loc');
-  al.innerHTML = locations.map(function(l){ return '<option value="'+esc(l)+'">'+esc(l)+'</option>'; }).join('');
-  document.getElementById('adm-mem-count').textContent = members.length;
-  var ml = document.getElementById('adm-mem-list');
-  if (!members.length) { ml.innerHTML='<div class="empty" style="padding:1rem 0"><div class="empty-text">No members loaded</div></div>'; return; }
-  ml.innerHTML = members.slice(0,50).map(function(m) {
-    var unit=m.unit||m.id||'?', name=m.name||((m.firstName||'')+' '+(m.lastName||'')).trim();
+  var al=document.getElementById('add-loc');
+  al.innerHTML=locations.map(function(l){return '<option value="'+esc(l)+'">'+esc(l)+'</option>';}).join('');
+  document.getElementById('adm-mem-count').textContent=members.length;
+  var ml=document.getElementById('adm-mem-list');
+  if(!members.length){ml.innerHTML='<div style="padding:10px 0;color:#888;font-size:14px">No members loaded</div>';return;}
+  ml.innerHTML=members.slice(0,50).map(function(m){
+    var unit=m.unit||m.id||'?',name=m.name||((m.firstName||'')+' '+(m.lastName||'')).trim();
     return '<div class="mem-row"><div class="mem-num">'+esc(unit)+'</div>'
-      +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--text)">'+esc(name)+'</div>'
-      +'<div style="font-size:11px;color:var(--text2)">'+esc(m.phone||'')+'</div></div></div>';
+      +'<div><div style="font-size:14px;font-weight:600">'+esc(name)+'</div><div style="font-size:12px;color:#666">'+esc(m.phone||'')+'</div></div></div>';
   }).join('');
-  if (members.length>50) ml.innerHTML+='<div style="text-align:center;padding:8px;font-size:12px;color:var(--text2)">+'+(members.length-50)+' more</div>';
+  if(members.length>50) ml.innerHTML+='<div style="padding:8px;font-size:12px;color:#888;text-align:center">+'+(members.length-50)+' more</div>';
 }
-function addItem() {
+function addItem(){
   var name=document.getElementById('add-name').value.trim();
   var loc=document.getElementById('add-loc').value;
-  if (!name) { alert('Please enter an item name.'); return; }
+  if(!name){alert('Please enter an item name.');return;}
   showLoad(true);
-  postJ({action:'addItem', name:name, location:loc})
-  .then(function(data) {
-    if (data.success) {
-      items.push({row:data.row,name:name,homeLocation:loc,status:'IN',equipStatus:'OK',isCNC:false,cncNote:'',ccnc:'CC',member:'',call:'',lastUpdated:''});
-      document.getElementById('add-name').value='';
-      updateStats(); renderInventory(); populateRptItems();
-      showToast('V Item added + QR generated');
-    } else { showToast('[!] '+(data.error||'Error')); }
-  }).catch(function(){ showToast('[!] Network error'); })
-  .finally(function(){ showLoad(false); });
+  postJ({action:'addItem',name:name,location:loc}).then(function(data){
+    if(data.success){items.push({row:data.row,name:name,homeLocation:loc,status:'IN',equipStatus:'OK',isCNC:false,cncNote:'',ccnc:'CC',member:'',call:'',lastUpdated:''});document.getElementById('add-name').value='';updateStats();renderInventory();populateRptItems();showToast('Item added');}
+    else{showToast('Error: '+(data.error||'Unknown'));}
+  }).catch(function(){showToast('Network error');}).finally(function(){showLoad(false);});
 }
-function addLoc() {
-  var v=document.getElementById('new-loc').value.trim();
-  if (!v||locations.indexOf(v)>=0) return;
-  locations.push(v);
-  document.getElementById('new-loc').value='';
-  saveLocs(); renderAdmin();
-}
-function removeLoc(i) { locations.splice(i,1); saveLocs(); renderAdmin(); }
-function saveLocs() { postJ({action:'updateLocations',locations:locations}).catch(function(){}); }
-function addMember() {
+function addLoc(){var v=document.getElementById('new-loc').value.trim();if(!v||locations.indexOf(v)>=0) return;locations.push(v);document.getElementById('new-loc').value='';saveLocs();renderAdmin();}
+function removeLoc(i){locations.splice(i,1);saveLocs();renderAdmin();}
+function saveLocs(){postJ({action:'updateLocations',locations:locations}).catch(function(){});}
+function addMember(){
   var mid=document.getElementById('add-mid').value.trim();
   var fn=document.getElementById('add-fname').value.trim();
   var ln=document.getElementById('add-lname').value.trim();
   var ph=document.getElementById('add-phone').value.trim();
-  if (!mid||!fn||!ln) { alert('Please fill in BC#, first and last name.'); return; }
+  if(!mid||!fn||!ln){alert('Please fill in BC#, first and last name.');return;}
   showLoad(true);
-  postJ({action:'addMember',memberId:mid,firstName:fn,lastName:ln,phone:ph})
-  .then(function(data) {
-    if (data.success) {
-      members.push({id:mid,unit:mid,firstName:fn,lastName:ln,name:fn+' '+ln,phone:ph});
-      document.getElementById('add-mid').value='';
-      document.getElementById('add-fname').value='';
-      document.getElementById('add-lname').value='';
-      document.getElementById('add-phone').value='';
-      renderAdmin(); renderMembers();
-      showToast('V Member added');
-    } else { showToast('[!] '+(data.error||'Error')); }
-  }).catch(function(){ showToast('[!] Network error'); })
-  .finally(function(){ showLoad(false); });
+  postJ({action:'addMember',memberId:mid,firstName:fn,lastName:ln,phone:ph}).then(function(data){
+    if(data.success){members.push({id:mid,unit:mid,firstName:fn,lastName:ln,name:fn+' '+ln,phone:ph});document.getElementById('add-mid').value='';document.getElementById('add-fname').value='';document.getElementById('add-lname').value='';document.getElementById('add-phone').value='';renderAdmin();renderMembers();showToast('Member added');}
+    else{showToast('Error: '+(data.error||'Unknown'));}
+  }).catch(function(){showToast('Network error');}).finally(function(){showLoad(false);});
 }
 
-// ?? Helpers ??????????????????????????????????????????????????????
-function showLoad(v) { document.getElementById('loading').classList.toggle('hidden',!v); }
+// HELPERS
+function showLoad(v){document.getElementById('loading').className=v?'show':'';}
 var toastTimer;
-function showToast(msg) {
-  var el=document.getElementById('toast');
-  el.textContent=msg; el.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer=setTimeout(function(){ el.classList.remove('show'); },2800);
-}
-function esc(v) {
-  return (v||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+function showToast(msg){var el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(function(){el.classList.remove('show');},2800);}
+function esc(v){return (v||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
-// ?? Boot ?????????????????????????????????????????????????????????
+// BOOT
 (function(){
-  if (localStorage.getItem('cobc_pin_ok')==='1') {
+  if(localStorage.getItem('cobc_pin_ok')==='1'){
     document.getElementById('pin-gate').classList.add('hidden');
     document.getElementById('app').style.display='flex';
     loadData();
