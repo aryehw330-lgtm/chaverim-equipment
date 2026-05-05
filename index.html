@@ -869,7 +869,7 @@ function renderAdmin(){
       var unit=m.unit||m.id||'?',name=m.name||((m.firstName||'')+' '+(m.lastName||'')).trim();
       return '<div class="mem-row"><div class="mem-num">'+esc(unit)+'</div>'
         +'<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600">'+esc(name)+'</div><div style="font-size:12px;color:#666">'+esc(m.phone||'')+'</div></div>'
-        +'<button onclick="deleteMember(''+esc(String(m.id||m.unit))+'')" style="padding:5px 10px;font-size:12px;font-weight:600;border:1.5px solid #ffcdd2;background:#fdecea;color:#c0392b;border-radius:7px;cursor:pointer;flex-shrink:0">Delete</button>'
+        +'<button onclick="deleteMember(&quot;'+esc(String(m.id||m.unit))+'&quot;)" style="padding:5px 10px;font-size:12px;font-weight:600;border:1.5px solid #ffcdd2;background:#fdecea;color:#c0392b;border-radius:7px;cursor:pointer;flex-shrink:0">Delete</button>'
         +'</div>';
     }).join('');
 }
