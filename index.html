@@ -761,35 +761,71 @@ function renderChkItems() {
   document.getElementById('chk-issues').textContent=iss;
   document.getElementById('wa-btn').style.display=chk>0?'block':'none';
   document.getElementById('chk-list').innerHTML=li.map(function(it){
-    var isC=!!checked[it.row];
-    var sb=it.status==='OUT'?'<span class="badge badge-out">OUT</span>':'';
-    var eb=getEB(it.equipStatus);
-    var cb=it.isCNC?'<span class="badge badge-cnc">CNC</span>':'';
-    return '<div class="chk-card">'
-      +'<div class="chk-box '+(isC?'checked':'')+'" onclick="toggleChk('+it.row+',this)">'+(isC?'✓':'')+'</div>'
-      +'<div style="flex:1;min-width:0"><div class="chk-name">'+esc(it.name)+'</div>'
-      +'<div class="chk-meta">'+(it.isCNC?'📍 '+esc(it.cncNote||it.ccnc):(it.lastUpdated||'Not yet checked'))+'</div></div>'
-      +'<div style="display:flex;gap:4px">'+sb+eb+cb+'</div></div>';
+    var st=chkStatus[it.row]||'';
+    var noteVal=chkNotes[it.row]||'';
+    var stColors={'OK':'#2e7d32','Missing':'#c0392b','Missing Part':'#e65100','Damaged':'#f57f17','Need More':'#1565c0','Not Active':'#888'};
+    var stLabel=st?'<span style="font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;background:'+(st==='OK'?'#e8f5e9':st==='Missing'||st==='Missing Part'?'#fdecea':st==='Damaged'?'#fff8e1':st==='Need More'?'#e3f2fd':'#f5f5f5')+';color:'+(stColors[st]||'#333')+'">'+esc(st)+'</span>':'';
+    var noteHtml=(st&&st!=='OK')?'<div style="margin-top:6px"><input type="text" placeholder="Describe issue (optional)..." value="'+esc(noteVal)+'" oninput="chkNotes['+it.row+']=this.value" style="font-size:13px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;width:100%"/></div>':'';
+    var btns=['OK','Missing','Missing Part','Damaged','Need More','Not Active'].map(function(s){
+      var active=st===s;
+      var col=stColors[s]||'#333';
+      return '<button onclick="setChkStatus('+it.row+',&quot;'+s+'&quot;)" style="flex:1;min-width:0;padding:6px 2px;font-size:10px;font-weight:700;border:2px solid '+(active?col:'#ddd')+';border-radius:7px;background:'+(active?col:'#fff')+';color:'+(active?'#fff':'#666')+';cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+s+'</button>';
+    }).join('');
+    return '<div class="chk-card" style="flex-direction:column;align-items:stretch;gap:0">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">'
+      +'<div style="font-size:14px;font-weight:700;color:#1a1a1a;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(it.name)+'</div>'
+      +'<div style="font-size:11px;color:#888;flex-shrink:0">'+(it.lastUpdated?fmtTime(it.lastUpdated):'')+' '+stLabel+'</div></div>'
+      +'<div style="display:flex;gap:4px">'+btns+'</div>'
+      +noteHtml+'</div>';
   }).join('');
 }
-function toggleChk(row,el) {
-  checked[row]=!checked[row];
-  el.classList.toggle('checked',!!checked[row]);
-  el.textContent=checked[row]?'✓':'';
+// chkStatus and chkNotes store per-item selections
+var chkStatus={}, chkNotes={};
+function setChkStatus(row, status) {
+  chkStatus[row]=status;
+  if(status==='OK') chkNotes[row]='';
+  // Update sheet col K
+  var sheetStatuses=['OK','Missing','Damaged','Need More','Not Active'];
+  var note=chkNotes[row]||'';
+  // Map "Missing Part" to "Missing" for sheet
+  var sheetStatus=status==='Missing Part'?'Missing':status;
+  if(sheetStatuses.indexOf(sheetStatus)>=0){
+    postJ({action:'updateEquipmentStatus',row:row,status:sheetStatus,note:note,resetNote:status==='OK'})
+    .then(function(data){
+      if(data.success){
+        var idx=items.findIndex(function(i){return i.row===row;});
+        if(idx>=0){items[idx].equipStatus=sheetStatus;if(status==='OK')items[idx].ccnc='CC';}
+        updateStats();
+      }
+    }).catch(function(){});
+  }
   renderChkItems();
 }
 function sendWA() {
   if(!curLoc) return;
   var li=items.filter(function(i){return i.homeLocation===curLoc && i.equipStatus!=='Not Active';});
-  var chk=li.filter(function(i){return !!checked[i.row];});
-  var iss=li.filter(function(i){return i.isCNC||i.equipStatus==='Missing'||i.equipStatus==='Damaged';});
+  var done=li.filter(function(i){return !!chkStatus[i.row];});
+  var issues=li.filter(function(i){return chkStatus[i.row]&&chkStatus[i.row]!=='OK';});
+  var unchecked=li.filter(function(i){return !chkStatus[i.row];});
   var out=li.filter(function(i){return i.status==='OUT';});
   var msg='*COBC Equipment Check — '+curLoc+'*\n';
-  msg+='📅 '+new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+'\n\n';
-  msg+='✅ *Checked:* '+chk.length+'/'+li.length+' items\n';
-  if(iss.length){msg+='\n⚠️ *Issues ('+iss.length+'):*\n';iss.forEach(function(it){msg+='• '+it.name+' — '+(it.equipStatus==='Missing'?'MISSING':it.equipStatus==='Damaged'?'DAMAGED':'CNC: '+(it.cncNote||it.ccnc))+'\n';});}
-  else{msg+='\n✅ No issues found';}
-  if(out.length){msg+='\n\n📤 *Currently OUT ('+out.length+'):*\n';out.forEach(function(it){msg+='• '+it.name+(it.member?' (BC-'+it.member+')':'')+'\n';});}
+  msg+='Date: '+new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+'\n\n';
+  msg+='Checked: '+done.length+'/'+li.length+' items\n';
+  if(issues.length){
+    msg+='\nISSUES ('+issues.length+'):\n';
+    issues.forEach(function(it){
+      var note=chkNotes[it.row]?(' - '+chkNotes[it.row]):'';
+      msg+='• '+it.name+' — '+chkStatus[it.row]+note+'\n';
+    });
+  } else { msg+='\nNo issues found'; }
+  if(unchecked.length){
+    msg+='\n\nNot checked ('+unchecked.length+'):\n';
+    unchecked.forEach(function(it){msg+='• '+it.name+'\n';});
+  }
+  if(out.length){
+    msg+='\n\nCurrently OUT ('+out.length+'):\n';
+    out.forEach(function(it){msg+='• '+it.name+(it.member?' (BC-'+it.member+')':'')+'\n';});
+  }
   window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
 }
 
