@@ -878,7 +878,7 @@ function renderMembers(){
   var filtered=members.filter(function(m){
     if(!q) return true;
     return (m.name||'').toLowerCase().indexOf(q)>=0||(m.firstName||'').toLowerCase().indexOf(q)>=0||(m.lastName||'').toLowerCase().indexOf(q)>=0||String(m.id||'').indexOf(q)>=0||(m.phone||'').indexOf(q)>=0;
-  }).sort(function(a,b){return parseInt(a.unit||a.id||0)-parseInt(b.unit||b.id||0);});
+  }).sort(function(a,b){return parseInt((a.unit||a.id||'0').toString().replace(/^BC-/i,''))-parseInt((b.unit||b.id||'0').toString().replace(/^BC-/i,''));});
   document.getElementById('mem-count').textContent=filtered.length+' member'+(filtered.length!==1?'s':'');
   var el=document.getElementById('mem-list');
   if(!filtered.length){el.innerHTML='<div class="empty"><div class="empty-icon">👤</div><div class="empty-text">No members found</div></div>';return;}
@@ -915,7 +915,7 @@ function renderAdmin(){
     if(!sq) return true;
     var name=m.name||((m.firstName||'')+' '+(m.lastName||'')).trim();
     return name.toLowerCase().indexOf(sq)>=0 || String(m.id||'').indexOf(sq)>=0 || String(m.unit||'').indexOf(sq)>=0 || (m.phone||'').indexOf(sq)>=0;
-  }).sort(function(a,b){return parseInt(a.unit||a.id||0)-parseInt(b.unit||b.id||0);});
+  }).sort(function(a,b){return parseInt((a.unit||a.id||'0').toString().replace(/^BC-/i,''))-parseInt((b.unit||b.id||'0').toString().replace(/^BC-/i,''));});
   ml.innerHTML='<div style="margin-bottom:10px"><input id="adm-mem-search" type="text" placeholder="Search members..." value="'+esc(sq)+'" oninput="renderAdmin()" style="font-size:14px;padding:10px 12px"/></div>'
     +filtered.map(function(m){
       var unit=m.unit||m.id||'?',name=m.name||((m.firstName||'')+' '+(m.lastName||'')).trim();
