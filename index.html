@@ -446,7 +446,7 @@ textarea{resize:vertical;min-height:70px}
 </div>
 
 <script>
-const BASE_URL   = 'https://script.google.com/macros/s/AKfycbyNxICWIl22RRp-iQmGdUERpyY5WafWiGcziXucTfjY-NyQPDsTk2U7crfwtulEfyGGQQ/exec';
+const BASE_URL   = 'https://script.google.com/macros/s/AKfycbxqN2njVjCicFkbAU0aTNjrmSzGAstBIcHau9y1JJ8RSwX5C8HQ0j4YvXv8o6HtYA-ynQ/exec';
 const MAIN_PIN   = '4357';
 const ADMIN_PASS = 'cobc2026';
 
@@ -616,10 +616,25 @@ function parseTs(s) { try{var d=new Date(s);return isNaN(d)?0:d.getTime();}catch
 function fmtTime(s) {
   if (!s) return '';
   try {
+    // Apps Script returns format like "5/4/26 8:22 PM"
+    // Clean it up for display: "May 4, 2026 · 8:22 PM"
     var d = new Date(s);
-    if (isNaN(d)) return s;
-    return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})
-      + ' · ' + d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+    if (!isNaN(d)) {
+      return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})
+        + ' · ' + d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+    }
+    // Fallback: manually parse M/d/yy h:mm a
+    var m = s.match(/(\d+)\/(\d+)\/(\d+)\s+(\d+):(\d+)\s+(AM|PM)/i);
+    if (m) {
+      var mo=parseInt(m[1])-1, dy=parseInt(m[2]), yr=parseInt(m[3])+2000;
+      var hr=parseInt(m[4]), mn=parseInt(m[5]), ampm=m[6].toUpperCase();
+      if (ampm==='PM' && hr!==12) hr+=12;
+      if (ampm==='AM' && hr===12) hr=0;
+      var d2 = new Date(yr,mo,dy,hr,mn);
+      return d2.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})
+        + ' · ' + d2.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+    }
+    return s;
   } catch(e) { return s; }
 }
 
@@ -650,7 +665,7 @@ function renderInventory() {
     var fl = it.equipStatus==='Missing'?'fl-miss':it.equipStatus==='Damaged'?'fl-dmg':it.isCNC?'fl-cnc':'';
     return '<div class="inv-card '+fl+'">'
       +'<div class="inv-top"><div class="inv-name">'+esc(it.name)+'</div><div class="inv-badges">'+sb+eb+cb+'</div></div>'
-      +'<div class="inv-meta">📍 '+esc(it.homeLocation)+(it.member?' · BC-'+esc(it.member):'')+(it.lastUpdated?' · '+it.lastUpdated:'')+'</div>'
+      +'<div class="inv-meta">📍 '+esc(it.homeLocation)+(it.member?' · BC-'+esc(it.member):'')+(it.lastUpdated?' · '+fmtTime(it.lastUpdated):'')+'</div>'
       +(it.isCNC?'<div class="inv-cnc">📍 '+esc(it.cncNote||it.ccnc)+'</div>':'')
       +'<div class="inv-actions"><button class="btn-in" onclick="openCheckout('+it.row+')">✓ Check IN</button><button class="btn-out" onclick="openCheckout('+it.row+', &quot;OUT&quot;)">↓ Check OUT</button></div>'
       +((['Missing','Damaged','Need More'].indexOf(it.equipStatus)>=0)?'<div style="margin-top:6px"><button class="btn-reset" onclick="resetStatus('+it.row+')">↺ Mark as OK</button></div>':'')
@@ -841,12 +856,35 @@ function renderAdmin(){
   document.getElementById('adm-mem-count').textContent=members.length;
   var ml=document.getElementById('adm-mem-list');
   if(!members.length){ml.innerHTML='<div style="padding:10px 0;color:#888;font-size:14px">No members loaded</div>';return;}
-  ml.innerHTML=members.slice(0,50).map(function(m){
-    var unit=m.unit||m.id||'?',name=m.name||((m.firstName||'')+' '+(m.lastName||'')).trim();
-    return '<div class="mem-row"><div class="mem-num">'+esc(unit)+'</div>'
-      +'<div><div style="font-size:14px;font-weight:600">'+esc(name)+'</div><div style="font-size:12px;color:#666">'+esc(m.phone||'')+'</div></div></div>';
-  }).join('');
-  if(members.length>50) ml.innerHTML+='<div style="padding:8px;font-size:12px;color:#888;text-align:center">+'+(members.length-50)+' more</div>';
+  // Add search box above list if not already there
+  var searchBox = document.getElementById('adm-mem-search');
+  var sq = searchBox ? searchBox.value.toLowerCase().trim() : '';
+  var filtered = members.filter(function(m){
+    if(!sq) return true;
+    var name=m.name||((m.firstName||'')+' '+(m.lastName||'')).trim();
+    return name.toLowerCase().indexOf(sq)>=0 || String(m.id||'').indexOf(sq)>=0 || String(m.unit||'').indexOf(sq)>=0 || (m.phone||'').indexOf(sq)>=0;
+  }).sort(function(a,b){return parseInt(a.unit||a.id||0)-parseInt(b.unit||b.id||0);});
+  ml.innerHTML='<div style="margin-bottom:10px"><input id="adm-mem-search" type="text" placeholder="Search members..." value="'+esc(sq)+'" oninput="renderAdmin()" style="font-size:14px;padding:10px 12px"/></div>'
+    +filtered.map(function(m){
+      var unit=m.unit||m.id||'?',name=m.name||((m.firstName||'')+' '+(m.lastName||'')).trim();
+      return '<div class="mem-row"><div class="mem-num">'+esc(unit)+'</div>'
+        +'<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600">'+esc(name)+'</div><div style="font-size:12px;color:#666">'+esc(m.phone||'')+'</div></div>'
+        +'<button onclick="deleteMember(''+esc(String(m.id||m.unit))+'')" style="padding:5px 10px;font-size:12px;font-weight:600;border:1.5px solid #ffcdd2;background:#fdecea;color:#c0392b;border-radius:7px;cursor:pointer;flex-shrink:0">Delete</button>'
+        +'</div>';
+    }).join('');
+}
+function deleteMember(memberId) {
+  if (!confirm('Delete member BC-'+memberId+'? This cannot be undone.')) return;
+  showLoad(true);
+  postJ({action:'deleteMember', memberId:memberId})
+  .then(function(data){
+    if(data.success){
+      members = members.filter(function(m){ return String(m.id||m.unit) !== String(memberId); });
+      renderAdmin(); renderMembers();
+      showToast('Member deleted');
+    } else { showToast('Error: '+(data.error||'Unknown')); }
+  }).catch(function(){ showToast('Network error'); })
+  .finally(function(){ showLoad(false); });
 }
 function addItem(){
   var name=document.getElementById('add-name').value.trim();
