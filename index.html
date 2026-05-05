@@ -1230,6 +1230,16 @@ function toggleAdm(titleEl) {
   if (body) body.classList.toggle('open');
 }
 
+// LOGOUT
+function logout() {
+  localStorage.removeItem('cobc_level');
+  userLevel = 0;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('pin-gate').classList.remove('hidden');
+  document.getElementById('pin-input').value = '';
+  document.getElementById('pin-error').textContent = '';
+}
+
 // HELPERS
 function showLoad(v){document.getElementById('loading').className=v?'show':'';}
 var toastTimer;
