@@ -494,31 +494,62 @@ textarea{resize:vertical;min-height:70px}
 
 <script>
 const BASE_URL   = 'https://script.google.com/macros/s/AKfycbyBdrrcWUuQvFKb6qZyQBMU0aVpkbWKiHpsgBRZsiDN429d8w1gTra43lEFlXUM00AZzg/exec';
-const MAIN_PIN   = '4357';
-const ADMIN_PASS = 'cobc2026';
+// Access levels: member=1, et=2, admin=3
+const PASSWORDS = {
+  '4357':      1,  // Member
+  'cobcet':    2,  // Equipment Team
+  'cobcadmin': 3   // Admin
+};
+var userLevel = 0; // 0=not logged in, 1=member, 2=ET, 3=admin
 
 var items=[], members=[], locations=['COBC'];
 var curFilter='all', curPage='dashboard', curLoc=null, curCat='all';
 var checked={}, rptType='', modalItem=null;
 var chkStatus={}, chkNotes={}, chkFilter='all';
 var secTarget=null, secPrevPage='dashboard';
-var secUnlocked={admin:false, checklist:false};
+const ADMIN_PASS='cobc2026';
 
 // PIN
 function checkPin() {
-  var v = document.getElementById('pin-input').value;
-  if (v === MAIN_PIN) {
-    localStorage.setItem('cobc_pin_ok','1');
+  var v = document.getElementById('pin-input').value.trim();
+  var level = PASSWORDS[v] || 0;
+  if (level > 0) {
+    userLevel = level;
+    localStorage.setItem('cobc_level', level);
     document.getElementById('pin-gate').classList.add('hidden');
     document.getElementById('app').style.display = 'flex';
+    applyAccessLevel();
     loadData();
   } else {
-    document.getElementById('pin-error').textContent = '✕ Incorrect PIN';
+    document.getElementById('pin-error').textContent = '✕ Incorrect password';
     document.getElementById('pin-input').value = '';
     setTimeout(function(){ document.getElementById('pin-error').textContent=''; }, 2000);
   }
 }
 document.getElementById('pin-input').addEventListener('keydown', function(e){ if(e.key==='Enter') checkPin(); });
+
+function applyAccessLevel() {
+  // Show/hide tabs based on access level
+  // Member (1): Dash, Inventory, Report, Members
+  // ET (2): + Checklist
+  // Admin (3): everything
+  var tabs = {
+    'dashboard': 1,
+    'inventory': 1,
+    'report':    1,
+    'members':   1,
+    'checklist': 2,
+    'admin':     3
+  };
+  document.querySelectorAll('.tab').forEach(function(t){
+    var page = t.dataset.page;
+    var required = tabs[page] || 1;
+    t.style.display = userLevel >= required ? 'flex' : 'none';
+  });
+  // If current page is not accessible, go to dashboard
+  if (curPage === 'checklist' && userLevel < 2) doShowPage('dashboard');
+  if (curPage === 'admin'     && userLevel < 3) doShowPage('dashboard');
+}
 
 // SEC PIN
 function requireSec(page, icon, title, sub) {
@@ -552,8 +583,9 @@ document.getElementById('sec-input').addEventListener('keydown', function(e){ if
 
 // PAGES
 function showPage(page, btn) {
-  if (page==='admin'     && !secUnlocked.admin)     { requireSec('admin','⚙️','Admin Access','Enter the admin password'); return; }
-  if (page==='checklist' && !secUnlocked.checklist) { requireSec('checklist','✅','Checklist Access','Enter the password to continue'); return; }
+  // Access already controlled by login level — just navigate
+  if (page==='admin'     && userLevel < 3) { showToast('Admin access required'); return; }
+  if (page==='checklist' && userLevel < 2) { showToast('Equipment Team access required'); return; }
   doShowPage(page);
 }
 function doShowPage(page) {
@@ -1206,9 +1238,12 @@ function esc(v){return (v||'').toString().replace(/&/g,'&amp;').replace(/</g,'&l
 
 // BOOT
 (function(){
-  if(localStorage.getItem('cobc_pin_ok')==='1'){
+  var savedLevel = parseInt(localStorage.getItem('cobc_level')||'0');
+  if(savedLevel > 0){
+    userLevel = savedLevel;
     document.getElementById('pin-gate').classList.add('hidden');
     document.getElementById('app').style.display='flex';
+    applyAccessLevel();
     loadData();
   }
 })();
