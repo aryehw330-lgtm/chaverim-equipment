@@ -192,8 +192,14 @@ textarea{resize:vertical;min-height:70px}
 .mem-call{width:40px;height:40px;background:#e8f5e9;border:1.5px solid #a5d6a7;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;text-decoration:none;flex-shrink:0}
 
 /* ADMIN */
-.adm-sec{background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-.adm-title{font-size:14px;font-weight:700;color:#1a3a5c;margin-bottom:12px}
+.adm-sec{background:#fff;border-radius:12px;padding:0;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);overflow:hidden}
+.adm-title{font-size:14px;font-weight:700;color:#1a3a5c;padding:14px;margin:0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;border-bottom:1px solid transparent}
+.adm-title:hover{background:#f8fafc}
+.adm-title.open{border-bottom-color:#e0e6ed}
+.adm-title .toggle{font-size:12px;color:#aaa;transition:transform .2s}
+.adm-title.open .toggle{transform:rotate(180deg)}
+.adm-body{display:none;padding:14px}
+.adm-body.open{display:block}
 .mem-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f0f0f0}
 .mem-row:last-child{border-bottom:none}
 .mem-num{width:36px;height:36px;background:#eef3f8;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#1a3a5c;flex-shrink:0}
@@ -395,7 +401,8 @@ textarea{resize:vertical;min-height:70px}
     <!-- ADMIN -->
     <div class="page" id="page-admin">
       <div class="adm-sec">
-        <div class="adm-title">➕ Add New Item</div>
+        <div class="adm-title open" onclick="toggleAdm(this)">➕ Add New Item<span class="toggle">▼</span></div>
+        <div class="adm-body open">
         <div class="input-group">
           <label class="field-label">Item Name</label>
           <input id="add-name" type="text" placeholder="e.g. Fan 21"/>
@@ -413,9 +420,11 @@ textarea{resize:vertical;min-height:70px}
           <input id="new-loc" type="text" placeholder="New location name" style="flex:1"/>
           <button class="btn btn-ghost btn-sm" onclick="addLoc()">Add</button>
         </div>
+        </div>
       </div>
       <div class="adm-sec">
-        <div class="adm-title">👤 Add Member</div>
+        <div class="adm-title" onclick="toggleAdm(this)">👤 Add Member<span class="toggle">▼</span></div>
+        <div class="adm-body">
         <div class="input-group">
           <label class="field-label">BC # (Unit)</label>
           <input id="add-mid" type="text" inputmode="numeric" placeholder="e.g. 42"/>
@@ -452,7 +461,7 @@ textarea{resize:vertical;min-height:70px}
 </div>
 
 <script>
-const BASE_URL   = 'https://script.google.com/macros/s/AKfycbxTsXwnJuLN5OeaFMNrmG-MhW53pkcj2vDpWRDf-qht0HwWjtZrF66_JQtfFC_9Uh_aSg/exec';
+const BASE_URL   = 'https://script.google.com/macros/s/AKfycbzjUN5gCGY227NLC54WXlLWy1jNGXfLutKYVdrg3eV0scRZ-rvUD_oOB7obELRoItjC8Q/exec';
 const MAIN_PIN   = '4357';
 const ADMIN_PASS = 'cobc2026';
 
@@ -578,13 +587,14 @@ function renderDashboard() {
   document.getElementById('dash-alerts').innerHTML = alerts.map(function(it) {
     var cls = (it.equipStatus==='Missing'||it.equipStatus==='Damaged') ? 'red' : '';
     var detail = it.equipStatus==='Missing'?'MISSING':it.equipStatus==='Damaged'?'DAMAGED':it.equipStatus==='Need More'?'NEED MORE':'CNC: '+(it.cncNote||it.ccnc);
-    var hVal = it.ccnc || '';
-    var noteMatch = hVal.match(/^[A-Z ]+\s*-\s*(.+)$/i);
-    var hNote = noteMatch ? noteMatch[1].trim() : '';
+    var equipNote = it.equipNote || '';
+    // Parse note from equipNote col L (format: "DAMAGED - note" or just "DAMAGED")
+    var noteMatch = equipNote.match(/^[A-Z ]+\s*-\s*(.+)$/i);
+    var dispNote = noteMatch ? noteMatch[1].trim() : '';
     return '<div class="alert-card '+cls+'">'
       +'<div class="alert-name">'+esc(it.name)+'</div>'
       +'<div class="alert-detail">'+esc(it.homeLocation)+(it.member?' · BC-'+esc(it.member):'')+' · '+detail+'</div>'
-      +(hNote?'<div style="margin-top:5px;font-size:12px;font-weight:700;color:#c0392b;background:#fff5f5;border-radius:6px;padding:4px 8px">📝 '+esc(hNote)+'</div>':'')
+      +(dispNote?'<div style="margin-top:5px;font-size:12px;font-weight:700;color:#c0392b;background:#fff5f5;border-radius:6px;padding:4px 8px">📝 '+esc(dispNote)+'</div>':'')
       +'</div>';
   }).join('');
 
@@ -777,7 +787,9 @@ function renderChkItems() {
     var noteVal=chkNotes[it.row]||'';
     var stColors={'OK':'#2e7d32','Missing':'#c0392b','Missing Part':'#e65100','Damaged':'#f57f17','Need More':'#1565c0','Not Active':'#888'};
     var stLabel=st?'<span style="font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;background:'+(st==='OK'?'#e8f5e9':st==='Missing'||st==='Missing Part'?'#fdecea':st==='Damaged'?'#fff8e1':st==='Need More'?'#e3f2fd':'#f5f5f5')+';color:'+(stColors[st]||'#333')+'">'+esc(st)+'</span>':'';
-    var sheetNote = (it.ccnc && (it.ccnc.toUpperCase().indexOf('MISSING')===0||it.ccnc.toUpperCase().indexOf('DAMAGED')===0)) ? it.ccnc.replace(/^(MISSING|DAMAGED)\s*-\s*/i,'') : '';
+    var rawNote = it.equipNote || '';
+    var noteFromSheet = rawNote.match(/^[A-Z ]+\s*-\s*(.+)$/i);
+    var sheetNote = noteFromSheet ? noteFromSheet[1].trim() : '';
     var noteHtml=(st&&st!=='OK')?'<div style="margin-top:6px">'
       +(sheetNote&&!noteVal?'<div style="font-size:11px;color:#c0392b;font-weight:600;margin-bottom:4px">Last note: '+esc(sheetNote)+'</div>':'')
       +'<input type="text" placeholder="Describe issue (optional)..." value="'+esc(noteVal||sheetNote)+'" oninput="chkNotes['+it.row+']=this.value" style="font-size:13px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;width:100%"/></div>':''
@@ -807,8 +819,8 @@ function setChkStatus(row, status) {
         var idx=items.findIndex(function(i){return i.row===row;});
         if(idx>=0){
           items[idx].equipStatus=status;
-          if(status==='OK'){ items[idx].ccnc='CC'; }
-          else if(note){ items[idx].ccnc=status.toUpperCase()+' - '+note; }
+          if(status==='OK'){ items[idx].equipNote=''; }
+          else { items[idx].equipNote=note?status.toUpperCase()+' - '+note:status.toUpperCase(); }
         }
         updateStats(); renderDashboard();
       }
@@ -989,6 +1001,7 @@ function renderAdminItems() {
       + '<div style="flex:1;min-width:0">'
       + '<div style="font-size:13px;font-weight:600;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(it.name)+'</div>'
       + '<div style="font-size:11px;color:#888">'+esc(it.homeLocation)+(isActive?'':' · <span style="color:#c0392b;font-weight:600">Not Active</span>')+'</div>'
+      + (it.equipNote?'<div style="font-size:11px;color:#c0392b;font-weight:600;margin-top:2px">📝 '+esc(it.equipNote)+'</div>':'')
       + '</div>'
       + '<button onclick="toggleItemActive('+it.row+','+(!isActive)+')" style="flex-shrink:0;padding:6px 11px;font-size:12px;font-weight:700;border-radius:8px;cursor:pointer;border:2px solid '+(isActive?'#c0392b':'#2e7d32')+';background:'+(isActive?'#fdecea':'#e8f5e9')+';color:'+(isActive?'#c0392b':'#2e7d32')+'">'
       + (isActive ? 'Set Not Active' : 'Reactivate')
@@ -1010,6 +1023,13 @@ function toggleItemActive(row, makeActive) {
     } else { showToast('Error: '+(data.error||'Unknown')); }
   }).catch(function(){ showToast('Network error'); })
   .finally(function(){ showLoad(false); });
+}
+
+// ADMIN COLLAPSIBLE
+function toggleAdm(titleEl) {
+  titleEl.classList.toggle('open');
+  var body = titleEl.nextElementSibling;
+  if (body) body.classList.toggle('open');
 }
 
 // HELPERS
