@@ -605,7 +605,7 @@ function renderDashboard() {
     var dispNote = noteMatch ? noteMatch[1].trim() : '';
     return '<div class="alert-card '+cls+'">'
       +'<div class="alert-name">'+esc(it.name)+'</div>'
-      +'<div class="alert-detail">'+esc(it.homeLocation)+(it.member?' · BC-'+esc(it.member):'')+' · '+detail+'</div>'
+      +'<div class="alert-detail">'+esc(it.homeLocation)+(it.member?' · BC-'+esc(it.member):'')+(it.call?' · Call #'+esc(it.call):'')+' · '+detail+'</div>'
       +(dispNote?'<div style="margin-top:5px;font-size:12px;font-weight:700;color:#c0392b;background:#fff5f5;border-radius:6px;padding:4px 8px">📝 '+esc(dispNote)+'</div>':'')
       +'</div>';
   }).join('');
@@ -699,7 +699,7 @@ function renderInventory() {
     var fl = it.equipStatus==='Missing'?'fl-miss':it.equipStatus==='Damaged'?'fl-dmg':it.isCNC?'fl-cnc':'';
     return '<div class="inv-card '+fl+'">'
       +'<div class="inv-top"><div class="inv-name">'+esc(it.name)+'</div><div class="inv-badges">'+sb+eb+cb+'</div></div>'
-      +'<div class="inv-meta">📍 '+esc(it.homeLocation)+(it.member?' · BC-'+esc(it.member):'')+(it.lastUpdated?' · '+fmtTime(it.lastUpdated):'')+'</div>'
+      +'<div class="inv-meta">📍 '+esc(it.homeLocation)+(it.member?' · BC-'+esc(it.member):'')+(it.call?' · Call #'+esc(it.call):'')+(it.lastUpdated?' · '+fmtTime(it.lastUpdated):'')+'</div>'
       +(it.isCNC?'<div class="inv-cnc">📍 '+esc(it.cncNote||it.ccnc)+'</div>':'')
       +'<div class="inv-actions"><button class="btn-in" onclick="openCheckout('+it.row+')">✓ Check IN</button><button class="btn-out" onclick="openCheckout('+it.row+', &quot;OUT&quot;)">↓ Check OUT</button></div>'
       +((['Missing','Damaged','Need More'].indexOf(it.equipStatus)>=0)?'<div style="margin-top:6px"><button class="btn-reset" onclick="resetStatus('+it.row+')">↺ Mark as OK</button></div>':'')
