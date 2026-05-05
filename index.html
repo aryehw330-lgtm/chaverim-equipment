@@ -720,12 +720,13 @@ function fmtTime(s) {
 
 // INVENTORY
 // Known equipment categories — items not matching any go to 'Other'
-var KNOWN_CATS = ['Fan','Heater','Light Tower','Shop Vac','A/C','EZ Spare','Generator','Wheel Chair Ramp','Sump Pump'];
+var KNOWN_CATS = ['Fan','Heater','Light Tower','Shop Vac','A/C','EZ Spare','EZ-Spare','Generator','Wheel Chair Ramp','Sump Pump'];
 
 function getCat(name) {
-  var n = (name||'').toLowerCase();
-  for (var i=0; i<KNOWN_CATS.length; i++) {
-    if (n.indexOf(KNOWN_CATS[i].toLowerCase()) >= 0) return KNOWN_CATS[i];
+  var n = (name||'').toLowerCase().replace(/-/g,' ');
+  var cats = ['Fan','Heater','Light Tower','Shop Vac','A/C','EZ Spare','Generator','Wheel Chair Ramp','Sump Pump'];
+  for (var i=0; i<cats.length; i++) {
+    if (n.indexOf(cats[i].toLowerCase().replace(/-/g,' ')) >= 0) return cats[i];
   }
   return 'Other';
 }
