@@ -482,7 +482,7 @@ textarea{resize:vertical;min-height:70px}
         <div class="adm-title open" onclick="toggleAdm(this)">📦 Equipment Status (<span id="adm-item-count">0</span>)<span class="toggle">▼</span></div>
         <div class="adm-body open">
           <div class="search-wrap" style="margin-bottom:10px"><span class="search-icon">🔍</span><input id="adm-item-search" type="text" placeholder="Search items..." oninput="renderAdminItems()" style="padding-left:36px;font-size:14px"/></div>
-          <div style="display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;scrollbar-width:none"><button class="fchip active" onclick="setAdmFilter('all',this)">All</button><button class="fchip" onclick="setAdmFilter('active',this)">Active</button><button class="fchip" onclick="setAdmFilter('inactive',this)">Not Active</button></div>
+          <div style="display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;scrollbar-width:none"><button class="fchip active" onclick="setAdmFilter('all',this)">All</button><button class="fchip" onclick="setAdmFilter('active',this)">Active</button><button class="fchip" onclick="setAdmFilter('missing',this)">Missing</button><button class="fchip" onclick="setAdmFilter('damaged',this)">Damaged</button><button class="fchip" onclick="setAdmFilter('needmore',this)">Need More</button><button class="fchip" onclick="setAdmFilter('inactive',this)">Not Active</button></div>
           <div id="adm-item-list"></div>
         </div>
       </div>
@@ -1097,6 +1097,9 @@ function renderAdminItems() {
   var filtered = items.filter(function(it) {
     if (q && it.name.toLowerCase().indexOf(q) < 0) return false;
     if (admItemFilter === 'active')   return it.equipStatus !== 'Not Active';
+    if (admItemFilter === 'missing')  return it.equipStatus === 'Missing';
+    if (admItemFilter === 'damaged')  return it.equipStatus === 'Damaged';
+    if (admItemFilter === 'needmore') return it.equipStatus === 'Need More';
     if (admItemFilter === 'inactive') return it.equipStatus === 'Not Active';
     return true;
   }).sort(function(a,b){ return a.name.localeCompare(b.name); });
