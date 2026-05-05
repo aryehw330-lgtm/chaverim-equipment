@@ -473,7 +473,7 @@ textarea{resize:vertical;min-height:70px}
 </div>
 
 <script>
-const BASE_URL   = 'https://script.google.com/macros/s/AKfycbzjUN5gCGY227NLC54WXlLWy1jNGXfLutKYVdrg3eV0scRZ-rvUD_oOB7obELRoItjC8Q/exec';
+const BASE_URL   = 'https://script.google.com/macros/s/AKfycby403T9CdeNeMKQd-9Ia30y-OMALPe5keGe-gyDIWlRUzEpWIt8Q-_UBGR53nppUO_cCA/exec';
 const MAIN_PIN   = '4357';
 const ADMIN_PASS = 'cobc2026';
 
@@ -804,7 +804,7 @@ function renderChkItems() {
     var sheetNote = noteFromSheet ? noteFromSheet[1].trim() : '';
     var noteHtml=(st&&st!=='OK')?'<div style="margin-top:6px">'
       +(sheetNote&&!noteVal?'<div style="font-size:11px;color:#c0392b;font-weight:600;margin-bottom:4px">Last note: '+esc(sheetNote)+'</div>':'')
-      +'<input type="text" placeholder="Describe issue (optional)..." value="'+esc(noteVal||sheetNote)+'" oninput="chkNotes['+it.row+']=this.value" style="font-size:13px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;width:100%"/></div>':''
+      +'<input type="text" placeholder="Describe issue (optional)..." value="'+esc(noteVal||sheetNote)+'" oninput="chkNotes['+it.row+']=this.value;saveChkNote('+it.row+')" style="font-size:13px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;width:100%"/></div>':''
     var btns=['OK','Missing','Damaged','Need More','Not Active'].map(function(s){
       var active=st===s;
       var col=stColors[s]||'#333';
@@ -832,13 +832,25 @@ function setChkStatus(row, status) {
         if(idx>=0){
           items[idx].equipStatus=status;
           if(status==='OK'){ items[idx].equipNote=''; }
-          else { items[idx].equipNote=note?status.toUpperCase()+' - '+note:status.toUpperCase(); }
+          else { items[idx].equipNote=note?(status+' - '+note):status; }
         }
         updateStats(); renderDashboard();
       }
     }).catch(function(){});
   }
   renderChkItems();
+}
+function saveChkNote(row) {
+  var status = chkStatus[row] || '';
+  var note   = chkNotes[row]  || '';
+  if (!status || status==='OK') return;
+  var equipNote = note ? (status+' - '+note) : status;
+  // Update col L in sheet
+  postJ({action:'updateEquipmentStatus', row:row, status:status, note:note, resetNote:false})
+  .catch(function(){});
+  // Update local state
+  var idx = items.findIndex(function(i){ return i.row===row; });
+  if (idx>=0) items[idx].equipNote = equipNote;
 }
 function sendWA() {
   if(!curLoc) return;
@@ -1007,34 +1019,48 @@ function renderAdminItems() {
   document.getElementById('adm-item-count').textContent = items.length;
   var el = document.getElementById('adm-item-list');
   if (!filtered.length) { el.innerHTML = '<div style="padding:10px 0;color:#888;font-size:14px">No items found</div>'; return; }
+  var statusColors = {'OK':'#2e7d32','Missing':'#c0392b','Damaged':'#f57f17','Need More':'#1565c0','Not Active':'#888'};
   el.innerHTML = filtered.map(function(it) {
-    var isActive = it.equipStatus !== 'Not Active';
-    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;gap:10px">'
+    var st = it.equipStatus || 'OK';
+    var stColor = statusColors[st] || '#888';
+    var noteDisplay = it.equipNote ? it.equipNote.replace(/^[A-Z ]+\s*-\s*/i,'') : '';
+    var stBtns = ['OK','Missing','Damaged','Need More','Not Active'].map(function(s){
+      var active = st === s;
+      var col = statusColors[s];
+      return '<button onclick="adminSetStatus('+it.row+',&quot;'+s+'&quot;)" style="flex:1;padding:5px 2px;font-size:10px;font-weight:700;border:2px solid '+(active?col:'#ddd')+';border-radius:6px;background:'+(active?col:'#fff')+';color:'+(active?'#fff':'#666')+';cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+s+'</button>';
+    }).join('');
+    return '<div style="padding:10px 0;border-bottom:1px solid #f0f0f0">'
+      + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px">'
       + '<div style="flex:1;min-width:0">'
       + '<div style="font-size:13px;font-weight:600;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(it.name)+'</div>'
-      + '<div style="font-size:11px;color:#888">'+esc(it.homeLocation)+(isActive?'':' · <span style="color:#c0392b;font-weight:600">Not Active</span>')+'</div>'
-      + (it.equipNote?'<div style="font-size:11px;color:#c0392b;font-weight:600;margin-top:2px">📝 '+esc(it.equipNote)+'</div>':'')
+      + '<div style="font-size:11px;color:#888;margin-top:1px">'+esc(it.homeLocation)+'</div>'
+      + (noteDisplay?'<div style="font-size:11px;color:#c0392b;font-weight:600;margin-top:2px">📝 '+esc(noteDisplay)+'</div>':'')
       + '</div>'
-      + '<button onclick="toggleItemActive('+it.row+','+(!isActive)+')" style="flex-shrink:0;padding:6px 11px;font-size:12px;font-weight:700;border-radius:8px;cursor:pointer;border:2px solid '+(isActive?'#c0392b':'#2e7d32')+';background:'+(isActive?'#fdecea':'#e8f5e9')+';color:'+(isActive?'#c0392b':'#2e7d32')+'">'
-      + (isActive ? 'Set Not Active' : 'Reactivate')
-      + '</button></div>';
+      + '<span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:10px;background:'+(st==='OK'?'#e8f5e9':st==='Not Active'?'#f5f5f5':'#fdecea')+';color:'+stColor+';flex-shrink:0">'+esc(st)+'</span>'
+      + '</div>'
+      + '<div style="display:flex;gap:4px">'+stBtns+'</div>'
+      + '</div>';
   }).join('');
 }
-function toggleItemActive(row, makeActive) {
-  var newStatus = makeActive ? 'OK' : 'Not Active';
-  var msg = makeActive ? 'Reactivate this item?' : 'Mark this item as Not Active?';
-  if (!confirm(msg)) return;
+function adminSetStatus(row, status) {
   showLoad(true);
-  postJ({action:'updateEquipmentStatus', row:row, status:newStatus, resetNote:makeActive})
+  var note = '';
+  postJ({action:'updateEquipmentStatus', row:row, status:status, note:note, resetNote:status==='OK'})
   .then(function(data) {
     if (data.success) {
       var idx = items.findIndex(function(i){ return i.row===row; });
-      if (idx >= 0) { items[idx].equipStatus = newStatus; if(makeActive) items[idx].ccnc='CC'; }
-      updateStats(); renderInventory(); renderAdminItems();
-      showToast(makeActive ? 'Item reactivated' : 'Item set to Not Active');
+      if (idx>=0) {
+        items[idx].equipStatus = status;
+        if (status==='OK') { items[idx].equipNote=''; items[idx].ccnc='CC'; }
+      }
+      updateStats(); renderInventory(); renderAdminItems(); renderDashboard();
+      showToast('Status updated to '+status);
     } else { showToast('Error: '+(data.error||'Unknown')); }
   }).catch(function(){ showToast('Network error'); })
   .finally(function(){ showLoad(false); });
+}
+function toggleItemActive(row, makeActive) {
+  adminSetStatus(row, makeActive ? 'OK' : 'Not Active');
 }
 
 // ADMIN COLLAPSIBLE
