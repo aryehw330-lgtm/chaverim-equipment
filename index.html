@@ -484,7 +484,8 @@ textarea{resize:vertical;min-height:70px}
         <div class="adm-title open" onclick="toggleAdm(this)">📦 Equipment Status (<span id="adm-item-count">0</span>)<span class="toggle">▼</span></div>
         <div class="adm-body open">
           <div class="search-wrap" style="margin-bottom:10px"><span class="search-icon">🔍</span><input id="adm-item-search" type="text" placeholder="Search items..." oninput="renderAdminItems()" style="padding-left:36px;font-size:14px"/></div>
-          <div style="display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;scrollbar-width:none"><button class="fchip active" onclick="setAdmFilter('all',this)">All</button><button class="fchip" onclick="setAdmFilter('active',this)">Active</button><button class="fchip" onclick="setAdmFilter('missing',this)">Missing</button><button class="fchip" onclick="setAdmFilter('damaged',this)">Damaged</button><button class="fchip" onclick="setAdmFilter('needmore',this)">Need More</button><button class="fchip" onclick="setAdmFilter('inactive',this)">Not Active</button></div>
+          <div style="display:flex;gap:6px;margin-bottom:8px;overflow-x:auto;scrollbar-width:none"><button class="fchip active" onclick="setAdmFilter('all',this)">All</button><button class="fchip" onclick="setAdmFilter('active',this)">Active</button><button class="fchip" onclick="setAdmFilter('missing',this)">Missing</button><button class="fchip" onclick="setAdmFilter('damaged',this)">Damaged</button><button class="fchip" onclick="setAdmFilter('needmore',this)">Need More</button><button class="fchip" onclick="setAdmFilter('inactive',this)">Not Active</button></div>
+          <div id="adm-cat-row" style="display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;scrollbar-width:none"></div>
           <div id="adm-item-list"></div>
         </div>
       </div>
@@ -646,7 +647,7 @@ function loadData() {
     var locs = res[2].locations || [];
     if (locs.length) locations = locs;
     items.forEach(function(it){ if(it.homeLocation && locations.indexOf(it.homeLocation)<0) locations.push(it.homeLocation); });
-    updateStats(); renderDashboard(); renderInventory(); renderCatChips(); populateRptItems(); renderAdmin(); renderMembers();
+    updateStats(); renderDashboard(); renderInventory(); renderCatChips(); populateRptItems(); renderAdmin(); renderAdmCatChips(); renderMembers();
   }).catch(function(){ showToast('Failed to load — check connection'); })
   .finally(function(){ showLoad(false); document.getElementById('sync-btn').textContent='↻ Sync'; });
 }
@@ -1124,7 +1125,7 @@ function renderAdmin(){
   var al=document.getElementById('add-loc');
   al.innerHTML=locations.map(function(l){return '<option value="'+esc(l)+'">'+esc(l)+'</option>';}).join('');
   document.getElementById('adm-mem-count').textContent=members.length;
-  if(document.getElementById('adm-item-list')) renderAdminItems();
+  if(document.getElementById('adm-item-list')){ renderAdminItems(); renderAdmCatChips(); }
   var ml=document.getElementById('adm-mem-list');
   if(!members.length){ml.innerHTML='<div style="padding:10px 0;color:#888;font-size:14px">No members loaded</div>';return;}
   // Add search box above list if not already there
@@ -1184,7 +1185,25 @@ function addMember(){
 }
 
 // ADMIN ITEMS
-var admItemFilter = 'all';
+var admItemFilter = 'all', admCat = 'all';
+function renderAdmCatChips() {
+  var present = {};
+  items.forEach(function(it){ var cat = getCat(it.name); present[cat] = (present[cat]||0)+1; });
+  var cats = ['all'];
+  ['Fan','Heater','Light Tower','Shop Vac','A/C','EZ Spare','Generator','Wheel Chair Ramp','Sump Pump'].forEach(function(c){ if(present[c]) cats.push(c); });
+  if(present['Other']) cats.push('Other');
+  var el = document.getElementById('adm-cat-row');
+  if(!el) return;
+  el.innerHTML = cats.map(function(c){
+    return '<button class="fchip'+(admCat===c?' active':'')+'" onclick="setAdmCat(&quot;'+c+'&quot;,this)">'+(c==='all'?'All Categories':c)+'</button>';
+  }).join('');
+}
+function setAdmCat(cat, btn) {
+  admCat = cat;
+  document.querySelectorAll('#adm-cat-row .fchip').forEach(function(c){ c.classList.remove('active'); });
+  if(btn) btn.classList.add('active');
+  renderAdminItems();
+}
 function setAdmFilter(f, btn) {
   admItemFilter = f;
   document.querySelectorAll('#page-admin .fchip').forEach(function(c){ c.classList.remove('active'); });
@@ -1195,6 +1214,7 @@ function renderAdminItems() {
   var q = (document.getElementById('adm-item-search').value || '').toLowerCase().trim();
   var filtered = items.filter(function(it) {
     if (q && it.name.toLowerCase().indexOf(q) < 0) return false;
+    if (admCat !== 'all' && getCat(it.name) !== admCat) return false;
     if (admItemFilter === 'active')   return it.equipStatus !== 'Not Active';
     if (admItemFilter === 'missing')  return it.equipStatus === 'Missing';
     if (admItemFilter === 'damaged')  return it.equipStatus === 'Damaged';
