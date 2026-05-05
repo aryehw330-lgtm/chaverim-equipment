@@ -473,7 +473,7 @@ textarea{resize:vertical;min-height:70px}
 </div>
 
 <script>
-const BASE_URL   = 'https://script.google.com/macros/s/AKfycbyJ5EXL0bqURzXAL7gr3e77cLyiyPDTMHAI7-MuZlR52XYvLxm0_ICRWCmdvQ38unbREw/exec';
+const BASE_URL   = 'https://script.google.com/macros/s/AKfycbxIZLvI6XLyqgPpg6Q7vw2GwoYp8kab0kdJw6GDxY-nc_D4JCLQTG9JFdSGquLfkalmtg/exec';
 const MAIN_PIN   = '4357';
 const ADMIN_PASS = 'cobc2026';
 
@@ -918,14 +918,23 @@ function submitReport(){
   if(!member){alert('Please enter your BC member number.');return;}
   var it=items.find(function(i){return i.name===item;});
   showLoad(true);
-  postJ({action:'submitReport',type:rptType,item:item,location:it?it.homeLocation:'',note:note,member:member})
+  // Build CNC note for col H — "CNC - [type]: [note]"
+  var cncNote = note ? ('CNC - '+rptType+': '+note) : ('CNC - '+rptType);
+  postJ({action:'submitReport',type:rptType,item:item,location:it?it.homeLocation:'',note:note,member:member,cncNote:cncNote,row:it?it.row:null})
   .then(function(data){
     if(data.success){
-      if(it&&(rptType==='Missing'||rptType==='Damaged'||rptType==='Need More')){
-        postJ({action:'updateEquipmentStatus',row:it.row,status:rptType,note:note});
-        var idx=items.findIndex(function(i){return i.row===it.row;});
-        if(idx>=0) items[idx].equipStatus=rptType;
-        updateStats();renderInventory();
+      if(it){
+        // Update col K (equip status) for Missing/Damaged/Need More - no note to col L
+        if(rptType==='Missing'||rptType==='Damaged'||rptType==='Need More'){
+          postJ({action:'updateEquipmentStatus',row:it.row,status:rptType,note:'',resetNote:false});
+          var idx=items.findIndex(function(i){return i.row===it.row;});
+          if(idx>=0) items[idx].equipStatus=rptType;
+        }
+        // Update col H with CNC note
+        postJ({action:'updateCNCNote',row:it.row,cncNote:cncNote,member:member});
+        var idx2=items.findIndex(function(i){return i.row===it.row;});
+        if(idx2>=0){ items[idx2].ccnc=cncNote; items[idx2].isCNC=true; items[idx2].cncNote=note?rptType+': '+note:rptType; }
+        updateStats();renderInventory();renderDashboard();
       }
       showToast('Report submitted');
       document.getElementById('rpt-item').value='';document.getElementById('rpt-member').value='';document.getElementById('rpt-note').value='';
