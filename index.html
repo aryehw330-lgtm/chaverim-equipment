@@ -771,7 +771,7 @@ function renderChkItems() {
   document.getElementById('chk-summary').style.display=li.length?'block':'none';
   document.getElementById('chk-checked').textContent=chk+'/'+li.length;
   document.getElementById('chk-issues').textContent=iss;
-  document.getElementById('wa-btn').style.display=chk>0?'block':'none';
+  document.getElementById('wa-btn').style.display=li.length?'block':'none';
   document.getElementById('chk-list').innerHTML=li.map(function(it){
     var st=chkStatus[it.row]||'';
     var noteVal=chkNotes[it.row]||'';
