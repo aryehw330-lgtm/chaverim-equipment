@@ -446,7 +446,7 @@ textarea{resize:vertical;min-height:70px}
 </div>
 
 <script>
-const BASE_URL   = 'https://script.google.com/macros/s/AKfycbx8EflC0HozxcGzWBKjXD6FYT7o7RrzAlYlHCTdoemz04qr1Bbgw46vQu0rDBsWD8SFzw/exec';
+const BASE_URL   = 'https://script.google.com/macros/s/AKfycbyNxICWIl22RRp-iQmGdUERpyY5WafWiGcziXucTfjY-NyQPDsTk2U7crfwtulEfyGGQQ/exec';
 const MAIN_PIN   = '4357';
 const ADMIN_PASS = 'cobc2026';
 
@@ -660,11 +660,11 @@ function renderInventory() {
 function resetStatus(row) {
   if (!confirm('Mark this item as OK?')) return;
   showLoad(true);
-  postJ({action:'updateEquipmentStatus', row:row, status:'OK'})
+  postJ({action:'updateEquipmentStatus', row:row, status:'OK', resetNote:true})
   .then(function(data) {
     if (data.success) {
       var idx = items.findIndex(function(i){ return i.row===row; });
-      if (idx>=0) items[idx].equipStatus = 'OK';
+      if (idx>=0) { items[idx].equipStatus='OK'; items[idx].ccnc='CC'; items[idx].isCNC=false; items[idx].cncNote=''; }
       updateStats(); renderInventory(); renderDashboard();
       showToast('Item marked as OK');
     } else { showToast('Error: '+(data.error||'Unknown')); }
