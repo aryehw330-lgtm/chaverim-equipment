@@ -452,7 +452,7 @@ textarea{resize:vertical;min-height:70px}
 </div>
 
 <script>
-const BASE_URL   = 'https://script.google.com/macros/s/AKfycbxqN2njVjCicFkbAU0aTNjrmSzGAstBIcHau9y1JJ8RSwX5C8HQ0j4YvXv8o6HtYA-ynQ/exec';
+const BASE_URL   = 'https://script.google.com/macros/s/AKfycbwM_FnmTeYCyai0axwyBrdoTjdrRc8NMbo-8iakcOxlmC0Fi-CY6quLvbpEb8jOAWdw0A/exec';
 const MAIN_PIN   = '4357';
 const ADMIN_PASS = 'cobc2026';
 
@@ -577,9 +577,14 @@ function renderDashboard() {
   aw.style.display = alerts.length ? 'block' : 'none';
   document.getElementById('dash-alerts').innerHTML = alerts.map(function(it) {
     var cls = (it.equipStatus==='Missing'||it.equipStatus==='Damaged') ? 'red' : '';
-    var detail = it.equipStatus==='Missing'?'MISSING':it.equipStatus==='Damaged'?'DAMAGED':'CNC: '+(it.cncNote||it.ccnc);
-    return '<div class="alert-card '+cls+'"><div class="alert-name">'+esc(it.name)+'</div><div class="alert-detail">'+esc(it.homeLocation)+(it.member?' · BC-'+esc(it.member):'')+' · '+detail+'</div>'
-      +(it.ccnc && (it.ccnc.toUpperCase().indexOf('MISSING')===0||it.ccnc.toUpperCase().indexOf('DAMAGED')===0) ? '<div style="margin-top:4px;font-size:12px;color:#c0392b;font-weight:600">📝 '+esc(it.ccnc.replace(/^(MISSING|DAMAGED)\s*-\s*/i,''))+'</div>' : '')
+    var detail = it.equipStatus==='Missing'?'MISSING':it.equipStatus==='Damaged'?'DAMAGED':it.equipStatus==='Need More'?'NEED MORE':'CNC: '+(it.cncNote||it.ccnc);
+    var hVal = it.ccnc || '';
+    var noteMatch = hVal.match(/^[A-Z ]+\s*-\s*(.+)$/i);
+    var hNote = noteMatch ? noteMatch[1].trim() : '';
+    return '<div class="alert-card '+cls+'">'
+      +'<div class="alert-name">'+esc(it.name)+'</div>'
+      +'<div class="alert-detail">'+esc(it.homeLocation)+(it.member?' · BC-'+esc(it.member):'')+' · '+detail+'</div>'
+      +(hNote?'<div style="margin-top:5px;font-size:12px;font-weight:700;color:#c0392b;background:#fff5f5;border-radius:6px;padding:4px 8px">📝 '+esc(hNote)+'</div>':'')
       +'</div>';
   }).join('');
 
