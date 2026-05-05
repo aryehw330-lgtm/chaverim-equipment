@@ -571,7 +571,9 @@ function renderDashboard() {
   document.getElementById('dash-alerts').innerHTML = alerts.map(function(it) {
     var cls = (it.equipStatus==='Missing'||it.equipStatus==='Damaged') ? 'red' : '';
     var detail = it.equipStatus==='Missing'?'MISSING':it.equipStatus==='Damaged'?'DAMAGED':'CNC: '+(it.cncNote||it.ccnc);
-    return '<div class="alert-card '+cls+'"><div class="alert-name">'+esc(it.name)+'</div><div class="alert-detail">'+esc(it.homeLocation)+(it.member?' · BC-'+esc(it.member):'')+' · '+detail+'</div></div>';
+    return '<div class="alert-card '+cls+'"><div class="alert-name">'+esc(it.name)+'</div><div class="alert-detail">'+esc(it.homeLocation)+(it.member?' · BC-'+esc(it.member):'')+' · '+detail+'</div>'
+      +(it.ccnc && (it.ccnc.toUpperCase().indexOf('MISSING')===0||it.ccnc.toUpperCase().indexOf('DAMAGED')===0) ? '<div style="margin-top:4px;font-size:12px;color:#c0392b;font-weight:600">📝 '+esc(it.ccnc.replace(/^(MISSING|DAMAGED)\s*-\s*/i,''))+'</div>' : '')
+      +'</div>';
   }).join('');
 
   var ow = document.getElementById('dash-out-wrap');
