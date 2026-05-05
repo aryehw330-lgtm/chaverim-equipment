@@ -440,6 +440,12 @@ textarea{resize:vertical;min-height:70px}
         <div class="adm-title">👥 Members (<span id="adm-mem-count">0</span>)</div>
         <div id="adm-mem-list"></div>
       </div>
+      <div class="adm-sec">
+        <div class="adm-title">📦 Equipment Status (<span id="adm-item-count">0</span>)</div>
+        <div class="search-wrap" style="margin-bottom:10px"><span class="search-icon">🔍</span><input id="adm-item-search" type="text" placeholder="Search items..." oninput="renderAdminItems()" style="padding-left:36px;font-size:14px"/></div>
+        <div style="display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;scrollbar-width:none"><button class="fchip active" onclick="setAdmFilter('all',this)">All</button><button class="fchip" onclick="setAdmFilter('active',this)">Active</button><button class="fchip" onclick="setAdmFilter('inactive',this)">Not Active</button></div>
+        <div id="adm-item-list"></div>
+      </div>
     </div>
 
   </div>
@@ -889,6 +895,7 @@ function renderAdmin(){
   var al=document.getElementById('add-loc');
   al.innerHTML=locations.map(function(l){return '<option value="'+esc(l)+'">'+esc(l)+'</option>';}).join('');
   document.getElementById('adm-mem-count').textContent=members.length;
+  if(document.getElementById('adm-item-list')) renderAdminItems();
   var ml=document.getElementById('adm-mem-list');
   if(!members.length){ml.innerHTML='<div style="padding:10px 0;color:#888;font-size:14px">No members loaded</div>';return;}
   // Add search box above list if not already there
@@ -945,6 +952,54 @@ function addMember(){
     if(data.success){members.push({id:mid,unit:mid,firstName:fn,lastName:ln,name:fn+' '+ln,phone:ph});document.getElementById('add-mid').value='';document.getElementById('add-fname').value='';document.getElementById('add-lname').value='';document.getElementById('add-phone').value='';renderAdmin();renderMembers();showToast('Member added');}
     else{showToast('Error: '+(data.error||'Unknown'));}
   }).catch(function(){showToast('Network error');}).finally(function(){showLoad(false);});
+}
+
+// ADMIN ITEMS
+var admItemFilter = 'all';
+function setAdmFilter(f, btn) {
+  admItemFilter = f;
+  document.querySelectorAll('#page-admin .fchip').forEach(function(c){ c.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  renderAdminItems();
+}
+function renderAdminItems() {
+  var q = (document.getElementById('adm-item-search').value || '').toLowerCase().trim();
+  var filtered = items.filter(function(it) {
+    if (q && it.name.toLowerCase().indexOf(q) < 0) return false;
+    if (admItemFilter === 'active')   return it.equipStatus !== 'Not Active';
+    if (admItemFilter === 'inactive') return it.equipStatus === 'Not Active';
+    return true;
+  }).sort(function(a,b){ return a.name.localeCompare(b.name); });
+  document.getElementById('adm-item-count').textContent = items.length;
+  var el = document.getElementById('adm-item-list');
+  if (!filtered.length) { el.innerHTML = '<div style="padding:10px 0;color:#888;font-size:14px">No items found</div>'; return; }
+  el.innerHTML = filtered.map(function(it) {
+    var isActive = it.equipStatus !== 'Not Active';
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;gap:10px">'
+      + '<div style="flex:1;min-width:0">'
+      + '<div style="font-size:13px;font-weight:600;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(it.name)+'</div>'
+      + '<div style="font-size:11px;color:#888">'+esc(it.homeLocation)+(isActive?'':' · <span style="color:#c0392b;font-weight:600">Not Active</span>')+'</div>'
+      + '</div>'
+      + '<button onclick="toggleItemActive('+it.row+','+(!isActive)+')" style="flex-shrink:0;padding:6px 11px;font-size:12px;font-weight:700;border-radius:8px;cursor:pointer;border:2px solid '+(isActive?'#c0392b':'#2e7d32')+';background:'+(isActive?'#fdecea':'#e8f5e9')+';color:'+(isActive?'#c0392b':'#2e7d32')+'">'
+      + (isActive ? 'Set Not Active' : 'Reactivate')
+      + '</button></div>';
+  }).join('');
+}
+function toggleItemActive(row, makeActive) {
+  var newStatus = makeActive ? 'OK' : 'Not Active';
+  var msg = makeActive ? 'Reactivate this item?' : 'Mark this item as Not Active?';
+  if (!confirm(msg)) return;
+  showLoad(true);
+  postJ({action:'updateEquipmentStatus', row:row, status:newStatus, resetNote:makeActive})
+  .then(function(data) {
+    if (data.success) {
+      var idx = items.findIndex(function(i){ return i.row===row; });
+      if (idx >= 0) { items[idx].equipStatus = newStatus; if(makeActive) items[idx].ccnc='CC'; }
+      updateStats(); renderInventory(); renderAdminItems();
+      showToast(makeActive ? 'Item reactivated' : 'Item set to Not Active');
+    } else { showToast('Error: '+(data.error||'Unknown')); }
+  }).catch(function(){ showToast('Network error'); })
+  .finally(function(){ showLoad(false); });
 }
 
 // HELPERS
