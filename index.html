@@ -356,6 +356,25 @@ textarea{resize:vertical;min-height:70px}
     <!-- CHECKLIST -->
     <div class="page" id="page-checklist">
       <div class="loc-tabs" id="loc-tabs"></div>
+      <!-- Alerts within checklist -->
+      <div id="chk-alerts-wrap" style="display:none;margin-bottom:10px">
+        <div class="section-label">⚠️ Active Alerts</div>
+        <div id="chk-alerts"></div>
+      </div>
+      <!-- Search + filter -->
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input id="chk-search" type="text" placeholder="Search items..." oninput="renderChkItems()" style="padding-left:36px"/>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;scrollbar-width:none" id="chk-filter-row">
+        <button class="fchip active" onclick="setChkFilter('all',this)">All</button>
+        <button class="fchip" onclick="setChkFilter('out',this)">OUT</button>
+        <button class="fchip" onclick="setChkFilter('in',this)">IN</button>
+        <button class="fchip" onclick="setChkFilter('cnc',this)">CNC</button>
+        <button class="fchip" onclick="setChkFilter('missing',this)">Missing</button>
+        <button class="fchip" onclick="setChkFilter('damaged',this)">Damaged</button>
+        <button class="fchip" onclick="setChkFilter('inactive',this)">Not Active</button>
+      </div>
       <div id="chk-summary" class="chk-summary" style="display:none">
         <div class="chk-sum-row"><span>Items checked</span><span class="chk-sum-val" id="chk-checked">0/0</span></div>
         <div class="chk-sum-row"><span>Issues flagged</span><span class="chk-sum-val" id="chk-issues">0</span></div>
@@ -473,14 +492,14 @@ textarea{resize:vertical;min-height:70px}
 </div>
 
 <script>
-const BASE_URL   = 'https://script.google.com/macros/s/AKfycbyKtyEszIcswp4U8S87vYZdYyMobi7tNhq1tmD9weQ0TtQdG-1asD9NEFeYanLsyScZDg/exec';
+const BASE_URL   = 'https://script.google.com/macros/s/AKfycbyBdrrcWUuQvFKb6qZyQBMU0aVpkbWKiHpsgBRZsiDN429d8w1gTra43lEFlXUM00AZzg/exec';
 const MAIN_PIN   = '4357';
 const ADMIN_PASS = 'cobc2026';
 
 var items=[], members=[], locations=['COBC'];
 var curFilter='all', curPage='dashboard', curLoc=null;
 var checked={}, rptType='', modalItem=null;
-var chkStatus={}, chkNotes={};
+var chkStatus={}, chkNotes={}, chkFilter='all';
 var secTarget=null, secPrevPage='dashboard';
 var secUnlocked={admin:false, checklist:false};
 
@@ -733,7 +752,9 @@ function renderInventory() {
   }).join('');
 }
 function resetStatus(row) {
-  if (!confirm('Mark this item as OK?')) return;
+  var pwd = prompt('Enter password to mark as OK:');
+  if (pwd === null) return;
+  if (pwd !== ADMIN_PASS) { alert('Incorrect password.'); return; }
   showLoad(true);
   postJ({action:'updateEquipmentStatus', row:row, status:'OK', resetNote:true})
   .then(function(data) {
@@ -811,9 +832,43 @@ function selLoc(loc,btn) {
   if(btn) btn.classList.add('active');
   renderChkItems();
 }
+function setChkFilter(f, btn) {
+  chkFilter = f;
+  document.querySelectorAll('#chk-filter-row .fchip').forEach(function(c){ c.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  renderChkItems();
+}
 function renderChkItems() {
   if(!curLoc){document.getElementById('chk-list').innerHTML='<div class="empty"><div class="empty-text">No locations found</div></div>';return;}
-  var li=items.filter(function(i){return i.homeLocation===curLoc && i.equipStatus!=='Not Active';});
+  // Show alerts for this location
+  var locAlerts = items.filter(function(i){ return i.homeLocation===curLoc && (i.isCNC||i.equipStatus==='Missing'||i.equipStatus==='Damaged'); });
+  var aw = document.getElementById('chk-alerts-wrap');
+  aw.style.display = locAlerts.length ? 'block' : 'none';
+  if (locAlerts.length) {
+    document.getElementById('chk-alerts').innerHTML = locAlerts.map(function(it){
+      var lMatch = (it.equipNote||'').match(/^[A-Za-z ]+\s*-\s*(.+)$/);
+      var lNote = lMatch ? lMatch[1].trim() : (it.equipNote||'');
+      return '<div class="alert-card '+(it.equipStatus==='Missing'||it.equipStatus==='Damaged'?'red':'')+'">'
+        +'<div class="alert-name">'+esc(it.name)+'</div>'
+        +'<div class="alert-detail">'+esc(it.equipStatus||'')+(it.member?' · BC-'+esc(it.member):'')+(it.call?' · Call #'+esc(it.call):'')+'</div>'
+        +((it.ccnc&&it.ccnc!=='CC')?'<div style="font-size:11px;color:#e65100;margin-top:3px">📍 '+esc(it.ccnc)+'</div>':'')
+        +(lNote?'<div style="font-size:11px;color:#c0392b;font-weight:600;margin-top:3px">🔧 ET: '+esc(lNote)+'</div>':'')
+        +'</div>';
+    }).join('');
+  }
+  // Filter items - show Not Active only if filter is 'inactive', otherwise hide them
+  var q = (document.getElementById('chk-search').value||'').toLowerCase().trim();
+  var li = items.filter(function(i){
+    if (i.homeLocation !== curLoc) return false;
+    if (q && i.name.toLowerCase().indexOf(q) < 0) return false;
+    if (chkFilter==='out')      return i.status==='OUT';
+    if (chkFilter==='in')       return i.status==='IN' && i.equipStatus!=='Not Active';
+    if (chkFilter==='cnc')      return i.isCNC;
+    if (chkFilter==='missing')  return i.equipStatus==='Missing';
+    if (chkFilter==='damaged')  return i.equipStatus==='Damaged';
+    if (chkFilter==='inactive') return i.equipStatus==='Not Active';
+    return i.equipStatus !== 'Not Active'; // 'all' hides Not Active
+  });
   var chk=li.filter(function(i){return !!checked[i.row];}).length;
   var iss=li.filter(function(i){return i.isCNC||i.equipStatus==='Missing'||i.equipStatus==='Damaged';}).length;
   document.getElementById('chk-summary').style.display=li.length?'block':'none';
@@ -924,13 +979,7 @@ function submitReport(){
   .then(function(data){
     if(data.success){
       if(it){
-        // Update col K (equip status) for Missing/Damaged/Need More - no note to col L
-        if(rptType==='Missing'||rptType==='Damaged'||rptType==='Need More'){
-          postJ({action:'updateEquipmentStatus',row:it.row,status:rptType,note:'',resetNote:false});
-          var idx=items.findIndex(function(i){return i.row===it.row;});
-          if(idx>=0) items[idx].equipStatus=rptType;
-        }
-        // Update col H with CNC note
+        // ONLY update col H with CNC note — never touch col K or col L
         postJ({action:'updateCNCNote',row:it.row,cncNote:cncNote,member:member});
         var idx2=items.findIndex(function(i){return i.row===it.row;});
         if(idx2>=0){ items[idx2].ccnc=cncNote; items[idx2].isCNC=true; items[idx2].cncNote=note?rptType+': '+note:rptType; }
@@ -954,7 +1003,7 @@ function renderMembers(){
   var el=document.getElementById('mem-list');
   if(!filtered.length){el.innerHTML='<div class="empty"><div class="empty-icon">👤</div><div class="empty-text">No members found</div></div>';return;}
   el.innerHTML=filtered.map(function(m){
-    var unit=m.unit||m.id||'?';
+    var unit=(m.unit||m.id||'?').toString().replace(/^BC-/i,'');
     var name=m.name||((m.firstName||'')+' '+(m.lastName||'')).trim()||'Unknown';
     var phone=m.phone||'';
     var digits=phone.replace(/\D/g,'');
