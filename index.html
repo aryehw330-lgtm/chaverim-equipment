@@ -453,6 +453,7 @@ const ADMIN_PASS = 'cobc2026';
 var items=[], members=[], locations=['COBC'];
 var curFilter='all', curPage='dashboard', curLoc=null;
 var checked={}, rptType='', modalItem=null;
+var chkStatus={}, chkNotes={};
 var secTarget=null, secPrevPage='dashboard';
 var secUnlocked={admin:false, checklist:false};
 
@@ -779,8 +780,6 @@ function renderChkItems() {
       +noteHtml+'</div>';
   }).join('');
 }
-// chkStatus and chkNotes store per-item selections
-var chkStatus={}, chkNotes={};
 function setChkStatus(row, status) {
   chkStatus[row]=status;
   if(status==='OK') chkNotes[row]='';
