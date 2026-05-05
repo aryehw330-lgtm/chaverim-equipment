@@ -400,60 +400,72 @@ textarea{resize:vertical;min-height:70px}
 
     <!-- ADMIN -->
     <div class="page" id="page-admin">
+      <!-- Add Item -->
       <div class="adm-sec">
         <div class="adm-title open" onclick="toggleAdm(this)">➕ Add New Item<span class="toggle">▼</span></div>
         <div class="adm-body open">
-        <div class="input-group">
-          <label class="field-label">Item Name</label>
-          <input id="add-name" type="text" placeholder="e.g. Fan 21"/>
+          <div class="input-group">
+            <label class="field-label">Item Name</label>
+            <input id="add-name" type="text" placeholder="e.g. Fan 21"/>
+          </div>
+          <div class="input-group">
+            <label class="field-label">Home Location</label>
+            <select id="add-loc"><option value="COBC">COBC</option></select>
+          </div>
+          <button class="btn btn-primary" onclick="addItem()">Add Item + Generate QR</button>
         </div>
-        <div class="input-group">
-          <label class="field-label">Home Location</label>
-          <select id="add-loc"><option value="COBC">COBC</option></select>
-        </div>
-        <button class="btn btn-primary" onclick="addItem()">Add Item + Generate QR</button>
       </div>
+      <!-- Manage Locations -->
       <div class="adm-sec">
-        <div class="adm-title">📍 Manage Locations</div>
-        <div id="loc-list" style="margin-bottom:10px"></div>
-        <div style="display:flex;gap:8px">
-          <input id="new-loc" type="text" placeholder="New location name" style="flex:1"/>
-          <button class="btn btn-ghost btn-sm" onclick="addLoc()">Add</button>
-        </div>
+        <div class="adm-title" onclick="toggleAdm(this)">📍 Manage Locations<span class="toggle">▼</span></div>
+        <div class="adm-body">
+          <div id="loc-list" style="margin-bottom:10px"></div>
+          <div style="display:flex;gap:8px">
+            <input id="new-loc" type="text" placeholder="New location name" style="flex:1"/>
+            <button class="btn btn-ghost btn-sm" onclick="addLoc()">Add</button>
+          </div>
         </div>
       </div>
+      <!-- Add Member -->
       <div class="adm-sec">
         <div class="adm-title" onclick="toggleAdm(this)">👤 Add Member<span class="toggle">▼</span></div>
         <div class="adm-body">
-        <div class="input-group">
-          <label class="field-label">BC # (Unit)</label>
-          <input id="add-mid" type="text" inputmode="numeric" placeholder="e.g. 42"/>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           <div class="input-group">
-            <label class="field-label">First Name</label>
-            <input id="add-fname" type="text" placeholder="First"/>
+            <label class="field-label">BC # (Unit)</label>
+            <input id="add-mid" type="text" inputmode="numeric" placeholder="e.g. 42"/>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="input-group">
+              <label class="field-label">First Name</label>
+              <input id="add-fname" type="text" placeholder="First"/>
+            </div>
+            <div class="input-group">
+              <label class="field-label">Last Name</label>
+              <input id="add-lname" type="text" placeholder="Last"/>
+            </div>
           </div>
           <div class="input-group">
-            <label class="field-label">Last Name</label>
-            <input id="add-lname" type="text" placeholder="Last"/>
+            <label class="field-label">Phone</label>
+            <input id="add-phone" type="tel" placeholder="555-000-0000"/>
           </div>
+          <button class="btn btn-primary" onclick="addMember()">Add Member</button>
         </div>
-        <div class="input-group">
-          <label class="field-label">Phone</label>
-          <input id="add-phone" type="tel" placeholder="555-000-0000"/>
+      </div>
+      <!-- Members List -->
+      <div class="adm-sec">
+        <div class="adm-title open" onclick="toggleAdm(this)">👥 Members (<span id="adm-mem-count">0</span>)<span class="toggle">▼</span></div>
+        <div class="adm-body open">
+          <div id="adm-mem-list"></div>
         </div>
-        <button class="btn btn-primary" onclick="addMember()">Add Member</button>
       </div>
+      <!-- Equipment Status -->
       <div class="adm-sec">
-        <div class="adm-title">👥 Members (<span id="adm-mem-count">0</span>)</div>
-        <div id="adm-mem-list"></div>
-      </div>
-      <div class="adm-sec">
-        <div class="adm-title">📦 Equipment Status (<span id="adm-item-count">0</span>)</div>
-        <div class="search-wrap" style="margin-bottom:10px"><span class="search-icon">🔍</span><input id="adm-item-search" type="text" placeholder="Search items..." oninput="renderAdminItems()" style="padding-left:36px;font-size:14px"/></div>
-        <div style="display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;scrollbar-width:none"><button class="fchip active" onclick="setAdmFilter('all',this)">All</button><button class="fchip" onclick="setAdmFilter('active',this)">Active</button><button class="fchip" onclick="setAdmFilter('inactive',this)">Not Active</button></div>
-        <div id="adm-item-list"></div>
+        <div class="adm-title open" onclick="toggleAdm(this)">📦 Equipment Status (<span id="adm-item-count">0</span>)<span class="toggle">▼</span></div>
+        <div class="adm-body open">
+          <div class="search-wrap" style="margin-bottom:10px"><span class="search-icon">🔍</span><input id="adm-item-search" type="text" placeholder="Search items..." oninput="renderAdminItems()" style="padding-left:36px;font-size:14px"/></div>
+          <div style="display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;scrollbar-width:none"><button class="fchip active" onclick="setAdmFilter('all',this)">All</button><button class="fchip" onclick="setAdmFilter('active',this)">Active</button><button class="fchip" onclick="setAdmFilter('inactive',this)">Not Active</button></div>
+          <div id="adm-item-list"></div>
+        </div>
       </div>
     </div>
 
