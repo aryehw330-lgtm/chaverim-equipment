@@ -598,15 +598,35 @@ function renderDashboard() {
   aw.style.display = alerts.length ? 'block' : 'none';
   document.getElementById('dash-alerts').innerHTML = alerts.map(function(it) {
     var cls = (it.equipStatus==='Missing'||it.equipStatus==='Damaged') ? 'red' : '';
-    var detail = it.equipStatus==='Missing'?'MISSING':it.equipStatus==='Damaged'?'DAMAGED':it.equipStatus==='Need More'?'NEED MORE':'CNC: '+(it.cncNote||it.ccnc);
-    var equipNote = it.equipNote || '';
-    // Parse note from equipNote col L (format: "DAMAGED - note" or just "DAMAGED")
-    var noteMatch = equipNote.match(/^[A-Z ]+\s*-\s*(.+)$/i);
-    var dispNote = noteMatch ? noteMatch[1].trim() : '';
+
+    // ── Col K status label ──
+    var kStatus = it.equipStatus || '';
+
+    // ── Col H — member CNC/CC note ──
+    var hVal = it.ccnc || '';
+    var isCNC = it.isCNC || hVal.toUpperCase().indexOf('CNC') === 0;
+    var hDisplay = isCNC ? hVal : '';
+
+    // ── Col L — equipment team note (strip leading status prefix) ──
+    var lVal = it.equipNote || '';
+    var lMatch = lVal.match(/^[A-Za-z ]+\s*-\s*(.+)$/);
+    var lNote = lMatch ? lMatch[1].trim() : lVal;
+
     return '<div class="alert-card '+cls+'">'
+      // Item name + status badge
+      +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
       +'<div class="alert-name">'+esc(it.name)+'</div>'
-      +'<div class="alert-detail">'+esc(it.homeLocation)+(it.member?' · BC-'+esc(it.member):'')+(it.call?' · Call #'+esc(it.call):'')+' · '+detail+'</div>'
-      +(dispNote?'<div style="margin-top:5px;font-size:12px;font-weight:700;color:#c0392b;background:#fff5f5;border-radius:6px;padding:4px 8px">📝 '+esc(dispNote)+'</div>':'')
+      +(kStatus?'<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;background:'+(cls==='red'?'#fdecea':'#fff3e0')+';color:'+(cls==='red'?'#c0392b':'#e65100')+'">'+esc(kStatus)+'</span>':'')
+      +'</div>'
+      // Location, member, call
+      +'<div class="alert-detail" style="margin-top:4px">📍 '+esc(it.homeLocation)
+      +(it.member?' · <b>BC-'+esc(it.member)+'</b>':'')
+      +(it.call?' · Call #'+esc(it.call):'')
+      +'</div>'
+      // Col H — member note (CNC details)
+      +(hDisplay?'<div style="margin-top:5px;font-size:12px;color:#e65100;font-weight:600;background:#fff8f0;border-radius:6px;padding:4px 8px">📍 Member note: '+esc(hDisplay)+'</div>':'')
+      // Col L — equipment team note
+      +(lNote?'<div style="margin-top:5px;font-size:12px;color:#c0392b;font-weight:700;background:#fff5f5;border-radius:6px;padding:4px 8px">🔧 ET Note: '+esc(lNote)+'</div>':'')
       +'</div>';
   }).join('');
 
