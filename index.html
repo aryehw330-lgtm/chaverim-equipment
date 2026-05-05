@@ -834,7 +834,13 @@ function renderInventory() {
     if(curFilter==='missing') return it.equipStatus==='Missing' && (curCat==='all'||getCat(it.name)===curCat);
     if(curFilter==='damaged') return it.equipStatus==='Damaged' && (curCat==='all'||getCat(it.name)===curCat);
     return curCat==='all' || getCat(it.name)===curCat;
-  }).sort(function(a,b){ return ((a.status==='OUT'?0:2)+(a.isCNC?0:1)) - ((b.status==='OUT'?0:2)+(b.isCNC?0:1)); });
+  }).sort(function(a,b){
+    var pa = (a.status==='OUT'?0:2)+(a.isCNC?0:1);
+    var pb = (b.status==='OUT'?0:2)+(b.isCNC?0:1);
+    if (pa !== pb) return pa - pb;
+    // Natural sort by name (Fan 2 before Fan 10)
+    return a.name.localeCompare(b.name, undefined, {numeric:true, sensitivity:'base'});
+  });
   var el = document.getElementById('inv-list');
   if (!filtered.length) { el.innerHTML='<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">No items found</div></div>'; return; }
   el.innerHTML = filtered.map(function(it) {
@@ -1221,7 +1227,7 @@ function renderAdminItems() {
     if (admItemFilter === 'needmore') return it.equipStatus === 'Need More';
     if (admItemFilter === 'inactive') return it.equipStatus === 'Not Active';
     return true;
-  }).sort(function(a,b){ return a.name.localeCompare(b.name); });
+  }).sort(function(a,b){ return a.name.localeCompare(b.name, undefined, {numeric:true, sensitivity:'base'}); });
   document.getElementById('adm-item-count').textContent = items.length;
   var el = document.getElementById('adm-item-list');
   if (!filtered.length) { el.innerHTML = '<div style="padding:10px 0;color:#888;font-size:14px">No items found</div>'; return; }
