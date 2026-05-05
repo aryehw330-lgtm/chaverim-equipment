@@ -289,6 +289,7 @@ textarea{resize:vertical;min-height:70px}
     <div class="h-right">
       <span class="stat-pill" id="stat-out-pill" style="display:none"></span>
       <button id="sync-btn" onclick="loadData()">↻ Sync</button>
+      <button onclick="logout()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;font-size:12px;font-weight:600;cursor:pointer">Sign Out</button>
     </div>
   </div>
 
@@ -495,10 +496,11 @@ textarea{resize:vertical;min-height:70px}
 <script>
 const BASE_URL   = 'https://script.google.com/macros/s/AKfycbyBdrrcWUuQvFKb6qZyQBMU0aVpkbWKiHpsgBRZsiDN429d8w1gTra43lEFlXUM00AZzg/exec';
 // Access levels: member=1, et=2, admin=3
+// Passwords stored as SHA-256 hashes — never plain text
 const PASSWORDS = {
-  '4357':      1,  // Member
-  'cobcet':    2,  // Equipment Team
-  'cobcadmin': 3   // Admin
+  'faa3719c835d433bfb62878c18e28062c12146011bc16c332f3b4a2fed5ba2d9': 1,
+  '173c5ec3eea7bf07e14395ad73f741882e7637253831740557be9d4863dbda2e': 2,
+  '399d4e4b288b5fe2124ff08579e851feb7518cd5ca8eda73594fc1835084c066': 3
 };
 var userLevel = 0; // 0=not logged in, 1=member, 2=ET, 3=admin
 
@@ -510,9 +512,33 @@ var secTarget=null, secPrevPage='dashboard';
 const ADMIN_PASS='cobc2026';
 
 // PIN
+// SHA-256 hash using Web Crypto API
+async function hashSHA256(str) {
+  var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+}
+
 function checkPin() {
-  var v = document.getElementById('pin-input').value.trim();
-  var level = PASSWORDS[v] || 0;
+  var raw = document.getElementById('pin-input').value.trim();
+  // Hash the input with SHA-256 before checking
+  hashSHA256(raw).then(function(v) {
+    var level = PASSWORDS[v] || 0;
+    if (level > 0) {
+      userLevel = level;
+      localStorage.setItem('cobc_level', level);
+      document.getElementById('pin-gate').classList.add('hidden');
+      document.getElementById('app').style.display = 'flex';
+      applyAccessLevel();
+      loadData();
+    } else {
+      document.getElementById('pin-error').textContent = '✕ Incorrect password';
+      document.getElementById('pin-input').value = '';
+      setTimeout(function(){ document.getElementById('pin-error').textContent=''; }, 2000);
+    }
+  });
+  return; // async continues above
+  var v = '__never__';
+  var level = 0;
   if (level > 0) {
     userLevel = level;
     localStorage.setItem('cobc_level', level);
