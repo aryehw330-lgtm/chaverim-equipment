@@ -497,7 +497,7 @@ const MAIN_PIN   = '4357';
 const ADMIN_PASS = 'cobc2026';
 
 var items=[], members=[], locations=['COBC'];
-var curFilter='all', curPage='dashboard', curLoc=null;
+var curFilter='all', curPage='dashboard', curLoc=null, curCat='all';
 var checked={}, rptType='', modalItem=null;
 var chkStatus={}, chkNotes={}, chkFilter='all';
 var secTarget=null, secPrevPage='dashboard';
@@ -587,7 +587,7 @@ function loadData() {
     var locs = res[2].locations || [];
     if (locs.length) locations = locs;
     items.forEach(function(it){ if(it.homeLocation && locations.indexOf(it.homeLocation)<0) locations.push(it.homeLocation); });
-    updateStats(); renderDashboard(); renderInventory(); populateRptItems(); renderAdmin(); renderMembers();
+    updateStats(); renderDashboard(); renderInventory(); renderCatChips(); populateRptItems(); renderAdmin(); renderMembers();
   }).catch(function(){ showToast('Failed to load — check connection'); })
   .finally(function(){ showLoad(false); document.getElementById('sync-btn').textContent='↻ Sync'; });
 }
@@ -718,6 +718,44 @@ function fmtTime(s) {
 }
 
 // INVENTORY
+// Known equipment categories — items not matching any go to 'Other'
+var KNOWN_CATS = ['Fan','Heater','Light Tower','Shop Vac','A/C','EZ Spare','Generator','Wheel Chair Ramp','Sump Pump'];
+
+function getCat(name) {
+  var n = (name||'').toLowerCase();
+  for (var i=0; i<KNOWN_CATS.length; i++) {
+    if (n.indexOf(KNOWN_CATS[i].toLowerCase()) >= 0) return KNOWN_CATS[i];
+  }
+  return 'Other';
+}
+
+function renderCatChips() {
+  // Build set of categories present in inventory (excluding Not Active)
+  var present = {};
+  items.forEach(function(it){
+    if (it.equipStatus === 'Not Active') return;
+    var cat = getCat(it.name);
+    present[cat] = (present[cat]||0) + 1;
+  });
+  // Always show known cats first, then Other if present
+  var cats = ['all'];
+  KNOWN_CATS.forEach(function(c){ if (present[c]) cats.push(c); });
+  if (present['Other']) cats.push('Other');
+  var el = document.getElementById('inv-cat-row');
+  el.innerHTML = cats.map(function(c){
+    var active = curCat === c;
+    return '<button class="fchip'+(active?' active':'')+'" onclick="setCat(&quot;'+c+'&quot;,this)">'
+      +(c==='all'?'All Categories':c)+'</button>';
+  }).join('');
+}
+
+function setCat(cat, btn) {
+  curCat = cat;
+  document.querySelectorAll('#inv-cat-row .fchip').forEach(function(c){ c.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  renderInventory();
+}
+
 function setFilter(f,btn) {
   curFilter=f;
   document.querySelectorAll('.fchip').forEach(function(c){c.classList.remove('active');});
@@ -729,12 +767,12 @@ function renderInventory() {
   var filtered = items.filter(function(it) {
     if(it.equipStatus==='Not Active') return false; // always hide Not Active
     if(q && it.name.toLowerCase().indexOf(q)<0 && it.homeLocation.toLowerCase().indexOf(q)<0) return false;
-    if(curFilter==='out')     return it.status==='OUT';
-    if(curFilter==='in')      return it.status==='IN';
-    if(curFilter==='cnc')     return it.isCNC;
-    if(curFilter==='missing') return it.equipStatus==='Missing';
-    if(curFilter==='damaged') return it.equipStatus==='Damaged';
-    return true;
+    if(curFilter==='out')     return it.status==='OUT'     && (curCat==='all'||getCat(it.name)===curCat);
+    if(curFilter==='in')      return it.status==='IN'      && (curCat==='all'||getCat(it.name)===curCat);
+    if(curFilter==='cnc')     return it.isCNC              && (curCat==='all'||getCat(it.name)===curCat);
+    if(curFilter==='missing') return it.equipStatus==='Missing' && (curCat==='all'||getCat(it.name)===curCat);
+    if(curFilter==='damaged') return it.equipStatus==='Damaged' && (curCat==='all'||getCat(it.name)===curCat);
+    return curCat==='all' || getCat(it.name)===curCat;
   }).sort(function(a,b){ return ((a.status==='OUT'?0:2)+(a.isCNC?0:1)) - ((b.status==='OUT'?0:2)+(b.isCNC?0:1)); });
   var el = document.getElementById('inv-list');
   if (!filtered.length) { el.innerHTML='<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">No items found</div></div>'; return; }
