@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chaverim-equip-v5';
+const CACHE_NAME = 'chaverim-equip-v6';
 const STATIC_ASSETS = [
   '/chaverim-equipment/',
   '/chaverim-equipment/index.html',
