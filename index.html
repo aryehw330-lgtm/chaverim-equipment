@@ -252,12 +252,8 @@ textarea{resize:vertical;min-height:70px}
     <div class="modal-title">Check In / Out</div>
     <div class="modal-sub" style="color:#1a3a5c;font-weight:600;margin-bottom:12px">All items share the same call info</div>
     <div class="input-group">
-      <label class="field-label">BC Member #</label>
+      <label class="field-label">Unit # (BC Member)</label>
       <input id="modal-member" type="text" inputmode="numeric" placeholder="e.g. 38"/>
-    </div>
-    <div class="input-group">
-      <label class="field-label">Unit # (Truck/Vehicle)</label>
-      <input id="modal-unit" type="text" inputmode="numeric" placeholder="e.g. 02"/>
     </div>
     <div class="input-group">
       <label class="field-label">Call Number</label>
@@ -982,7 +978,7 @@ function submitCheckout(action) {
   var itemsCopy = modalItems.slice();
   closeModal(); showLoad(true);
   Promise.all(itemsCopy.map(function(item){
-    return postJ({action:'checkInOut',row:item.row,status:action,member:member,unit:unit,call:call,ccSel:ccSel,cncNote:cncNote})
+    return postJ({action:'checkInOut',row:item.row,status:action,member:member,call:call,ccSel:ccSel,cncNote:cncNote})
     .then(function(data){
       if(data.success){
         var idx=items.findIndex(function(i){return i.row===item.row;});
