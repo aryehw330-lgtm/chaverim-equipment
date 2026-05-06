@@ -902,15 +902,23 @@ function getEB(s) {
 function openCheckout(row, action) {
   var it = items.find(function(i){return i.row===row;});
   if(!it) return;
-  modalItem = it;
-  document.getElementById('modal-title').textContent     = (action||'IN')==='IN'?'Check IN':'Check OUT';
-  document.getElementById('modal-item-name').textContent = it.name+' — '+it.homeLocation;
-  document.getElementById('modal-member').value='';
-  document.getElementById('modal-unit').value='';
-  document.getElementById('modal-call').value='';
-  document.getElementById('modal-ccnc').value='';
-  document.getElementById('modal-cnc-note').value='';
-  document.getElementById('cnc-note-group').style.display='none';
+  // If modal not open yet, reset everything
+  if (!document.getElementById('checkout-modal').classList.contains('open')) {
+    modalItems = [];
+    document.getElementById('modal-member').value='';
+    document.getElementById('modal-unit').value='';
+    document.getElementById('modal-call').value='';
+    document.getElementById('modal-ccnc').value='';
+    document.getElementById('modal-cnc-note').value='';
+    document.getElementById('cnc-note-group').style.display='none';
+    document.getElementById('modal-item-search').value='';
+    document.getElementById('modal-search-results').style.display='none';
+  }
+  // Add item if not already in list
+  if (!modalItems.find(function(i){ return i.row===row; })) {
+    modalItems.push(it);
+  }
+  renderModalItemList();
   document.getElementById('checkout-modal').classList.add('open');
 }
 function closeModal() { document.getElementById('checkout-modal').classList.remove('open'); modalItems=[]; }
@@ -918,25 +926,29 @@ function toggleCNCNote() {
   document.getElementById('cnc-note-group').style.display = document.getElementById('modal-ccnc').value==='CNC'?'block':'none';
 }
 function submitCheckout(action) {
-  if(!modalItem) return;
-  var member=document.getElementById('modal-member').value.trim();
-  var unit=document.getElementById('modal-unit').value.trim();
-  var call=document.getElementById('modal-call').value.trim();
-  var ccSel=document.getElementById('modal-ccnc').value;
-  var cncNote=document.getElementById('modal-cnc-note').value.trim();
-  if(!member){alert('Please enter your BC member number.');return;}
-  if(!call){alert('Please enter the call number.');return;}
-  if(!ccSel){alert('Please select CC or CNC.');return;}
-  if(ccSel==='CNC'&&!cncNote){alert('Please describe where the item is.');return;}
-  var item=modalItem; closeModal(); showLoad(true);
-  postJ({action:'checkInOut',row:item.row,status:action,member:member,call:call,ccSel:ccSel,cncNote:cncNote})
-  .then(function(data){
-    if(data.success){
-      var idx=items.findIndex(function(i){return i.row===item.row;});
-      if(idx>=0){items[idx].status=action;items[idx].member=member;items[idx].call=call;items[idx].isCNC=ccSel==='CNC';items[idx].cncNote=cncNote;items[idx].lastUpdated=new Date().toLocaleString();}
-      updateStats();renderInventory();renderDashboard();
-      showToast(item.name+' checked '+action);
-    } else {showToast('Error: '+(data.error||'Unknown'));}
+  if(!modalItems.length) { alert('Please select at least one item.'); return; }
+  var member  = document.getElementById('modal-member').value.trim();
+  var unit    = document.getElementById('modal-unit').value.trim();
+  var call    = document.getElementById('modal-call').value.trim();
+  var ccSel   = document.getElementById('modal-ccnc').value;
+  var cncNote = document.getElementById('modal-cnc-note').value.trim();
+  if(!member) { alert('Please enter your BC member number.'); return; }
+  if(!call)   { alert('Please enter the call number.'); return; }
+  if(!ccSel)  { alert('Please select CC or CNC.'); return; }
+  if(ccSel==='CNC'&&!cncNote) { alert('Please describe where the item is.'); return; }
+  var itemsCopy = modalItems.slice();
+  closeModal(); showLoad(true);
+  Promise.all(itemsCopy.map(function(item){
+    return postJ({action:'checkInOut',row:item.row,status:action,member:member,unit:unit,call:call,ccSel:ccSel,cncNote:cncNote})
+    .then(function(data){
+      if(data.success){
+        var idx=items.findIndex(function(i){return i.row===item.row;});
+        if(idx>=0){items[idx].status=action;items[idx].member=member;items[idx].call=call;items[idx].isCNC=ccSel==='CNC';items[idx].cncNote=cncNote;items[idx].lastUpdated=new Date().toLocaleString();}
+      }
+    });
+  })).then(function(){
+    updateStats(); renderInventory(); renderDashboard();
+    showToast('✓ '+itemsCopy.length+' item'+(itemsCopy.length>1?'s':'')+' checked '+action);
   }).catch(function(){showToast('Network error');}).finally(function(){showLoad(false);});
 }
 
