@@ -50,6 +50,20 @@ input:focus,select:focus{border-color:#1a3a5c}
 </head>
 <body>
 
+<!-- PIN GATE -->
+<div id="pin-gate" style="position:fixed;inset:0;background:#f4f6f9;z-index:9999;display:flex;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:16px;padding:2rem 1.5rem;max-width:320px;width:90%;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.1)">
+    <div style="font-size:48px;margin-bottom:12px">🔒</div>
+    <div style="font-size:20px;font-weight:700;color:#1a3a5c;margin-bottom:6px">Bergen County Chaverim</div>
+    <div style="font-size:13px;color:#888;margin-bottom:20px">Enter PIN to continue</div>
+    <input id="pin-input" type="password" inputmode="numeric" maxlength="6" autocomplete="off"
+      style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:13px;font-size:24px;text-align:center;letter-spacing:8px;outline:none;margin-bottom:10px"
+      placeholder="••••"/>
+    <div id="pin-error" style="color:#c0392b;font-size:13px;font-weight:600;min-height:18px;margin-bottom:10px"></div>
+    <button onclick="checkPin()" style="width:100%;background:#1a3a5c;color:#fff;border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:700;cursor:pointer">Enter</button>
+  </div>
+</div>
+
 <div class="header">
   <h1>COBC Equipment</h1>
   <p>Bergen County Chaverim</p>
@@ -241,7 +255,34 @@ function showToast(msg){
 }
 function esc(v){ return (v||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-loadItems();
+function checkPin() {
+  var val = document.getElementById('pin-input').value.trim();
+  // Hash and compare using SHA-256
+  crypto.subtle.digest('SHA-256', new TextEncoder().encode(val))
+    .then(function(buf) {
+      var hash = Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+      // Accepted hashes: member (4357), ET (cobcet), admin (cobcadmin)
+      var valid = [
+        'faa3719c835d433bfb62878c18e28062c12146011bc16c332f3b4a2fed5ba2d9',
+        '173c5ec3eea7bf07e14395ad73f741882e7637253831740557be9d4863dbda2e',
+        '399d4e4b288b5fe2124ff08579e851feb7518cd5ca8eda73594fc1835084c066'
+      ];
+      if (valid.indexOf(hash) >= 0) {
+        document.getElementById('pin-gate').style.display = 'none';
+        loadItems();
+      } else {
+        document.getElementById('pin-error').textContent = '✕ Incorrect PIN';
+        document.getElementById('pin-input').value = '';
+        setTimeout(function(){ document.getElementById('pin-error').textContent = ''; }, 2000);
+      }
+    });
+}
+document.addEventListener('DOMContentLoaded', function() {
+  var pi = document.getElementById('pin-input');
+  if (pi) pi.addEventListener('keydown', function(e){ if(e.key==='Enter') checkPin(); });
+});
+
+// loadItems called after PIN
 </script>
 </body>
 </html>
