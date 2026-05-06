@@ -945,7 +945,6 @@ function openCheckout(row, action) {
   if (!document.getElementById('checkout-modal').classList.contains('open')) {
     modalItems = [];
     document.getElementById('modal-member').value='';
-    document.getElementById('modal-unit').value='';
     document.getElementById('modal-call').value='';
     document.getElementById('modal-ccnc').value='';
     document.getElementById('modal-cnc-note').value='';
@@ -967,7 +966,6 @@ function toggleCNCNote() {
 function submitCheckout(action) {
   if(!modalItems.length) { alert('Please select at least one item.'); return; }
   var member  = document.getElementById('modal-member').value.trim();
-  var unit    = document.getElementById('modal-unit').value.trim();
   var call    = document.getElementById('modal-call').value.trim();
   var ccSel   = document.getElementById('modal-ccnc').value;
   var cncNote = document.getElementById('modal-cnc-note').value.trim();
