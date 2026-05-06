@@ -899,6 +899,49 @@ function getEB(s) {
 }
 
 // CHECKOUT
+function renderModalItemList() {
+  var el = document.getElementById('modal-item-list');
+  if (!modalItems.length) {
+    el.innerHTML = '<div style="color:#aaa;font-size:13px;padding:6px">No items selected yet</div>';
+    return;
+  }
+  el.innerHTML = modalItems.map(function(it, idx){
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 8px;background:#f8fafc;border-radius:8px;margin-bottom:5px">'
+      +'<div><div style="font-size:13px;font-weight:600">'+esc(it.name)+'</div>'
+      +'<div style="font-size:11px;color:#888">'+esc(it.homeLocation)+'</div></div>'
+      +'<button onclick="removeModalItem('+idx+')" style="background:none;border:none;color:#c0392b;font-size:18px;cursor:pointer;padding:0 4px">✕</button>'
+      +'</div>';
+  }).join('');
+}
+function removeModalItem(idx) {
+  modalItems.splice(idx, 1);
+  renderModalItemList();
+}
+function renderModalSearch() {
+  var q = document.getElementById('modal-item-search').value.toLowerCase().trim();
+  var res = document.getElementById('modal-search-results');
+  if (!q) { res.style.display='none'; return; }
+  var matches = items.filter(function(it){
+    return it.equipStatus!=='Not Active'
+      && it.name.toLowerCase().indexOf(q) >= 0
+      && !modalItems.find(function(m){ return m.row===it.row; });
+  }).slice(0,8);
+  if (!matches.length) { res.style.display='none'; return; }
+  res.style.display = 'block';
+  res.innerHTML = matches.map(function(it){
+    return '<div onclick="addModalItem('+it.row+')" style="padding:9px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:13px;font-weight:600;color:#1a3a5c">'
+      +esc(it.name)+' <span style="color:#aaa;font-weight:400">— '+esc(it.homeLocation)+'</span></div>';
+  }).join('');
+}
+function addModalItem(row) {
+  var it = items.find(function(i){ return i.row===row; });
+  if (it && !modalItems.find(function(m){ return m.row===row; })) {
+    modalItems.push(it);
+    renderModalItemList();
+  }
+  document.getElementById('modal-item-search').value = '';
+  document.getElementById('modal-search-results').style.display = 'none';
+}
 function openCheckout(row, action) {
   var it = items.find(function(i){return i.row===row;});
   if(!it) return;
