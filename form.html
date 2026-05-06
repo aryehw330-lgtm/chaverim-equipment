@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+=<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -106,7 +106,7 @@ input:focus,select:focus{border-color:#1a3a5c}
 </div>
 
 <script>
-const BASE_URL = 'https://script.google.com/macros/s/AKfycbyPNglhj7ureloF8Au8TvRW9qPRWDZRLkxd60NhCsHbxALQNNBxEF-Y6bp4Bq9ScsjAOA/exec';
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbwOPOlN9kZXZbxit5PRDdcHBsoW8PmDzfp0MLe_AqPvNKbSZMVNFHBOfqNi-BrvVusN/exec';
 var allItems = [];
 var selectedItems = [];
 
@@ -122,8 +122,12 @@ function loadItems() {
   .then(function(r){ return r.json(); })
   .then(function(data){
     allItems = (data.items || []).filter(function(i){ return i.equipStatus !== 'Not Active'; });
-    // Pre-add scanned item
-    if (preRow) {
+    // Pre-add scanned item by name
+    if (preName) {
+      var decoded = decodeURIComponent(preName);
+      var it = allItems.find(function(i){ return i.name.toLowerCase() === decoded.toLowerCase(); });
+      if (it) addItem(it.row);
+    } else if (preRow) {
       var it = allItems.find(function(i){ return String(i.row) === String(preRow); });
       if (it) addItem(it.row);
     }
