@@ -249,11 +249,15 @@ textarea{resize:vertical;min-height:70px}
   <div class="modal-box">
     <button class="modal-close" onclick="closeModal()">✕</button>
     <div class="modal-bar"></div>
-    <div class="modal-title" id="modal-title">Check In / Out</div>
-    <div class="modal-sub" id="modal-item-name"></div>
+    <div class="modal-title">Check In / Out</div>
+    <div class="modal-sub" style="color:#1a3a5c;font-weight:600;margin-bottom:12px">All items share the same call info</div>
     <div class="input-group">
       <label class="field-label">BC Member #</label>
       <input id="modal-member" type="text" inputmode="numeric" placeholder="e.g. 38"/>
+    </div>
+    <div class="input-group">
+      <label class="field-label">Unit # (Truck/Vehicle)</label>
+      <input id="modal-unit" type="text" inputmode="numeric" placeholder="e.g. 02"/>
     </div>
     <div class="input-group">
       <label class="field-label">Call Number</label>
@@ -271,9 +275,18 @@ textarea{resize:vertical;min-height:70px}
       <label class="field-label">Where is the item? (CNC Note)</label>
       <input id="modal-cnc-note" type="text" placeholder="e.g. Left at Teaneck Garage"/>
     </div>
+    <!-- Selected items -->
+    <div class="field-label" style="margin-bottom:6px">Items Selected</div>
+    <div id="modal-item-list" style="margin-bottom:10px;max-height:160px;overflow-y:auto"></div>
+    <!-- Add more items -->
+    <div class="search-wrap" style="margin-bottom:8px">
+      <span class="search-icon">🔍</span>
+      <input id="modal-item-search" type="text" placeholder="Search to add more items..." oninput="renderModalSearch()" style="padding-left:36px;font-size:14px"/>
+    </div>
+    <div id="modal-search-results" style="max-height:140px;overflow-y:auto;margin-bottom:10px;border:1.5px solid #eee;border-radius:8px;display:none"></div>
     <div class="modal-footer">
-      <button class="btn btn-success" onclick="submitCheckout('IN')">✓ Check IN</button>
-      <button class="btn btn-danger"  onclick="submitCheckout('OUT')">↓ Check OUT</button>
+      <button class="btn btn-success" onclick="submitCheckout('IN')">✓ Check IN All</button>
+      <button class="btn btn-danger"  onclick="submitCheckout('OUT')">↓ Check OUT All</button>
     </div>
   </div>
 </div>
@@ -421,6 +434,11 @@ textarea{resize:vertical;min-height:70px}
 
     <!-- ADMIN -->
     <div class="page" id="page-admin">
+      <!-- Statistics Link -->
+      <a href="https://aryehw330-lgtm.github.io/Chaverim-Statistics/" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:10px;background:linear-gradient(135deg,#1a3a5c,#2a5a9c);color:#fff;text-decoration:none;border-radius:12px;padding:16px;margin-bottom:10px;font-size:15px;font-weight:700;box-shadow:0 2px 8px rgba(26,58,92,.3)">
+        📊 View Chaverim Dispatch Statistics
+      </a>
+
       <!-- Add Item -->
       <div class="adm-sec">
         <div class="adm-title open" onclick="toggleAdm(this)">➕ Add New Item<span class="toggle">▼</span></div>
@@ -509,6 +527,7 @@ var items=[], members=[], locations=['COBC'];
 var curFilter='all', curPage='dashboard', curLoc=null, curCat='all';
 var checked={}, rptType='', modalItem=null;
 var chkStatus={}, chkNotes={}, chkFilter='all';
+var modalItems = []; // array of items for multi-select checkout
 var secTarget=null, secPrevPage='dashboard';
 const ADMIN_PASS='cobc2026';
 
@@ -887,19 +906,21 @@ function openCheckout(row, action) {
   document.getElementById('modal-title').textContent     = (action||'IN')==='IN'?'Check IN':'Check OUT';
   document.getElementById('modal-item-name').textContent = it.name+' — '+it.homeLocation;
   document.getElementById('modal-member').value='';
+  document.getElementById('modal-unit').value='';
   document.getElementById('modal-call').value='';
   document.getElementById('modal-ccnc').value='';
   document.getElementById('modal-cnc-note').value='';
   document.getElementById('cnc-note-group').style.display='none';
   document.getElementById('checkout-modal').classList.add('open');
 }
-function closeModal() { document.getElementById('checkout-modal').classList.remove('open'); modalItem=null; }
+function closeModal() { document.getElementById('checkout-modal').classList.remove('open'); modalItems=[]; }
 function toggleCNCNote() {
   document.getElementById('cnc-note-group').style.display = document.getElementById('modal-ccnc').value==='CNC'?'block':'none';
 }
 function submitCheckout(action) {
   if(!modalItem) return;
   var member=document.getElementById('modal-member').value.trim();
+  var unit=document.getElementById('modal-unit').value.trim();
   var call=document.getElementById('modal-call').value.trim();
   var ccSel=document.getElementById('modal-ccnc').value;
   var cncNote=document.getElementById('modal-cnc-note').value.trim();
