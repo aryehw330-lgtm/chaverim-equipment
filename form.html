@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>COBC Equipment Check In/Out</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#f4f6f9;color:#1a1a1a}
+.header{background:#1a3a5c;padding:14px 16px;text-align:center}
+.header h1{font-size:18px;font-weight:700;color:#fff}
+.header p{font-size:12px;color:#a0bcd8;margin-top:2px}
+.container{max-width:480px;margin:0 auto;padding:16px}
+.card{background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.card-title{font-size:14px;font-weight:700;color:#1a3a5c;margin-bottom:12px}
+.field-label{font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px}
+input,select{width:100%;border:1.5px solid #ddd;border-radius:9px;padding:13px 12px;font-size:16px;outline:none;background:#fff;color:#1a1a1a;font-family:inherit;-webkit-appearance:none;margin-bottom:12px}
+input:focus,select:focus{border-color:#1a3a5c}
+.cnc-group{display:none}
+.item-card{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#f8fafc;border-radius:8px;margin-bottom:6px;border:1.5px solid #e0e6ed}
+.item-name{font-size:14px;font-weight:600;color:#1a1a1a}
+.item-loc{font-size:11px;color:#888;margin-top:2px}
+.item-remove{background:none;border:none;color:#c0392b;font-size:20px;cursor:pointer;padding:0 4px;line-height:1}
+.search-wrap{position:relative;margin-bottom:8px}
+.search-wrap input{margin-bottom:0;padding-left:36px}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#aaa;font-size:16px;pointer-events:none}
+.search-results{border:1.5px solid #e0e6ed;border-radius:9px;background:#fff;overflow:hidden;margin-bottom:12px;display:none}
+.search-result-item{padding:11px 14px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:14px;font-weight:600;color:#1a3a5c}
+.search-result-item:last-child{border-bottom:none}
+.search-result-item:active{background:#f0f4f8}
+.search-result-loc{font-size:11px;color:#aaa;font-weight:400}
+.btn{width:100%;padding:15px;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:10px}
+.btn-in{background:#1a3a5c;color:#fff}
+.btn-out{background:#c0392b;color:#fff}
+.btn:active{opacity:.85}
+.empty{color:#aaa;font-size:13px;padding:8px 0;text-align:center}
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#1a3a5c;color:#fff;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+.success-screen{display:none;text-align:center;padding:3rem 1rem}
+.success-icon{font-size:60px;margin-bottom:16px}
+.success-title{font-size:22px;font-weight:700;color:#2e7d32;margin-bottom:8px}
+.success-sub{font-size:15px;color:#666;margin-bottom:24px}
+.btn-another{background:#1a3a5c;color:#fff;border:none;border-radius:10px;padding:14px 24px;font-size:15px;font-weight:700;cursor:pointer;width:100%}
+#loading{display:none;position:fixed;inset:0;background:rgba(255,255,255,.8);z-index:400;align-items:center;justify-content:center}
+#loading.show{display:flex}
+.spinner{width:36px;height:36px;border:4px solid #e0e0e0;border-top-color:#1a3a5c;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>COBC Equipment</h1>
+  <p>Bergen County Chaverim</p>
+</div>
+
+<div id="loading"><div class="spinner"></div></div>
+<div class="toast" id="toast"></div>
+
+<div class="container">
+
+  <!-- Success screen -->
+  <div class="success-screen" id="success-screen">
+    <div class="success-icon">✅</div>
+    <div class="success-title" id="success-title">Checked In!</div>
+    <div class="success-sub" id="success-sub"></div>
+    <button class="btn-another" onclick="resetForm()">+ New Check In/Out</button>
+  </div>
+
+  <!-- Form -->
+  <div id="form-screen">
+
+    <div class="card">
+      <div class="card-title">📋 Call Information</div>
+      <label class="field-label">Unit # (BC Member)</label>
+      <input id="f-member" type="text" inputmode="numeric" placeholder="e.g. 38"/>
+      <label class="field-label">Call Number</label>
+      <input id="f-call" type="text" inputmode="numeric" placeholder="Dispatched call #"/>
+      <label class="field-label">CC or CNC?</label>
+      <select id="f-ccnc" onchange="toggleCNC()">
+        <option value="">-- Select --</option>
+        <option value="CC">CC — Correct location</option>
+        <option value="CNC">CNC — Wrong location</option>
+      </select>
+      <div class="cnc-group" id="cnc-group">
+        <label class="field-label">Where is the item? (CNC Note)</label>
+        <input id="f-cnc-note" type="text" placeholder="e.g. Left at Teaneck Garage"/>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📦 Items (<span id="item-count">0</span>)</div>
+      <div id="item-list"><div class="empty">No items selected yet</div></div>
+      <div class="search-wrap" style="margin-top:10px">
+        <span class="search-icon">🔍</span>
+        <input id="f-search" type="text" placeholder="Search to add items..." oninput="doSearch()"/>
+      </div>
+      <div class="search-results" id="search-results"></div>
+    </div>
+
+    <button class="btn btn-in" onclick="submit('IN')">✓ Check IN All Items</button>
+    <button class="btn btn-out" onclick="submit('OUT')">↓ Check OUT All Items</button>
+
+  </div>
+</div>
+
+<script>
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbwOPOlN9kZXZbxit5PRDdcHBsoW8PmDzfp0MLe_AqPvNKbSZMVNFHBOfqNi-BrvVusN/exec';
+var allItems = [];
+var selectedItems = [];
+
+// Parse URL params
+var params = new URLSearchParams(window.location.search);
+var preRow  = params.get('row');
+var preName = params.get('name');
+
+// Load inventory
+function loadItems() {
+  showLoad(true);
+  fetch(BASE_URL + '?action=getInventory', {redirect:'follow',credentials:'omit'})
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    allItems = (data.items || []).filter(function(i){ return i.equipStatus !== 'Not Active'; });
+    // Pre-add scanned item
+    if (preRow) {
+      var it = allItems.find(function(i){ return String(i.row) === String(preRow); });
+      if (it) addItem(it.row);
+    }
+  })
+  .catch(function(){ showToast('Failed to load items'); })
+  .finally(function(){ showLoad(false); });
+}
+
+function addItem(row) {
+  var it = allItems.find(function(i){ return i.row === row; });
+  if (!it) return;
+  if (selectedItems.find(function(i){ return i.row === row; })) return;
+  selectedItems.push(it);
+  renderItems();
+  document.getElementById('f-search').value = '';
+  document.getElementById('search-results').style.display = 'none';
+}
+
+function removeItem(row) {
+  selectedItems = selectedItems.filter(function(i){ return i.row !== row; });
+  renderItems();
+}
+
+function renderItems() {
+  document.getElementById('item-count').textContent = selectedItems.length;
+  var el = document.getElementById('item-list');
+  if (!selectedItems.length) {
+    el.innerHTML = '<div class="empty">No items selected yet</div>';
+    return;
+  }
+  el.innerHTML = selectedItems.map(function(it){
+    return '<div class="item-card">'
+      +'<div><div class="item-name">'+esc(it.name)+'</div><div class="item-loc">'+esc(it.homeLocation)+'</div></div>'
+      +'<button class="item-remove" onclick="removeItem('+it.row+')">✕</button>'
+      +'</div>';
+  }).join('');
+}
+
+function doSearch() {
+  var q = document.getElementById('f-search').value.toLowerCase().trim();
+  var res = document.getElementById('search-results');
+  if (!q) { res.style.display='none'; return; }
+  var matches = allItems.filter(function(it){
+    return it.name.toLowerCase().indexOf(q) >= 0
+      && !selectedItems.find(function(s){ return s.row === it.row; });
+  }).slice(0, 8);
+  if (!matches.length) { res.style.display='none'; return; }
+  res.style.display = 'block';
+  res.innerHTML = matches.map(function(it){
+    return '<div class="search-result-item" onclick="addItem('+it.row+')">'
+      +esc(it.name)+' <span class="search-result-loc">— '+esc(it.homeLocation)+'</span></div>';
+  }).join('');
+}
+
+function toggleCNC() {
+  var v = document.getElementById('f-ccnc').value;
+  document.getElementById('cnc-group').style.display = v === 'CNC' ? 'block' : 'none';
+}
+
+function submit(action) {
+  var member  = document.getElementById('f-member').value.trim();
+  var call    = document.getElementById('f-call').value.trim();
+  var ccSel   = document.getElementById('f-ccnc').value;
+  var cncNote = document.getElementById('f-cnc-note').value.trim();
+  if (!selectedItems.length) { showToast('Please add at least one item'); return; }
+  if (!member) { showToast('Please enter your unit number'); return; }
+  if (!call)   { showToast('Please enter the call number'); return; }
+  if (!ccSel)  { showToast('Please select CC or CNC'); return; }
+  if (ccSel === 'CNC' && !cncNote) { showToast('Please describe where the item is'); return; }
+  showLoad(true);
+  var itemsCopy = selectedItems.slice();
+  Promise.all(itemsCopy.map(function(it){
+    return fetch(BASE_URL, {
+      method:'POST', redirect:'follow', credentials:'omit',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({action:'checkInOut',row:it.row,status:action,member:member,call:call,ccSel:ccSel,cncNote:cncNote})
+    }).then(function(r){ return r.json(); });
+  })).then(function(){
+    showLoad(false);
+    document.getElementById('form-screen').style.display = 'none';
+    document.getElementById('success-screen').style.display = 'block';
+    document.getElementById('success-title').textContent = action === 'IN' ? '✅ Checked In!' : '✅ Checked Out!';
+    document.getElementById('success-sub').textContent = itemsCopy.length + ' item' + (itemsCopy.length > 1 ? 's' : '') + ' ' + (action === 'IN' ? 'checked in' : 'checked out') + ' for Call #' + call;
+  }).catch(function(){
+    showLoad(false);
+    showToast('Network error — please try again');
+  });
+}
+
+function resetForm() {
+  selectedItems = [];
+  document.getElementById('f-member').value = '';
+  document.getElementById('f-call').value = '';
+  document.getElementById('f-ccnc').value = '';
+  document.getElementById('f-cnc-note').value = '';
+  document.getElementById('f-search').value = '';
+  document.getElementById('cnc-group').style.display = 'none';
+  document.getElementById('search-results').style.display = 'none';
+  renderItems();
+  document.getElementById('success-screen').style.display = 'none';
+  document.getElementById('form-screen').style.display = 'block';
+}
+
+function showLoad(v){ document.getElementById('loading').className = v ? 'show' : ''; }
+var toastTimer;
+function showToast(msg){
+  var el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2800);
+}
+function esc(v){ return (v||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+loadItems();
+</script>
+</body>
+</html>
