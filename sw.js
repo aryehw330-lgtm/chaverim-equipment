@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chaverim-equip-v6';
+const CACHE_NAME = 'chaverim-equip-v7';
 const STATIC_ASSETS = [
   '/chaverim-equipment/',
   '/chaverim-equipment/index.html',
@@ -21,6 +21,11 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  // Never cache form.html - always fetch fresh
+  if (event.request.url.includes('form.html')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
   event.respondWith(
     fetch(event.request).then(response => {
       if (response.ok) {
