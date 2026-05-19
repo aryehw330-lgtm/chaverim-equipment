@@ -1408,6 +1408,15 @@ document.addEventListener('DOMContentLoaded', function() {
         <input id="qr-cnc-note" type="text" placeholder="e.g. Left at Teaneck Garage"
           style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:14px 12px;font-size:16px;outline:none;margin-bottom:13px"/>
       </div>
+      <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:6px">Items</div>
+      <div id="qr-items-list" style="margin-bottom:8px"></div>
+      <div style="position:relative;margin-bottom:8px">
+        <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#aaa;font-size:15px;pointer-events:none">🔍</span>
+        <input id="qr-item-search" type="text" placeholder="Add more items..."
+          oninput="qrItemSearch()"
+          style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:12px 12px 12px 36px;font-size:14px;outline:none"/>
+      </div>
+      <div id="qr-item-results" style="display:none;max-height:130px;overflow-y:auto;border:1.5px solid #eee;border-radius:8px;margin-bottom:12px"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <button onclick="qrSubmit('IN')" style="padding:18px;background:#1a3a5c;color:#fff;border:none;border-radius:10px;font-size:18px;font-weight:700;cursor:pointer">✓ IN</button>
         <button onclick="qrSubmit('OUT')" style="padding:18px;background:#c0392b;color:#fff;border:none;border-radius:10px;font-size:18px;font-weight:700;cursor:pointer">↓ OUT</button>
@@ -1426,6 +1435,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script>
 var _qrName = null;
 var _qrMember = null;
+var _qrExtraItems = [];
+var _qrAllItems = [];
 
 function showQRMode(name) {
   _qrName = name;
@@ -1477,10 +1488,13 @@ function qrShowForm() {
     document.getElementById('qr-member-display').textContent = '👤 BC-' + _qrMember.id + ' — ' + (_qrMember.name||'');
     document.getElementById('qr-member-wrap').style.display = 'none';
   }
+  _qrExtraItems = [];
+  qrRenderItemsList();
   fetch(BASE_URL + '?action=getInventory', {redirect:'follow',credentials:'omit'})
     .then(function(r){ return r.json(); })
     .then(function(d) {
-      var it = (d.items||[]).find(function(i){ return i.name === _qrName; });
+      _qrAllItems = d.items || [];
+      var it = _qrAllItems.find(function(i){ return i.name === _qrName; });
       if (it) {
         document.getElementById('qr-form-loc').textContent = '📍 ' + it.homeLocation;
         var isOut = it.status === 'OUT';
@@ -1496,6 +1510,51 @@ function qrToggleCNC() {
   document.getElementById('qr-cnc-wrap').style.display = document.getElementById('qr-ccnc').value === 'CNC' ? 'block' : 'none';
 }
 
+function qrRenderItemsList() {
+  var el = document.getElementById('qr-items-list');
+  if (!el) return;
+  var all = [{name: _qrName, main: true}].concat(_qrExtraItems.map(function(n){ return {name:n, main:false}; }));
+  el.innerHTML = all.map(function(it, idx) {
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 8px;background:#f8fafc;border-radius:8px;margin-bottom:4px">'
+      + '<span style="font-size:13px;font-weight:600;color:#1a1a1a">'+esc(it.name)+(it.main?' <span style="font-size:10px;color:#aaa;font-weight:400">(scanned)</span>':'')+'</span>'
+      + (!it.main ? '<button onclick="qrRemoveItem('+idx+')" style="background:none;border:none;color:#c0392b;font-size:18px;cursor:pointer;padding:0 4px;line-height:1">✕</button>' : '')
+      + '</div>';
+  }).join('');
+}
+
+function qrRemoveItem(idx) {
+  _qrExtraItems.splice(idx - 1, 1);
+  qrRenderItemsList();
+}
+
+function qrItemSearch() {
+  var q = document.getElementById('qr-item-search').value.toLowerCase().trim();
+  var res = document.getElementById('qr-item-results');
+  if (!q) { res.style.display='none'; return; }
+  var taken = [_qrName].concat(_qrExtraItems);
+  var matches = _qrAllItems.filter(function(it){
+    return it.equipStatus !== 'Not Active'
+      && it.name.toLowerCase().indexOf(q) >= 0
+      && taken.indexOf(it.name) < 0;
+  }).slice(0, 8);
+  if (!matches.length) { res.style.display='none'; return; }
+  res.style.display = 'block';
+  res.innerHTML = matches.map(function(it){
+    return '<div onclick="qrAddItem(this)" data-name="'+esc(it.name)+'" style="padding:9px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:13px;font-weight:600;color:#1a3a5c">'
+      +esc(it.name)+' <span style="color:#aaa;font-weight:400">— '+esc(it.homeLocation)+'</span></div>';
+  }).join('');
+}
+
+function qrAddItem(el) {
+  var name = el.getAttribute('data-name');
+  if (_qrExtraItems.indexOf(name) < 0) {
+    _qrExtraItems.push(name);
+    qrRenderItemsList();
+  }
+  document.getElementById('qr-item-search').value = '';
+  document.getElementById('qr-item-results').style.display = 'none';
+}
+
 function qrSubmit(action) {
   var member  = document.getElementById('qr-member').value.trim();
   var call    = document.getElementById('qr-call').value.trim();
@@ -1505,25 +1564,30 @@ function qrSubmit(action) {
   if (!call)   { alert('Please enter the call number.'); return; }
   if (!ccnc)   { alert('Please select a status.'); return; }
   if (ccnc === 'CNC' && !cncNote) { alert('Please describe where the item is.'); return; }
-  fetch(BASE_URL, {
-    method:'POST', redirect:'follow', credentials:'omit',
-    headers:{'Content-Type':'text/plain;charset=utf-8'},
-    body: JSON.stringify({action:'checkInByName', name:_qrName, status:action, member:member, call:call, ccSel:ccnc, cncNote:cncNote})
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(d) {
-    if (d.success) {
-      document.getElementById('qr-form-wrap').style.display = 'none';
-      var conf = document.getElementById('qr-confirm');
-      conf.style.display = 'flex';
-      var icon = document.getElementById('qr-conf-icon');
-      icon.style.background = action==='IN' ? '#1a3a5c' : '#c0392b';
-      icon.textContent = action==='IN' ? '✓' : '↓';
-      document.getElementById('qr-conf-title').textContent = action==='IN' ? 'Checked IN' : 'Checked OUT';
-      document.getElementById('qr-conf-detail').textContent = _qrName + ' · BC-' + member + ' · Call #' + call;
-    } else { alert('Error: ' + (d.error||'Unknown')); }
-  })
-  .catch(function(){ alert('Network error, please try again.'); });
+  var allNames = [_qrName].concat(_qrExtraItems);
+  var done = 0; var total = allNames.length;
+  allNames.forEach(function(name) {
+    fetch(BASE_URL, {
+      method:'POST', redirect:'follow', credentials:'omit',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({action:'checkInByName', name:name, status:action, member:member, call:call, ccSel:ccnc, cncNote:cncNote})
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(d) {
+      done++;
+      if (done === total) {
+        document.getElementById('qr-form-wrap').style.display = 'none';
+        var conf = document.getElementById('qr-confirm');
+        conf.style.display = 'flex';
+        var icon = document.getElementById('qr-conf-icon');
+        icon.style.background = action==='IN' ? '#1a3a5c' : '#c0392b';
+        icon.textContent = action==='IN' ? '✓' : '↓';
+        document.getElementById('qr-conf-title').textContent = action==='IN' ? 'Checked IN' : 'Checked OUT';
+        document.getElementById('qr-conf-detail').textContent = total + ' item' + (total>1?'s':'') + ' · BC-' + member + ' · Call #' + call;
+      }
+    })
+    .catch(function(){ done++; });
+  });
 }
 </script>
 </body>
