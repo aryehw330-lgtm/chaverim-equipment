@@ -1398,6 +1398,16 @@ document.addEventListener('DOMContentLoaded', function() {
       <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px">Call Number</label>
       <input id="qr-call" type="text" inputmode="numeric" placeholder="Dispatched call #"
         style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:14px 12px;font-size:16px;outline:none;margin-bottom:13px"/>
+      <!-- Additional items -->
+      <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:6px">Items Selected</div>
+      <div id="qr-item-list" style="margin-bottom:8px"></div>
+      <div style="position:relative;margin-bottom:8px">
+        <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#aaa;font-size:16px;pointer-events:none">🔍</span>
+        <input id="qr-item-search" type="text" placeholder="Add more items..."
+          oninput="renderQRItemSearch()"
+          style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:12px 12px 12px 36px;font-size:14px;outline:none"/>
+      </div>
+      <div id="qr-item-results" style="display:none;max-height:130px;overflow-y:auto;border:1.5px solid #eee;border-radius:8px;margin-bottom:10px"></div>
       <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px">Status</label>
       <select id="qr-ccnc" onchange="qrToggleCNC()"
         style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:14px 12px;font-size:16px;outline:none;background:#fff;margin-bottom:13px;-webkit-appearance:none">
@@ -1486,15 +1496,71 @@ function qrCheckPin() {
     });
 }
 
+var qrExtraItems = []; // additional items added in QR form
+
+function renderQRItemList() {
+  var el = document.getElementById('qr-item-list');
+  if (!el) return;
+  // Always show the scanned item first, then extras
+  var allItems = [{name: qrItemName, isMain: true}].concat(qrExtraItems);
+  el.innerHTML = allItems.map(function(it, idx) {
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 8px;background:#f8fafc;border-radius:8px;margin-bottom:5px">'
+      +'<div style="font-size:13px;font-weight:600;color:#1a3a5c">'+esc(it.name)
+      +(it.isMain ? ' <span style="font-size:10px;color:#888;font-weight:400">(scanned)</span>' : '')
+      +'</div>'
+      +(!it.isMain ? '<button onclick="qrRemoveItem('+idx+')" style="background:none;border:none;color:#c0392b;font-size:18px;cursor:pointer;padding:0 4px">✕</button>' : '')
+      +'</div>';
+  }).join('');
+}
+
+function qrRemoveItem(idx) {
+  // idx 0 is main item, extras start at idx 1
+  if (idx === 0) return; // can't remove scanned item
+  qrExtraItems.splice(idx - 1, 1);
+  renderQRItemList();
+}
+
+function renderQRItemSearch() {
+  var q = document.getElementById('qr-item-search').value.toLowerCase().trim();
+  var res = document.getElementById('qr-item-results');
+  if (!q) { res.style.display='none'; return; }
+  var allSelectedNames = [qrItemName].concat(qrExtraItems.map(function(i){ return i.name; }));
+  var matches = qrItems.filter(function(it){
+    return it.name.toLowerCase().indexOf(q) >= 0
+      && allSelectedNames.indexOf(it.name) < 0
+      && it.equipStatus !== 'Not Active';
+  }).slice(0, 8);
+  if (!matches.length) { res.style.display='none'; return; }
+  res.style.display = 'block';
+  res.innerHTML = matches.map(function(it){
+    return '<div onclick="qrAddItem('+JSON.stringify(it.name)+')" style="padding:9px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:13px;font-weight:600;color:#1a3a5c">'
+      +esc(it.name)+' <span style="color:#aaa;font-weight:400">— '+esc(it.homeLocation)+'</span></div>';
+  }).join('');
+}
+
+function qrAddItem(name) {
+  if (qrExtraItems.findIndex(function(i){ return i.name===name; }) < 0) {
+    qrExtraItems.push({name: name});
+    renderQRItemList();
+  }
+  document.getElementById('qr-item-search').value = '';
+  document.getElementById('qr-item-results').style.display = 'none';
+}
+
+var qrItems = []; // populated when QR form loads
+
 function showQRForm() {
   document.getElementById('qr-pin-gate').style.display = 'none';
   document.getElementById('qr-form-wrap').style.display = 'block';
   document.getElementById('qr-form-item').textContent = qrItemName;
+  qrExtraItems = [];
+  renderQRItemList();
   // Load item status from API
   fetch(BASE_URL + '?action=getInventory', {redirect:'follow', credentials:'omit'})
     .then(function(r){ return r.json(); })
     .then(function(d) {
-      var it = (d.items||[]).find(function(i){ return i.name === qrItemName; });
+      qrItems = d.items || [];
+      var it = qrItems.find(function(i){ return i.name === qrItemName; });
       if (it) {
         document.getElementById('qr-form-loc').textContent = '📍 ' + it.homeLocation;
         var isOut = it.status === 'OUT';
@@ -1528,39 +1594,51 @@ function qrSubmit(action) {
   if (!call)    { alert('Please enter the call number.'); return; }
   if (!ccnc)    { alert('Please select a status.'); return; }
   if (ccnc === 'CNC' && !cncNote) { alert('Please describe where the item is.'); return; }
-  var colH = ccnc === 'CNC' ? 'CNC - ' + cncNote : 'CC';
-  fetch(BASE_URL, {
-    method: 'POST',
-    redirect: 'follow',
-    credentials: 'omit',
-    headers: {'Content-Type': 'text/plain;charset=utf-8'},
-    body: JSON.stringify({
-      action: 'checkInByName',
-      name: qrItemName,
-      status: action,
-      member: member,
-      call: call,
-      ccSel: ccnc,
-      cncNote: cncNote
+  // All items to submit — main item + extras
+  var allNames = [qrItemName].concat(qrExtraItems.map(function(i){ return i.name; }));
+  var total = allNames.length;
+  var done = 0;
+  var errors = [];
+  allNames.forEach(function(name) {
+    fetch(BASE_URL, {
+      method: 'POST',
+      redirect: 'follow',
+      credentials: 'omit',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify({
+        action: 'checkInByName',
+        name: name,
+        status: action,
+        member: member,
+        call: call,
+        ccSel: ccnc,
+        cncNote: cncNote
+      })
     })
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(d) {
-    if (d.success) {
-      document.getElementById('qr-form-wrap').style.display = 'none';
-      var conf = document.getElementById('qr-confirm');
-      conf.style.display = 'flex';
-      var icon = document.getElementById('qr-confirm-icon');
-      icon.style.background = action === 'IN' ? '#1a3a5c' : '#c0392b';
-      icon.textContent = action === 'IN' ? '✓' : '↓';
-      icon.style.color = '#fff';
-      document.getElementById('qr-confirm-title').textContent = action === 'IN' ? 'Checked IN' : 'Checked OUT';
-      document.getElementById('qr-confirm-detail').textContent = qrItemName + ' · BC-' + member + ' · Call #' + call;
-    } else {
-      alert('Error: ' + (d.error || 'Unknown error'));
-    }
-  })
-  .catch(function(){ alert('Network error, please try again.'); });
+    .then(function(r){ return r.json(); })
+    .then(function(d) {
+      if (!d.success) errors.push(name + ': ' + (d.error||'Unknown'));
+      done++;
+      if (done === total) {
+        document.getElementById('qr-form-wrap').style.display = 'none';
+        var conf = document.getElementById('qr-confirm');
+        conf.style.display = 'flex';
+        var icon = document.getElementById('qr-confirm-icon');
+        icon.style.background = action === 'IN' ? '#1a3a5c' : '#c0392b';
+        icon.textContent = action === 'IN' ? '✓' : '↓';
+        icon.style.color = '#fff';
+        document.getElementById('qr-confirm-title').textContent = action === 'IN' ? 'Checked IN' : 'Checked OUT';
+        document.getElementById('qr-confirm-detail').textContent
+          = total + ' item' + (total>1?'s':'') + ' · BC-' + member + ' · Call #' + call
+          + (errors.length ? '
+⚠️ Errors: ' + errors.join(', ') : '');
+      }
+    })
+    .catch(function(){
+      errors.push(name + ': network error');
+      done++;
+    });
+  });
 }
 
 function qrDone() {
