@@ -336,6 +336,7 @@ textarea{resize:vertical;min-height:70px}
       </div>
       <div id="chk-list"></div>
       <button class="wa-btn" id="wa-btn" onclick="sendWA()" style="display:none">📲 Send WhatsApp Summary</button>
+      <button id="submit-chk-btn" onclick="showSubmitChecklist()" style="display:none;width:100%;padding:13px;background:#2e7d32;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px">✅ Submit Checklist</button>
     </div>
     <!-- REPORT -->
     <div class="page" id="page-report">
@@ -460,7 +461,7 @@ textarea{resize:vertical;min-height:70px}
   </div>
 </div>
 <script>
-const BASE_URL = 'https://script.google.com/macros/s/AKfycbwHeQZAXKeTEzPYpC-yvmQWZNuOKqvdft5b4q3Ir_nDjz1nPnWUJtFEluRh0ru8HLafMg/exec';
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbwjnEHbt8v1aVKUO7361uc8XTodz5yBWGKoRgQ3H26UFOJeAQarVQAGaEuYj277Ed14rw/exec';
 const PASSWORDS = {
   'faa3719c835d433bfb62878c18e28062c12146011bc16c332f3b4a2fed5ba2d9': 1,
   '173c5ec3eea7bf07e14395ad73f741882e7637253831740557be9d4863dbda2e': 2,
@@ -1042,8 +1043,37 @@ function saveChkNote(row) {
   var idx = items.findIndex(function(i){ return i.row===row; });
   if (idx>=0) items[idx].equipNote = note ? (status+' - '+note) : status;
 }
+function showSubmitChecklist() {
+  var modal = document.getElementById('chk-submit-modal');
+  document.getElementById('chk-submit-loc').textContent = 'Location: ' + (curLoc || '');
+  document.getElementById('chk-submit-bc').value = loggedInMember ? loggedInMember.id : '';
+  document.getElementById('chk-submit-err').textContent = '';
+  modal.style.display = 'flex';
+  setTimeout(function(){ document.getElementById('chk-submit-bc').focus(); }, 100);
+}
+function closeSubmitChecklist() {
+  document.getElementById('chk-submit-modal').style.display = 'none';
+}
+function doSubmitChecklist() {
+  var bc = document.getElementById('chk-submit-bc').value.trim();
+  if (!bc) { document.getElementById('chk-submit-err').textContent = 'Please enter your BC#'; return; }
+  var locItems = items.filter(function(i){ return i.homeLocation === curLoc && i.equipStatus !== 'Not Active'; });
+  if (!locItems.length) { closeSubmitChecklist(); return; }
+  var rows = locItems.map(function(i){ return i.row; });
+  document.getElementById('chk-submit-err').textContent = '';
+  postJ({action:'submitChecklist', bc:bc, rows:rows})
+    .then(function(d) {
+      if (d.success) {
+        closeSubmitChecklist();
+        showToast('✅ Checklist submitted — BC-' + bc);
+        renderChkItems();
+      } else {
+        document.getElementById('chk-submit-err').textContent = 'Error: ' + (d.error||'Unknown');
+      }
+    })
+    .catch(function(){ document.getElementById('chk-submit-err').textContent = 'Network error'; });
+}
 function sendWA() {
-  if(!curLoc) return;
   var li=items.filter(function(i){return i.homeLocation===curLoc && i.equipStatus!=='Not Active';});
   var done=li.filter(function(i){return !!chkStatus[i.row];});
   var issues=li.filter(function(i){return chkStatus[i.row]&&chkStatus[i.row]!=='OK';});
@@ -1378,6 +1408,21 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+<!-- SUBMIT CHECKLIST MODAL -->
+<div id="chk-submit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:600;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:20px;padding:2rem 1.5rem;max-width:320px;width:90%;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.2)">
+    <div style="font-size:36px;margin-bottom:12px">✅</div>
+    <div style="font-size:18px;font-weight:700;color:#1a3a5c;margin-bottom:4px">Submit Checklist</div>
+    <div id="chk-submit-loc" style="font-size:13px;color:#888;margin-bottom:16px"></div>
+    <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px;text-align:left">Your BC Member #</label>
+    <input id="chk-submit-bc" type="text" inputmode="numeric" placeholder="e.g. 38" style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:14px 12px;font-size:20px;text-align:center;outline:none;margin-bottom:8px"/>
+    <div id="chk-submit-err" style="color:#c0392b;font-size:13px;height:18px;margin-bottom:8px"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px">
+      <button onclick="closeSubmitChecklist()" style="padding:13px;background:#f0f0f0;color:#444;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer">Cancel</button>
+      <button onclick="doSubmitChecklist()" style="padding:13px;background:#2e7d32;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer">Submit</button>
+    </div>
+  </div>
+</div>
 <!-- QR MODE OVERLAY -->
 <div id="qr-overlay" style="display:none;position:fixed;inset:0;background:#f0f2f5;z-index:9999;overflow-y:auto">
   <div id="qr-pin-gate" style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem">
