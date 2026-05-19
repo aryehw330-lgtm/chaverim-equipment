@@ -457,7 +457,7 @@ textarea{resize:vertical;min-height:70px}
   </div>
 </div>
 <script>
-const BASE_URL = 'https://script.google.com/macros/s/AKfycbwRYw4OqkzJMri1qiYWzz3P7VYyaN2pnvKtdCqB7s40bPMdlBHanptCECK7TbpcU4ch-Q/exec';
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbyhC4PQ8Es6d0eKAtmgF3PXz9q0pk4nUiP-zlms3blTCBf27GbDdeOs5eJmzO70lRTMmw/exec';
 const PASSWORDS = {
   'faa3719c835d433bfb62878c18e28062c12146011bc16c332f3b4a2fed5ba2d9': 1,
   '173c5ec3eea7bf07e14395ad73f741882e7637253831740557be9d4863dbda2e': 2,
@@ -1337,10 +1337,19 @@ function esc(v){return (v||'').toString().replace(/&/g,'&amp;').replace(/</g,'&l
 
 // BOOT
 (function(){
+  // ── QR MODE: if ?name= param present, show simple check-in/out form ──
+  var urlParams = new URLSearchParams(window.location.search);
+  var qrItemName = urlParams.get('name');
+  if (qrItemName) {
+    // Show QR check-in/out overlay instead of full dashboard
+    showQRMode(qrItemName);
+    return;
+  }
+
+  // ── DASHBOARD MODE ──
   // Clear any old 4357-based sessions — force re-login
   var savedLevel = parseInt(localStorage.getItem('cobc_level')||'0');
   var savedMemberId = localStorage.getItem('cobc_member_id');
-  // If logged in as level 1 but no member ID stored, it was the old shared 4357 PIN — clear it
   if(savedLevel === 1 && !savedMemberId) {
     localStorage.removeItem('cobc_level');
     savedLevel = 0;
@@ -1356,6 +1365,207 @@ function esc(v){return (v||'').toString().replace(/&/g,'&amp;').replace(/</g,'&l
     loadData();
   }
 })();
+</script>
+<!-- QR MODE OVERLAY -->
+<div id="qr-overlay" style="display:none;position:fixed;inset:0;background:#f0f2f5;z-index:9999;overflow-y:auto">
+  <!-- QR PIN GATE -->
+  <div id="qr-pin-gate" style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem">
+    <div style="background:#fff;border-radius:20px;padding:2rem 1.5rem;max-width:340px;width:100%;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.1)">
+      <div style="font-size:48px;margin-bottom:12px">🔒</div>
+      <div style="font-size:20px;font-weight:700;color:#1a3a5c;margin-bottom:6px">Bergen County Chaverim</div>
+      <div id="qr-item-name-display" style="font-size:16px;font-weight:600;color:#555;margin-bottom:16px"></div>
+      <div style="font-size:13px;color:#888;margin-bottom:20px">Enter your member PIN</div>
+      <input id="qr-pin-input" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN"
+        style="width:100%;padding:16px;font-size:32px;text-align:center;letter-spacing:16px;border:2px solid #e0e0e0;border-radius:12px;outline:none;margin-bottom:12px"/>
+      <div id="qr-pin-error" style="color:#c0392b;font-size:13px;height:18px;margin-bottom:8px"></div>
+      <button onclick="qrCheckPin()" style="width:100%;padding:16px;background:#1a3a5c;color:#fff;border:none;border-radius:12px;font-size:17px;font-weight:700;cursor:pointer">Enter</button>
+    </div>
+  </div>
+  <!-- QR FORM -->
+  <div id="qr-form-wrap" style="display:none;padding:1rem;max-width:480px;margin:0 auto">
+    <div style="background:#fff;border-radius:20px;padding:1.5rem;box-shadow:0 4px 24px rgba(0,0,0,.08)">
+      <div style="font-size:13px;font-weight:700;color:#1a3a5c;letter-spacing:.06em;text-transform:uppercase;text-align:center;margin-bottom:8px">Bergen County Chaverim</div>
+      <div id="qr-form-item" style="font-size:22px;font-weight:700;text-align:center;margin-bottom:4px"></div>
+      <div id="qr-form-loc" style="font-size:13px;color:#888;text-align:center;margin-bottom:8px"></div>
+      <div id="qr-form-status-badge" style="padding:5px 16px;border-radius:20px;font-size:13px;font-weight:600;margin:0 auto 16px;display:block;width:fit-content;text-align:center"></div>
+      <div id="qr-member-display" style="display:none;background:#eef3f8;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:13px;font-weight:600;color:#1a3a5c;text-align:center"></div>
+      <div id="qr-member-group">
+        <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px">Your BC Member #</label>
+        <input id="qr-member" type="text" inputmode="numeric" placeholder="e.g. 38"
+          style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:14px 12px;font-size:16px;outline:none;margin-bottom:13px"/>
+      </div>
+      <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px">Call Number</label>
+      <input id="qr-call" type="text" inputmode="numeric" placeholder="Dispatched call #"
+        style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:14px 12px;font-size:16px;outline:none;margin-bottom:13px"/>
+      <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px">Status</label>
+      <select id="qr-ccnc" onchange="qrToggleCNC()"
+        style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:14px 12px;font-size:16px;outline:none;background:#fff;margin-bottom:13px;-webkit-appearance:none">
+        <option value="">-- Select --</option>
+        <option value="CC">CC — Correct location</option>
+        <option value="CNC">CNC — Wrong location</option>
+      </select>
+      <div id="qr-cnc-group" style="display:none">
+        <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px">Where is the item?</label>
+        <input id="qr-cnc-note" type="text" placeholder="e.g. Left at Teaneck Garage"
+          style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:14px 12px;font-size:16px;outline:none;margin-bottom:13px"/>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px">
+        <button onclick="qrSubmit('IN')" style="padding:18px;background:#1a3a5c;color:#fff;border:none;border-radius:10px;font-size:18px;font-weight:700;cursor:pointer">✓ IN</button>
+        <button onclick="qrSubmit('OUT')" style="padding:18px;background:#c0392b;color:#fff;border:none;border-radius:10px;font-size:18px;font-weight:700;cursor:pointer">↓ OUT</button>
+      </div>
+    </div>
+  </div>
+  <!-- QR CONFIRM -->
+  <div id="qr-confirm" style="display:none;align-items:center;justify-content:center;min-height:100vh;padding:1rem">
+    <div style="background:#fff;border-radius:20px;padding:2rem 1.5rem;max-width:320px;width:100%;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.1)">
+      <div id="qr-confirm-icon" style="width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 16px"></div>
+      <div id="qr-confirm-title" style="font-size:22px;font-weight:700;margin-bottom:8px"></div>
+      <div id="qr-confirm-detail" style="font-size:14px;color:#666;margin-bottom:20px"></div>
+      <button onclick="qrDone()" style="width:100%;padding:14px;background:#1a3a5c;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">Done</button>
+    </div>
+  </div>
+</div>
+<script>
+// ── QR MODE ──────────────────────────────────────────────────────────────────
+var qrItemName = null;
+var qrMemberInfo = null;
+
+function showQRMode(itemName) {
+  qrItemName = itemName;
+  document.getElementById('qr-overlay').style.display = 'block';
+  document.getElementById('qr-item-name-display').textContent = itemName;
+  // Check if already logged in from a previous QR scan
+  var savedPin = localStorage.getItem('cobc_qr_member');
+  if (savedPin) {
+    try {
+      qrMemberInfo = JSON.parse(savedPin);
+      showQRForm();
+      return;
+    } catch(e) {}
+  }
+  document.getElementById('qr-pin-input').focus();
+  document.getElementById('qr-pin-input').addEventListener('keydown', function(e){
+    if (e.key === 'Enter') qrCheckPin();
+  });
+}
+
+function qrCheckPin() {
+  var v = document.getElementById('qr-pin-input').value.trim();
+  if (!v) return;
+  var errEl = document.getElementById('qr-pin-error');
+  // Allow cobcadmin or cobcet
+  if (v === 'cobcadmin' || v === 'cobcet') {
+    qrMemberInfo = null;
+    localStorage.removeItem('cobc_qr_member');
+    showQRForm();
+    return;
+  }
+  // Look up member by PIN
+  document.getElementById('qr-pin-input').disabled = true;
+  fetch(BASE_URL + '?action=getMemberByPin&pin=' + encodeURIComponent(v), {redirect:'follow', credentials:'omit'})
+    .then(function(r){ return r.json(); })
+    .then(function(d) {
+      document.getElementById('qr-pin-input').disabled = false;
+      if (d && d.id) {
+        qrMemberInfo = d;
+        localStorage.setItem('cobc_qr_member', JSON.stringify(d));
+        showQRForm();
+      } else {
+        errEl.textContent = '✕ Incorrect PIN';
+        document.getElementById('qr-pin-input').value = '';
+        document.getElementById('qr-pin-input').focus();
+        setTimeout(function(){ errEl.textContent=''; }, 2000);
+      }
+    })
+    .catch(function() {
+      document.getElementById('qr-pin-input').disabled = false;
+      errEl.textContent = '✕ Connection error';
+      document.getElementById('qr-pin-input').value = '';
+      setTimeout(function(){ errEl.textContent=''; }, 3000);
+    });
+}
+
+function showQRForm() {
+  document.getElementById('qr-pin-gate').style.display = 'none';
+  document.getElementById('qr-form-wrap').style.display = 'block';
+  document.getElementById('qr-form-item').textContent = qrItemName;
+  // Load item status from API
+  fetch(BASE_URL + '?action=getInventory', {redirect:'follow', credentials:'omit'})
+    .then(function(r){ return r.json(); })
+    .then(function(d) {
+      var it = (d.items||[]).find(function(i){ return i.name === qrItemName; });
+      if (it) {
+        document.getElementById('qr-form-loc').textContent = '📍 ' + it.homeLocation;
+        var isOut = it.status === 'OUT';
+        var badge = document.getElementById('qr-form-status-badge');
+        badge.textContent = isOut ? 'Currently OUT' : 'Currently IN';
+        badge.style.background = isOut ? '#fdecea' : '#e8f5e9';
+        badge.style.color = isOut ? '#c0392b' : '#2e7d32';
+      }
+    }).catch(function(){});
+  // Auto-fill member if known
+  if (qrMemberInfo && qrMemberInfo.id) {
+    document.getElementById('qr-member').value = qrMemberInfo.id;
+    var memDisp = document.getElementById('qr-member-display');
+    memDisp.style.display = 'block';
+    memDisp.textContent = '👤 BC-' + qrMemberInfo.id + ' — ' + (qrMemberInfo.name || '');
+    document.getElementById('qr-member-group').style.display = 'none';
+  }
+}
+
+function qrToggleCNC() {
+  var v = document.getElementById('qr-ccnc').value;
+  document.getElementById('qr-cnc-group').style.display = v === 'CNC' ? 'block' : 'none';
+}
+
+function qrSubmit(action) {
+  var member  = document.getElementById('qr-member').value.trim();
+  var call    = document.getElementById('qr-call').value.trim();
+  var ccnc    = document.getElementById('qr-ccnc').value;
+  var cncNote = document.getElementById('qr-cnc-note').value.trim();
+  if (!member)  { alert('Please enter your BC member number.'); return; }
+  if (!call)    { alert('Please enter the call number.'); return; }
+  if (!ccnc)    { alert('Please select a status.'); return; }
+  if (ccnc === 'CNC' && !cncNote) { alert('Please describe where the item is.'); return; }
+  var colH = ccnc === 'CNC' ? 'CNC - ' + cncNote : 'CC';
+  fetch(BASE_URL, {
+    method: 'POST',
+    redirect: 'follow',
+    credentials: 'omit',
+    headers: {'Content-Type': 'text/plain;charset=utf-8'},
+    body: JSON.stringify({
+      action: 'checkInByName',
+      name: qrItemName,
+      status: action,
+      member: member,
+      call: call,
+      ccSel: ccnc,
+      cncNote: cncNote
+    })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d) {
+    if (d.success) {
+      document.getElementById('qr-form-wrap').style.display = 'none';
+      var conf = document.getElementById('qr-confirm');
+      conf.style.display = 'flex';
+      var icon = document.getElementById('qr-confirm-icon');
+      icon.style.background = action === 'IN' ? '#1a3a5c' : '#c0392b';
+      icon.textContent = action === 'IN' ? '✓' : '↓';
+      icon.style.color = '#fff';
+      document.getElementById('qr-confirm-title').textContent = action === 'IN' ? 'Checked IN' : 'Checked OUT';
+      document.getElementById('qr-confirm-detail').textContent = qrItemName + ' · BC-' + member + ' · Call #' + call;
+    } else {
+      alert('Error: ' + (d.error || 'Unknown error'));
+    }
+  })
+  .catch(function(){ alert('Network error, please try again.'); });
+}
+
+function qrDone() {
+  document.getElementById('qr-overlay').style.display = 'none';
+  document.getElementById('qr-confirm').style.display = 'none';
+}
 </script>
 </body>
 </html>
