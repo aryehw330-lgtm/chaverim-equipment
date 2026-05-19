@@ -184,7 +184,7 @@ textarea{resize:vertical;min-height:70px}
   <div class="pin-card">
     <div class="pin-logo">🔒</div>
     <div class="pin-title">Bergen County Chaverim</div>
-    <div class="pin-sub">Equipment Dashboard</div>
+    <div class="pin-sub">Equipment Dashboard — Enter your PIN</div>
     <input id="pin-input" class="pin-inp" type="password" autocomplete="off" placeholder="Enter password" style="letter-spacing:2px;font-size:18px"/>
     <div id="pin-error" class="pin-err"></div>
     <button class="pin-btn" onclick="checkPin()">Enter</button>
@@ -457,7 +457,7 @@ textarea{resize:vertical;min-height:70px}
   </div>
 </div>
 <script>
-const BASE_URL = 'https://script.google.com/macros/s/AKfycbxFwf0frVg32nx872htCAT4k8XmG_L3saN2HgQ3r-YPZxElAacbdfZdj8ho88hL0Wqwiw/exec';
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbyMiZyc_hg2_aQk0lf9TWUZMhmQMz0l59gzk2BEwjly3dgmELcj7WzfZMIuHo96sLXqnQ/exec';
 const PASSWORDS = {
   'faa3719c835d433bfb62878c18e28062c12146011bc16c332f3b4a2fed5ba2d9': 1,
   '173c5ec3eea7bf07e14395ad73f741882e7637253831740557be9d4863dbda2e': 2,
@@ -480,10 +480,12 @@ async function hashSHA256(str) {
 }
 function checkPin() {
   var raw = document.getElementById('pin-input').value.trim();
-  // First check admin/ET/member level passwords (hashed)
+  if (!raw) return;
+  // First check ET/admin hashed passwords
   hashSHA256(raw).then(function(v) {
     var level = PASSWORDS[v] || 0;
     if (level > 0) {
+      // ET or Admin login
       userLevel = level;
       loggedInMember = null;
       localStorage.setItem('cobc_level', level);
@@ -492,24 +494,33 @@ function checkPin() {
       document.getElementById('app').style.display = 'flex';
       applyAccessLevel();
       loadData();
-    } else {
-      // Check member PINs loaded from sheet
-      var found = memberPins.find(function(m){ return m.pin === raw; });
-      if (found) {
-        userLevel = 1;
-        loggedInMember = found;
-        localStorage.setItem('cobc_level', 1);
-        localStorage.setItem('cobc_member_id', found.id);
-        document.getElementById('pin-gate').classList.add('hidden');
-        document.getElementById('app').style.display = 'flex';
-        applyAccessLevel();
-        loadData();
-      } else {
-        document.getElementById('pin-error').textContent = '✕ Incorrect password';
-        document.getElementById('pin-input').value = '';
-        setTimeout(function(){ document.getElementById('pin-error').textContent=''; }, 2000);
-      }
+      return;
     }
+    // Not ET/admin — check against member PINs from sheet via API
+    var url = BASE_URL + '?action=getMemberByPin&pin=' + encodeURIComponent(raw);
+    fetch(url, {redirect:'follow', credentials:'omit'})
+      .then(function(r){ return r.json(); })
+      .then(function(d) {
+        if (d && d.id) {
+          userLevel = 1;
+          loggedInMember = {id: d.id, name: d.name, firstName: d.firstName, lastName: d.lastName};
+          localStorage.setItem('cobc_level', 1);
+          localStorage.setItem('cobc_member_id', d.id);
+          document.getElementById('pin-gate').classList.add('hidden');
+          document.getElementById('app').style.display = 'flex';
+          applyAccessLevel();
+          loadData();
+        } else {
+          document.getElementById('pin-error').textContent = '✕ Incorrect PIN';
+          document.getElementById('pin-input').value = '';
+          setTimeout(function(){ document.getElementById('pin-error').textContent=''; }, 2000);
+        }
+      })
+      .catch(function() {
+        document.getElementById('pin-error').textContent = '✕ Connection error, try again';
+        document.getElementById('pin-input').value = '';
+        setTimeout(function(){ document.getElementById('pin-error').textContent=''; }, 3000);
+      });
   });
 }
 document.getElementById('pin-input').addEventListener('keydown', function(e){ if(e.key==='Enter') checkPin(); });
@@ -598,11 +609,14 @@ function loadData() {
     items.forEach(function(it){ if(it.homeLocation && locations.indexOf(it.homeLocation)<0) locations.push(it.homeLocation); });
     // Build member PIN lookup
     memberPins = members.filter(function(m){ return m.pin; }).map(function(m){ return {id: String(m.id||m.unit||''), name: m.name||((m.firstName||'')+' '+(m.lastName||'')).trim(), pin: String(m.pin)}; });
-    // Restore logged in member after data load
+    // Restore full member info after data load
     var savedMemberId = localStorage.getItem('cobc_member_id');
-    if (savedMemberId && !loggedInMember) {
+    if (savedMemberId) {
       var found = memberPins.find(function(m){ return m.id === savedMemberId; });
-      if (found) loggedInMember = found;
+      if (found) {
+        loggedInMember = found;
+        applyAccessLevel(); // refresh header with name
+      }
     }
     updateStats(); renderDashboard(); renderInventory(); renderCatChips(); populateRptItems(); renderAdmin(); renderAdmCatChips(); renderMembers(); renderHlocList();
   }).catch(function(){ showToast('Failed to load — check connection'); })
@@ -1326,6 +1340,12 @@ function esc(v){return (v||'').toString().replace(/&/g,'&amp;').replace(/</g,'&l
   var savedLevel = parseInt(localStorage.getItem('cobc_level')||'0');
   if(savedLevel > 0){
     userLevel = savedLevel;
+    // Restore logged in member if saved
+    var savedMemberId = localStorage.getItem('cobc_member_id');
+    if (savedMemberId) {
+      // Will be fully restored after loadData populates memberPins
+      loggedInMember = {id: savedMemberId, name: '', firstName: '', lastName: ''};
+    }
     document.getElementById('pin-gate').classList.add('hidden');
     document.getElementById('app').style.display='flex';
     applyAccessLevel();
