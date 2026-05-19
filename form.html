@@ -845,9 +845,11 @@ function renderModalSearch() {
   }).slice(0,8);
   if (!matches.length) { res.style.display='none'; return; }
   res.style.display = 'block';
-  res.innerHTML = matches.map(function(it){
-    return '<div onclick="addModalItem('+it.row+')" style="padding:9px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:13px;font-weight:600;color:#1a3a5c">'
-      +esc(it.name)+' <span style="color:#aaa;font-weight:400">— '+esc(it.homeLocation)+'</span></div>';
+ res.innerHTML = matches.map(function(it){
+    var isOut = it.status === 'OUT';
+    var badge = '<span style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;margin-left:6px;background:'+(isOut?'#fdecea':'#e8f5e9')+';color:'+(isOut?'#c0392b':'#2e7d32')+'">'+(isOut?'OUT':'IN')+'</span>';
+    return '<div onclick="addModalItem('+it.row+')" style="padding:9px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:13px;font-weight:600;color:#1a3a5c;display:flex;align-items:center;justify-content:space-between">'
+      +'<span>'+esc(it.name)+' <span style="color:#aaa;font-weight:400;font-size:11px">'+esc(it.homeLocation)+'</span></span>'+badge+'</div>';
   }).join('');
 }
 function addModalItem(row) {
@@ -907,6 +909,15 @@ function submitCheckout(action) {
   if(!call)   { alert('Please enter the call number.'); return; }
   if(!ccSel)  { alert('Please select CC or CNC.'); return; }
   if(ccSel==='CNC'&&!cncNote) { alert('Please describe where the item is.'); return; }
+var blocked = [];
+  modalItems.forEach(function(item) {
+    if (action === 'IN'  && item.status === 'IN')  blocked.push(item.name + ' (already IN)');
+    if (action === 'OUT' && item.status === 'OUT') blocked.push(item.name + ' (already OUT)');
+  });
+  if (blocked.length > 0) {
+    alert('Cannot check ' + action + ': ' + blocked.join(', ') + '. Contact BC-38 if you need help.');
+    return;
+  }
   var itemsCopy = modalItems.slice();
   closeModal(); showLoad(true);
   Promise.all(itemsCopy.map(function(item){
