@@ -282,6 +282,7 @@ textarea{resize:vertical;min-height:70px}
         <div class="kpi kpi-iss"><div class="kpi-val" id="kpi-iss">0</div><div class="kpi-label">Issues</div></div>
         <div class="kpi kpi-cnc"><div class="kpi-val" id="kpi-cnc">0</div><div class="kpi-label">CNC</div></div>
       </div>
+      <div id="dash-chk-wrap" style="display:none;margin-bottom:14px"><div class="section-label">🗂 Last Checklist Submitted</div><div id="dash-chk-info"></div></div>
       <div id="dash-alerts-wrap" style="display:none">
         <div class="section-label">⚠️ Active Alerts</div>
         <div id="dash-alerts"></div>
@@ -290,7 +291,6 @@ textarea{resize:vertical;min-height:70px}
         <div class="section-label">📤 Currently Out</div>
         <div id="dash-out"></div>
       </div>
-      <div id="dash-chk-wrap" style="display:none;margin-bottom:14px"><div class="section-label">🗂 Last Checklist Submitted</div><div id="dash-chk-info"></div></div>
       <div class="section-label">🕐 Recent Activity</div>
       <div id="dash-recent"></div>
     </div>
@@ -654,9 +654,21 @@ function renderDashboard() {
       if (!byLoc[i.homeLocation] || i.lastChecked > byLoc[i.homeLocation]) byLoc[i.homeLocation] = i.lastChecked;
     });
     var html = Object.keys(byLoc).map(function(loc){
-      return '<div style="background:#fff;border-radius:10px;padding:10px 13px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.08)">'
-        +'<div style="font-size:13px;font-weight:700;color:#1a3a5c">📍 '+esc(loc)+'</div>'
-        +'<div style="font-size:12px;color:#555;margin-top:3px">'+esc(byLoc[loc])+'</div>'
+      var raw = byLoc[loc] || '';
+      // Format: 'BC-38 · May 19, 2026 · 2:22 PM'
+      var parts = raw.split(' · ');
+      var member = parts[0] || '';
+      var dateTime = parts.slice(1).join(' · ');
+      var memberName = '';
+      if (member) {
+        var bcNum = member.replace(/^BC-/i,'').trim();
+        var mObj = members.find(function(m){ return String(m.id||m.unit) === bcNum; });
+        memberName = mObj ? (mObj.firstName || mObj.name || '') : '';
+      }
+      return '<div style="background:#fff;border-radius:10px;padding:12px 14px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:4px solid #2e7d32">'
+        +'<div style="font-size:14px;font-weight:700;color:#1a3a5c;margin-bottom:6px">📍 '+esc(loc)+'</div>'
+        +'<div style="font-size:12px;color:#444;margin-bottom:3px">👤 Submitted by: <b>'+esc(member)+(memberName?' — '+esc(memberName):'')+'</b></div>'
+        +'<div style="font-size:12px;color:#666">🕐 '+esc(dateTime)+'</div>'
         +'</div>';
     }).join('');
     document.getElementById('dash-chk-info').innerHTML = html;
