@@ -1450,32 +1450,16 @@ function qrCheckPin() {
   var v = document.getElementById('qr-pin-input').value.trim();
   if (!v) return;
   var errEl = document.getElementById('qr-pin-error');
-  if (v === 'cobcadmin' || v === 'cobcet') {
-    _qrMember = null;
-    qrShowForm();
-    return;
-  }
+  if (v === 'cobcadmin' || v === 'cobcet') { _qrMember = null; qrShowForm(); return; }
   document.getElementById('qr-pin-input').disabled = true;
   fetch(BASE_URL + '?action=getMemberByPin&pin=' + encodeURIComponent(v), {redirect:'follow',credentials:'omit'})
     .then(function(r){ return r.json(); })
     .then(function(d) {
       document.getElementById('qr-pin-input').disabled = false;
-      if (d && d.id) {
-        _qrMember = d;
-        qrShowForm();
-      } else {
-        errEl.textContent = '✕ Incorrect PIN';
-        document.getElementById('qr-pin-input').value = '';
-        document.getElementById('qr-pin-input').focus();
-        setTimeout(function(){ errEl.textContent=''; }, 2000);
-      }
+      if (d && d.id) { _qrMember = d; qrShowForm(); }
+      else { errEl.textContent = '\u2715 Incorrect PIN'; document.getElementById('qr-pin-input').value = ''; document.getElementById('qr-pin-input').focus(); setTimeout(function(){ errEl.textContent=''; }, 2000); }
     })
-    .catch(function(){
-      document.getElementById('qr-pin-input').disabled = false;
-      errEl.textContent = '✕ Connection error';
-      document.getElementById('qr-pin-input').value = '';
-      setTimeout(function(){ errEl.textContent=''; }, 3000);
-    });
+    .catch(function(){ document.getElementById('qr-pin-input').disabled = false; errEl.textContent = '\u2715 Connection error'; document.getElementById('qr-pin-input').value = ''; setTimeout(function(){ errEl.textContent=''; }, 3000); });
 }
 
 function qrShowForm() {
@@ -1485,7 +1469,7 @@ function qrShowForm() {
   if (_qrMember) {
     document.getElementById('qr-member').value = _qrMember.id;
     document.getElementById('qr-member-display').style.display = 'block';
-    document.getElementById('qr-member-display').textContent = '👤 BC-' + _qrMember.id + ' — ' + (_qrMember.name||'');
+    document.getElementById('qr-member-display').textContent = '\ud83d\udc64 BC-' + _qrMember.id + ' \u2014 ' + (_qrMember.name||'');
     document.getElementById('qr-member-wrap').style.display = 'none';
   }
   _qrExtraItems = [];
@@ -1496,7 +1480,7 @@ function qrShowForm() {
       _qrAllItems = d.items || [];
       var it = _qrAllItems.find(function(i){ return i.name === _qrName; });
       if (it) {
-        document.getElementById('qr-form-loc').textContent = '📍 ' + it.homeLocation;
+        document.getElementById('qr-form-loc').textContent = '\ud83d\udccd ' + it.homeLocation;
         var isOut = it.status === 'OUT';
         var badge = document.getElementById('qr-form-badge');
         badge.textContent = isOut ? 'Currently OUT' : 'Currently IN';
@@ -1517,7 +1501,7 @@ function qrRenderItemsList() {
   el.innerHTML = all.map(function(it, idx) {
     return '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 8px;background:#f8fafc;border-radius:8px;margin-bottom:4px">'
       + '<span style="font-size:13px;font-weight:600;color:#1a1a1a">'+esc(it.name)+(it.main?' <span style="font-size:10px;color:#aaa;font-weight:400">(scanned)</span>':'')+'</span>'
-      + (!it.main ? '<button onclick="qrRemoveItem('+idx+')" style="background:none;border:none;color:#c0392b;font-size:18px;cursor:pointer;padding:0 4px;line-height:1">✕</button>' : '')
+      + (!it.main ? '<button onclick="qrRemoveItem('+idx+')" style="background:none;border:none;color:#c0392b;font-size:18px;cursor:pointer;padding:0 4px;line-height:1">\u2715</button>' : '')
       + '</div>';
   }).join('');
 }
@@ -1533,24 +1517,21 @@ function qrItemSearch() {
   if (!q) { res.style.display='none'; return; }
   var taken = [_qrName].concat(_qrExtraItems);
   var matches = _qrAllItems.filter(function(it){
-    return it.equipStatus !== 'Not Active'
-      && it.name.toLowerCase().indexOf(q) >= 0
-      && taken.indexOf(it.name) < 0;
+    return it.equipStatus !== 'Not Active' && it.name.toLowerCase().indexOf(q) >= 0 && taken.indexOf(it.name) < 0;
   }).slice(0, 8);
   if (!matches.length) { res.style.display='none'; return; }
   res.style.display = 'block';
   res.innerHTML = matches.map(function(it){
-    return '<div onclick="qrAddItem(this)" data-name="'+esc(it.name)+'" style="padding:9px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:13px;font-weight:600;color:#1a3a5c">'
-      +esc(it.name)+' <span style="color:#aaa;font-weight:400">— '+esc(it.homeLocation)+'</span></div>';
+    var isOut = it.status === 'OUT';
+    var badge = '<span style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;margin-left:6px;background:'+(isOut?'#fdecea':'#e8f5e9')+';color:'+(isOut?'#c0392b':'#2e7d32')+'">'+(isOut?'OUT':'IN')+'</span>';
+    return '<div onclick="qrAddItem(this)" data-name="'+esc(it.name)+'" style="padding:9px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:13px;font-weight:600;color:#1a3a5c;display:flex;align-items:center;justify-content:space-between">'
+      +'<span>'+esc(it.name)+' <span style="color:#aaa;font-weight:400;font-size:11px">'+esc(it.homeLocation)+'</span></span>'+badge+'</div>';
   }).join('');
 }
 
 function qrAddItem(el) {
   var name = el.getAttribute('data-name');
-  if (_qrExtraItems.indexOf(name) < 0) {
-    _qrExtraItems.push(name);
-    qrRenderItemsList();
-  }
+  if (_qrExtraItems.indexOf(name) < 0) { _qrExtraItems.push(name); qrRenderItemsList(); }
   document.getElementById('qr-item-search').value = '';
   document.getElementById('qr-item-results').style.display = 'none';
 }
@@ -1564,17 +1545,19 @@ function qrSubmit(action) {
   if (!call)   { alert('Please enter the call number.'); return; }
   if (!ccnc)   { alert('Please select a status.'); return; }
   if (ccnc === 'CNC' && !cncNote) { alert('Please describe where the item is.'); return; }
-  // Block wrong direction — check scanned item status
-  var mainItem = _qrAllItems.find(function(i){ return i.name === _qrName; });
-  if (mainItem) {
-    if (action === 'IN' && mainItem.status === 'IN') {
-      alert('⚠️ Item already IN — contact BC-38 if you need help');
-      return;
+  // Block wrong direction \u2014 check ALL items including extras
+  var allToCheck = [_qrName].concat(_qrExtraItems);
+  var blocked = [];
+  allToCheck.forEach(function(name) {
+    var it = _qrAllItems.find(function(i){ return i.name === name; });
+    if (it) {
+      if (action === 'IN'  && it.status === 'IN')  blocked.push(name + ' (already IN)');
+      if (action === 'OUT' && it.status === 'OUT') blocked.push(name + ' (already OUT)');
     }
-    if (action === 'OUT' && mainItem.status === 'OUT') {
-      alert('⚠️ Item already OUT — contact BC-38 if you need help');
-      return;
-    }
+  });
+  if (blocked.length > 0) {
+    alert('Cannot check ' + action + ': ' + blocked.join(', ') + '. Contact BC-38 if you need help.');
+    return;
   }
   var allNames = [_qrName].concat(_qrExtraItems);
   var done = 0; var total = allNames.length;
@@ -1593,9 +1576,9 @@ function qrSubmit(action) {
         conf.style.display = 'flex';
         var icon = document.getElementById('qr-conf-icon');
         icon.style.background = action==='IN' ? '#1a3a5c' : '#c0392b';
-        icon.textContent = action==='IN' ? '✓' : '↓';
+        icon.textContent = action==='IN' ? '\u2713' : '\u2193';
         document.getElementById('qr-conf-title').textContent = action==='IN' ? 'Checked IN' : 'Checked OUT';
-        document.getElementById('qr-conf-detail').textContent = total + ' item' + (total>1?'s':'') + ' · BC-' + member + ' · Call #' + call;
+        document.getElementById('qr-conf-detail').textContent = total + ' item' + (total>1?'s':'') + ' \u00b7 BC-' + member + ' \u00b7 Call #' + call;
       }
     })
     .catch(function(){ done++; });
