@@ -282,7 +282,6 @@ textarea{resize:vertical;min-height:70px}
         <div class="kpi kpi-iss"><div class="kpi-val" id="kpi-iss">0</div><div class="kpi-label">Issues</div></div>
         <div class="kpi kpi-cnc"><div class="kpi-val" id="kpi-cnc">0</div><div class="kpi-label">CNC</div></div>
       </div>
-      <div id="dash-chk-wrap" style="display:none;margin-bottom:14px"><div class="section-label">🗂 Last Checklist Submitted</div><div id="dash-chk-info"></div></div>
       <div id="dash-alerts-wrap" style="display:none">
         <div class="section-label">⚠️ Active Alerts</div>
         <div id="dash-alerts"></div>
@@ -314,7 +313,7 @@ textarea{resize:vertical;min-height:70px}
     <!-- CHECKLIST -->
     <div class="page" id="page-checklist">
       <div class="loc-tabs" id="loc-tabs"></div>
-      <div id="chk-last-submitted" style="display:none;background:#e8f5e9;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:13px;color:#2e7d32;font-weight:600">🗂 Last submitted: <span id="chk-last-submitted-text"></span></div>
+      <div id="chk-last-submitted" style="display:none;background:#e8f5e9;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:13px;color:#2e7d32;border-left:4px solid #2e7d32"><div style="font-weight:700;margin-bottom:3px">🗂 Last Checklist Submitted</div><div style="font-size:12px;color:#2e7d32;font-weight:600">📍 <span id="chk-last-loc"></span></div><div style="font-size:12px;color:#444;margin-top:2px">👤 <span id="chk-last-submitted-text"></span></div></div>
       <div id="chk-alerts-wrap" style="display:none;margin-bottom:10px">
         <div class="section-label">⚠️ Active Alerts</div>
         <div id="chk-alerts"></div>
@@ -645,35 +644,6 @@ function updateStats() {
 }
 
 function renderDashboard() {
-  // Last checklist info
-  var allChecked = items.filter(function(i){ return i.lastChecked; });
-  var wrap = document.getElementById('dash-chk-wrap');
-  if (allChecked.length) {
-    var byLoc = {};
-    allChecked.forEach(function(i){
-      if (!byLoc[i.homeLocation] || i.lastChecked > byLoc[i.homeLocation]) byLoc[i.homeLocation] = i.lastChecked;
-    });
-    var html = Object.keys(byLoc).map(function(loc){
-      var raw = byLoc[loc] || '';
-      // Format: 'BC-38 · May 19, 2026 · 2:22 PM'
-      var parts = raw.split(' · ');
-      var member = parts[0] || '';
-      var dateTime = parts.slice(1).join(' · ');
-      var memberName = '';
-      if (member) {
-        var bcNum = member.replace(/^BC-/i,'').trim();
-        var mObj = members.find(function(m){ return String(m.id||m.unit) === bcNum; });
-        memberName = mObj ? (mObj.firstName || mObj.name || '') : '';
-      }
-      return '<div style="background:#fff;border-radius:10px;padding:12px 14px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:4px solid #2e7d32">'
-        +'<div style="font-size:14px;font-weight:700;color:#1a3a5c;margin-bottom:6px">📍 '+esc(loc)+'</div>'
-        +'<div style="font-size:12px;color:#444;margin-bottom:3px">👤 Submitted by: <b>'+esc(member)+(memberName?' — '+esc(memberName):'')+'</b></div>'
-        +'<div style="font-size:12px;color:#666">🕐 '+esc(dateTime)+'</div>'
-        +'</div>';
-    }).join('');
-    document.getElementById('dash-chk-info').innerHTML = html;
-    wrap.style.display = 'block';
-  } else { wrap.style.display = 'none'; }
   var out    = items.filter(function(i){return i.status==='OUT';});
   var alerts = items.filter(function(i){return i.isCNC||i.equipStatus==='Missing'||i.equipStatus==='Damaged';});
   var aw = document.getElementById('dash-alerts-wrap');
@@ -971,8 +941,23 @@ function renderChecklist() {
   var lastChk = '';
   locItems.forEach(function(i){ if(i.lastChecked && (!lastChk || i.lastChecked > lastChk)) lastChk = i.lastChecked; });
   var lsEl = document.getElementById('chk-last-submitted');
-  if (lastChk) { lsEl.style.display='block'; document.getElementById('chk-last-submitted-text').textContent = lastChk; }
-  else { lsEl.style.display='none'; }
+  if (lastChk) {
+    // Format: 'BC-38 · May 19, 2026 · 2:22 PM'
+    var lsParts = lastChk.split(' · ');
+    var lsMember = lsParts[0] || '';
+    var lsDateTime = lsParts.slice(1).join(' · ');
+    var lsMemberName = '';
+    if (lsMember) {
+      var lsBcNum = lsMember.replace(/^BC-/i,'').trim();
+      var lsMObj = members.find(function(m){ return String(m.id||m.unit) === lsBcNum; });
+      lsMemberName = lsMObj ? (lsMObj.firstName || lsMObj.name || '') : '';
+    }
+    lsEl.style.display = 'block';
+    var lsLocEl = document.getElementById('chk-last-loc');
+    if (lsLocEl) lsLocEl.textContent = curLoc || '';
+    document.getElementById('chk-last-submitted-text').innerHTML =
+      '<b>'+esc(lsMember)+(lsMemberName?' — '+esc(lsMemberName):'')+'</b> &nbsp;·&nbsp; '+esc(lsDateTime);
+  } else { lsEl.style.display='none'; }
   var locs=[];  items.forEach(function(i){if(i.homeLocation&&locs.indexOf(i.homeLocation)<0) locs.push(i.homeLocation);});
   if(!curLoc||locs.indexOf(curLoc)<0) curLoc=locs[0]||null;
   document.getElementById('loc-tabs').innerHTML = locs.map(function(loc){
