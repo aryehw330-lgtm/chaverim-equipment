@@ -224,7 +224,7 @@ textarea{resize:vertical;min-height:70px}
       <input id="modal-call" type="text" inputmode="numeric" placeholder="Dispatched call #"/>
     </div>
     <div class="input-group">
-      <label class="field-label">CC or CNC?</label>
+      <label class="field-label">Status</label>
       <select id="modal-ccnc" onchange="toggleCNCNote()">
         <option value="">-- Select --</option>
         <option value="CC">CC — Correct location</option>
@@ -242,6 +242,7 @@ textarea{resize:vertical;min-height:70px}
       <input id="modal-item-search" type="text" placeholder="Search to add more items..." oninput="renderModalSearch()" style="padding-left:36px;font-size:14px"/>
     </div>
     <div id="modal-search-results" style="max-height:140px;overflow-y:auto;margin-bottom:10px;border:1.5px solid #eee;border-radius:8px;display:none"></div>
+    <div id="modal-member-display" style="display:none;background:#eef3f8;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px;font-weight:600;color:#1a3a5c"></div>
     <div class="modal-footer">
       <button class="btn btn-success" onclick="submitCheckout('IN')">✓ Check IN All</button>
       <button class="btn btn-danger" onclick="submitCheckout('OUT')">↓ Check OUT All</button>
@@ -253,7 +254,7 @@ textarea{resize:vertical;min-height:70px}
   <div id="header">
     <div>
       <div class="h-title">COBC Equipment</div>
-      <div class="h-sub">Bergen County Chaverim</div>
+      <div class="h-sub" id="h-sub">Bergen County Chaverim</div>
     </div>
     <div class="h-right">
       <span class="stat-pill" id="stat-out-pill" style="display:none"></span>
@@ -456,7 +457,7 @@ textarea{resize:vertical;min-height:70px}
   </div>
 </div>
 <script>
-const BASE_URL = 'https://script.google.com/macros/s/AKfycbyFDLyw8pFQbgKL6TRxsE8L_y9E_BdnhwNKQuAgBQ4UPj3ht8cICao7oqP-bX9gCPa4Tg/exec';
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbzV8psL-Md1-mjZNAwb6pYuFXOJv23mWwo-r6e2X7KKQFo5Ev1sLF4X4YbT9qJq6WALFg/exec';
 const PASSWORDS = {
   'faa3719c835d433bfb62878c18e28062c12146011bc16c332f3b4a2fed5ba2d9': 1,
   '173c5ec3eea7bf07e14395ad73f741882e7637253831740557be9d4863dbda2e': 2,
@@ -470,6 +471,8 @@ var chkStatus={}, chkNotes={}, chkFilter='all';
 var modalItems=[];
 var secTarget=null, secPrevPage='dashboard';
 const ADMIN_PASS='cobc2026';
+var loggedInMember = null; // set after member PIN login
+var memberPins = []; // loaded from members sheet
 
 async function hashSHA256(str) {
   var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
@@ -477,19 +480,35 @@ async function hashSHA256(str) {
 }
 function checkPin() {
   var raw = document.getElementById('pin-input').value.trim();
+  // First check admin/ET/member level passwords (hashed)
   hashSHA256(raw).then(function(v) {
     var level = PASSWORDS[v] || 0;
     if (level > 0) {
       userLevel = level;
+      loggedInMember = null;
       localStorage.setItem('cobc_level', level);
+      localStorage.removeItem('cobc_member_id');
       document.getElementById('pin-gate').classList.add('hidden');
       document.getElementById('app').style.display = 'flex';
       applyAccessLevel();
       loadData();
     } else {
-      document.getElementById('pin-error').textContent = '✕ Incorrect password';
-      document.getElementById('pin-input').value = '';
-      setTimeout(function(){ document.getElementById('pin-error').textContent=''; }, 2000);
+      // Check member PINs loaded from sheet
+      var found = memberPins.find(function(m){ return m.pin === raw; });
+      if (found) {
+        userLevel = 1;
+        loggedInMember = found;
+        localStorage.setItem('cobc_level', 1);
+        localStorage.setItem('cobc_member_id', found.id);
+        document.getElementById('pin-gate').classList.add('hidden');
+        document.getElementById('app').style.display = 'flex';
+        applyAccessLevel();
+        loadData();
+      } else {
+        document.getElementById('pin-error').textContent = '✕ Incorrect password';
+        document.getElementById('pin-input').value = '';
+        setTimeout(function(){ document.getElementById('pin-error').textContent=''; }, 2000);
+      }
     }
   });
 }
@@ -504,6 +523,12 @@ function applyAccessLevel() {
   });
   if (curPage==='checklist' && userLevel<2) doShowPage('dashboard');
   if (curPage==='admin' && userLevel<3) doShowPage('dashboard');
+  // Show member name in header if logged in as member
+  var hsub = document.getElementById('h-sub');
+  if (hsub) {
+    if (loggedInMember) hsub.textContent = 'Logged in: BC-'+loggedInMember.id+' '+loggedInMember.name;
+    else hsub.textContent = 'Bergen County Chaverim';
+  }
 }
 function requireSec(page, icon, title, sub) {
   if (secUnlocked[page]) { doShowPage(page); return; }
@@ -571,6 +596,14 @@ function loadData() {
     var locs = res[2].locations || [];
     if (locs.length) locations = locs;
     items.forEach(function(it){ if(it.homeLocation && locations.indexOf(it.homeLocation)<0) locations.push(it.homeLocation); });
+    // Build member PIN lookup
+    memberPins = members.filter(function(m){ return m.pin; }).map(function(m){ return {id: String(m.id||m.unit||''), name: m.name||((m.firstName||'')+' '+(m.lastName||'')).trim(), pin: String(m.pin)}; });
+    // Restore logged in member after data load
+    var savedMemberId = localStorage.getItem('cobc_member_id');
+    if (savedMemberId && !loggedInMember) {
+      var found = memberPins.find(function(m){ return m.id === savedMemberId; });
+      if (found) loggedInMember = found;
+    }
     updateStats(); renderDashboard(); renderInventory(); renderCatChips(); populateRptItems(); renderAdmin(); renderAdmCatChips(); renderMembers(); renderHlocList();
   }).catch(function(){ showToast('Failed to load — check connection'); })
   .finally(function(){ showLoad(false); document.getElementById('sync-btn').textContent='↻ Sync'; });
@@ -809,6 +842,16 @@ function addModalItem(row) {
 function openCheckout(row, action) {
   var it = items.find(function(i){return i.row===row;});
   if(!it) return;
+  // Block wrong direction
+  if (action === 'OUT' && it.status === 'OUT') {
+    var who = it.member ? 'BC-'+it.member : 'BC-38';
+    showToast('⚠️ Item already OUT — contact '+who+' if you need help');
+    return;
+  }
+  if ((!action || action === 'IN') && it.status === 'IN') {
+    showToast('⚠️ Item already IN — contact BC-38 if you need help');
+    return;
+  }
   if (!document.getElementById('checkout-modal').classList.contains('open')) {
     modalItems = [];
     document.getElementById('modal-member').value='';
@@ -822,6 +865,17 @@ function openCheckout(row, action) {
   if (!modalItems.find(function(i){ return i.row===row; })) modalItems.push(it);
   renderModalItemList();
   document.getElementById('checkout-modal').classList.add('open');
+  // Auto-fill member BC# if logged in
+  var memDisplay = document.getElementById('modal-member-display');
+  var memInput = document.getElementById('modal-member').parentElement;
+  if (loggedInMember) {
+    document.getElementById('modal-member').value = loggedInMember.id;
+    if (memDisplay) { memDisplay.style.display='block'; memDisplay.textContent='👤 Checking out as BC-'+loggedInMember.id+' — '+loggedInMember.name; }
+    if (memInput) memInput.style.display='none';
+  } else {
+    if (memDisplay) memDisplay.style.display='none';
+    if (memInput) memInput.style.display='block';
+  }
 }
 function closeModal() { document.getElementById('checkout-modal').classList.remove('open'); modalItems=[]; }
 function toggleCNCNote() {
@@ -1254,7 +1308,9 @@ function toggleAdm(titleEl) {
 }
 function logout() {
   localStorage.removeItem('cobc_level');
+  localStorage.removeItem('cobc_member_id');
   userLevel = 0;
+  loggedInMember = null;
   document.getElementById('app').style.display = 'none';
   document.getElementById('pin-gate').classList.remove('hidden');
   document.getElementById('pin-input').value = '';
