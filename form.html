@@ -452,7 +452,7 @@ textarea{resize:vertical;min-height:70px}
       <div class="adm-sec">
         <div class="adm-title" onclick="toggleAdm(this)">🗂 Checklist History<span class="toggle">▼</span></div>
         <div class="adm-body">
-          <div style="font-size:12px;color:#666;margin-bottom:10px">Latest checklist submission per location. Once Apps Script log is enabled, shows last 6 months.</div>
+          <div style="font-size:12px;color:#666;margin-bottom:10px">Latest checklist submission per location.</div>
           <div id="adm-chk-history"></div>
         </div>
       </div>
@@ -963,10 +963,10 @@ function renderChecklist() {
       var bcNum = member.replace(/^BC-/i,'').trim();
       var mObj = members.find(function(m){ return String(m.id||m.unit) === bcNum; });
       var mName = mObj ? (mObj.firstName || mObj.name || '') : '';
-      return '<div style="background:#fff;border-radius:8px;padding:9px 12px;margin-bottom:6px;box-shadow:0 1px 3px rgba(0,0,0,.07);border-left:3px solid #2e7d32;display:flex;align-items:flex-start;justify-content:space-between;gap:8px">'
-        +'<div><div style="font-size:13px;font-weight:700;color:#1a3a5c">📍 '+esc(loc)+'</div>'
-        +'<div style="font-size:11px;color:#555;margin-top:2px">👤 '+esc(member)+(mName?' — '+esc(mName):'')+'</div></div>'
-        +'<div style="font-size:11px;color:#888;white-space:nowrap;flex-shrink:0;text-align:right;margin-top:1px">'+esc(dateTime)+'</div>'
+      return '<div style="background:#fff;border-radius:8px;padding:9px 12px;margin-bottom:6px;box-shadow:0 1px 3px rgba(0,0,0,.07);border-left:3px solid #2e7d32">'
+        +'<div style="font-size:13px;font-weight:700;color:#1a3a5c">📍 '+esc(loc)+'</div>'
+        +'<div style="font-size:11px;color:#555;margin-top:2px">👤 '+esc(member)+(mName?' — '+esc(mName):'')+'</div>'
+        +'<div style="font-size:11px;color:#888;margin-top:2px">🕐 '+esc(dateTime)+'</div>'
         +'</div>';
     }).join('');
     document.getElementById('chk-last-submitted-text').innerHTML = cards;
@@ -1457,8 +1457,7 @@ function renderAdmChkFromItems(el) {
   });
   var locs = Object.keys(byLoc).sort();
   if (!locs.length) { el.innerHTML='<div style="color:#aaa;font-size:13px">No checklist data yet.</div>'; return; }
-  var note = '<div style="font-size:11px;color:#e65100;margin-bottom:8px;padding:4px 8px;background:#fff3e0;border-radius:6px">⚠️ Showing latest only per location. Enable Apps Script log for full history.</div>';
-  el.innerHTML = note + locs.map(function(loc){
+  el.innerHTML = locs.map(function(loc){
     var raw = byLoc[loc];
     var parts = raw.split(' · ');
     var member = parts[0]||'';
