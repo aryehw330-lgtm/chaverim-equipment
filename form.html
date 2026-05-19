@@ -313,7 +313,7 @@ textarea{resize:vertical;min-height:70px}
     <!-- CHECKLIST -->
     <div class="page" id="page-checklist">
       <div class="loc-tabs" id="loc-tabs"></div>
-      <div id="chk-last-submitted" style="display:none;background:#e8f5e9;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:13px;color:#2e7d32;border-left:4px solid #2e7d32"><div style="font-weight:700;margin-bottom:3px">🗂 Last Checklist Submitted</div><div style="font-size:12px;color:#2e7d32;font-weight:600">📍 <span id="chk-last-loc"></span></div><div style="font-size:12px;color:#444;margin-top:2px">👤 <span id="chk-last-submitted-text"></span></div></div>
+      <div id="chk-last-submitted" style="display:none;margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">🗂 Last Submitted Per Location</div><div id="chk-last-submitted-text"></div></div>
       <div id="chk-alerts-wrap" style="display:none;margin-bottom:10px">
         <div class="section-label">⚠️ Active Alerts</div>
         <div id="chk-alerts"></div>
@@ -446,6 +446,14 @@ textarea{resize:vertical;min-height:70px}
         <div class="adm-title open" onclick="toggleAdm(this)">👥 Members (<span id="adm-mem-count">0</span>)<span class="toggle">▼</span></div>
         <div class="adm-body open">
           <div id="adm-mem-list"></div>
+        </div>
+      </div>
+      <!-- Checklist History -->
+      <div class="adm-sec">
+        <div class="adm-title" onclick="toggleAdm(this)">🗂 Checklist History<span class="toggle">▼</span></div>
+        <div class="adm-body">
+          <div style="font-size:12px;color:#666;margin-bottom:10px">Latest checklist submission per location. Once Apps Script log is enabled, shows last 6 months.</div>
+          <div id="adm-chk-history"></div>
         </div>
       </div>
       <!-- Equipment Status -->
@@ -590,7 +598,7 @@ function doShowPage(page) {
   if (page==='dashboard') renderDashboard();
   if (page==='members')   renderMembers();
   if (page==='checklist') renderChecklist();
-  if (page==='admin')     { renderAdmin(); renderHlocList(); }
+  if (page==='admin')     { renderAdmin(); renderHlocList(); renderAdmChkHistory(); }
 }
 
 function fetchJ(url) { return fetch(url,{redirect:'follow',credentials:'omit'}).then(function(r){return r.json();}); }
@@ -937,27 +945,33 @@ var blocked = [];
 }
 
 function renderChecklist() {
-  var locItems = items.filter(function(i){ return i.homeLocation === curLoc; });
-  var lastChk = '';
-  locItems.forEach(function(i){ if(i.lastChecked && (!lastChk || i.lastChecked > lastChk)) lastChk = i.lastChecked; });
+  // Build latest-per-location summary from all items
   var lsEl = document.getElementById('chk-last-submitted');
-  if (lastChk) {
-    // Format: 'BC-38 · May 19, 2026 · 2:22 PM'
-    var lsParts = lastChk.split(' · ');
-    var lsMember = lsParts[0] || '';
-    var lsDateTime = lsParts.slice(1).join(' · ');
-    var lsMemberName = '';
-    if (lsMember) {
-      var lsBcNum = lsMember.replace(/^BC-/i,'').trim();
-      var lsMObj = members.find(function(m){ return String(m.id||m.unit) === lsBcNum; });
-      lsMemberName = lsMObj ? (lsMObj.firstName || lsMObj.name || '') : '';
+  var byLoc = {};
+  items.forEach(function(i){
+    if (i.lastChecked) {
+      if (!byLoc[i.homeLocation] || i.lastChecked > byLoc[i.homeLocation]) byLoc[i.homeLocation] = i.lastChecked;
     }
+  });
+  var locs = Object.keys(byLoc);
+  if (locs.length) {
+    var cards = locs.sort().map(function(loc){
+      var raw = byLoc[loc];
+      var parts = raw.split(' · ');
+      var member = parts[0] || '';
+      var dateTime = parts.slice(1).join(' · ');
+      var bcNum = member.replace(/^BC-/i,'').trim();
+      var mObj = members.find(function(m){ return String(m.id||m.unit) === bcNum; });
+      var mName = mObj ? (mObj.firstName || mObj.name || '') : '';
+      return '<div style="background:#fff;border-radius:8px;padding:9px 12px;margin-bottom:6px;box-shadow:0 1px 3px rgba(0,0,0,.07);border-left:3px solid #2e7d32;display:flex;align-items:flex-start;justify-content:space-between;gap:8px">'
+        +'<div><div style="font-size:13px;font-weight:700;color:#1a3a5c">📍 '+esc(loc)+'</div>'
+        +'<div style="font-size:11px;color:#555;margin-top:2px">👤 '+esc(member)+(mName?' — '+esc(mName):'')+'</div></div>'
+        +'<div style="font-size:11px;color:#888;white-space:nowrap;flex-shrink:0;text-align:right;margin-top:1px">'+esc(dateTime)+'</div>'
+        +'</div>';
+    }).join('');
+    document.getElementById('chk-last-submitted-text').innerHTML = cards;
     lsEl.style.display = 'block';
-    var lsLocEl = document.getElementById('chk-last-loc');
-    if (lsLocEl) lsLocEl.textContent = curLoc || '';
-    document.getElementById('chk-last-submitted-text').innerHTML =
-      '<b>'+esc(lsMember)+(lsMemberName?' — '+esc(lsMemberName):'')+'</b> &nbsp;·&nbsp; '+esc(lsDateTime);
-  } else { lsEl.style.display='none'; }
+  } else { lsEl.style.display = 'none'; }
   var locs=[];  items.forEach(function(i){if(i.homeLocation&&locs.indexOf(i.homeLocation)<0) locs.push(i.homeLocation);});
   if(!curLoc||locs.indexOf(curLoc)<0) curLoc=locs[0]||null;
   document.getElementById('loc-tabs').innerHTML = locs.map(function(loc){
@@ -1400,6 +1414,64 @@ var toastTimer;
 function showToast(msg){var el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(function(){el.classList.remove('show');},2800);}
 function esc(v){return (v||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
+// ═══════════════════════════════════════════
+// ADMIN CHECKLIST HISTORY
+// ═══════════════════════════════════════════
+function renderAdmChkHistory() {
+  var el = document.getElementById('adm-chk-history');
+  if (!el) return;
+  var sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  el.innerHTML = '<div style="color:#aaa;font-size:13px;padding:6px 0">Loading...</div>';
+  fetchJ(BASE_URL+'?action=getChecklistLog')
+    .then(function(data) {
+      var log = (data.log || []).filter(function(entry) {
+        try { return new Date(entry.timestamp) >= sixMonthsAgo; } catch(e) { return true; }
+      });
+      if (!log.length) {
+        renderAdmChkFromItems(el);
+        return;
+      }
+      log.sort(function(a,b){ return new Date(b.timestamp)-new Date(a.timestamp); });
+      var grouped = {};
+      log.forEach(function(e){ if(!grouped[e.location]) grouped[e.location]=[]; grouped[e.location].push(e); });
+      var html = Object.keys(grouped).sort().map(function(loc){
+        var rows = grouped[loc].map(function(e){
+          var bcNum = (e.bc||''). replace(/^BC-/i,'').trim();
+          var mObj = members.find(function(m){ return String(m.id||m.unit)===bcNum; });
+          var mName = mObj?(mObj.firstName||mObj.name||''): '';
+          return '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f8f8f8">'
+            +'<div style="font-size:12px"><b>BC-'+esc(e.bc||'')+'</b>'+(mName?' — '+esc(mName):'')+'</div>'
+            +'<div style="font-size:11px;color:#888">'+esc(e.timestamp||'')+'</div></div>';
+        }).join('');
+        return '<div style="margin-bottom:12px"><div style="font-size:13px;font-weight:700;color:#1a3a5c;margin-bottom:4px">📍 '+esc(loc)+'</div>'+rows+'</div>';
+      }).join('');
+      el.innerHTML = html;
+    })
+    .catch(function(){ renderAdmChkFromItems(el); });
+}
+function renderAdmChkFromItems(el) {
+  var byLoc = {};
+  items.forEach(function(i){
+    if (i.lastChecked && (!byLoc[i.homeLocation]||i.lastChecked>byLoc[i.homeLocation])) byLoc[i.homeLocation]=i.lastChecked;
+  });
+  var locs = Object.keys(byLoc).sort();
+  if (!locs.length) { el.innerHTML='<div style="color:#aaa;font-size:13px">No checklist data yet.</div>'; return; }
+  var note = '<div style="font-size:11px;color:#e65100;margin-bottom:8px;padding:4px 8px;background:#fff3e0;border-radius:6px">⚠️ Showing latest only per location. Enable Apps Script log for full history.</div>';
+  el.innerHTML = note + locs.map(function(loc){
+    var raw = byLoc[loc];
+    var parts = raw.split(' · ');
+    var member = parts[0]||'';
+    var dt = parts.slice(1).join(' · ');
+    var bcNum = member.replace(/^BC-/i,'').trim();
+    var mObj = members.find(function(m){ return String(m.id||m.unit)===bcNum; });
+    var mName = mObj?(mObj.firstName||mObj.name||''): '';
+    return '<div style="padding:8px 0;border-bottom:1px solid #f0f0f0">'
+      +'<div style="font-size:13px;font-weight:700;color:#1a3a5c">📍 '+esc(loc)+'</div>'
+      +'<div style="font-size:12px;color:#444;margin-top:2px">👤 '+esc(member)+(mName?' — '+esc(mName):'')+'</div>'
+      +'<div style="font-size:11px;color:#888;margin-top:1px">🕐 '+esc(dt)+'</div></div>';
+  }).join('');
+}
 // BOOT
 document.addEventListener('DOMContentLoaded', function() {
   // QR MODE: always takes priority over saved session
