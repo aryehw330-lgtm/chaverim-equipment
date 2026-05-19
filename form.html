@@ -1339,18 +1339,16 @@ function showToast(msg){var el=document.getElementById('toast');el.textContent=m
 function esc(v){return (v||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 // BOOT
-(function(){
+document.addEventListener('DOMContentLoaded', function() {
   // ── QR MODE: if ?name= param present, show simple check-in/out form ──
   var urlParams = new URLSearchParams(window.location.search);
   var qrItemName = urlParams.get('name');
   if (qrItemName) {
-    // Show QR check-in/out overlay instead of full dashboard
     showQRMode(qrItemName);
     return;
   }
 
   // ── DASHBOARD MODE ──
-  // Clear any old 4357-based sessions — force re-login
   var savedLevel = parseInt(localStorage.getItem('cobc_level')||'0');
   var savedMemberId = localStorage.getItem('cobc_member_id');
   if(savedLevel === 1 && !savedMemberId) {
@@ -1367,7 +1365,7 @@ function esc(v){return (v||'').toString().replace(/&/g,'&amp;').replace(/</g,'&l
     applyAccessLevel();
     loadData();
   }
-})();
+});
 </script>
 <!-- QR MODE OVERLAY -->
 <div id="qr-overlay" style="display:none;position:fixed;inset:0;background:#f0f2f5;z-index:9999;overflow-y:auto">
