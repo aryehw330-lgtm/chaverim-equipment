@@ -1339,10 +1339,13 @@ function esc(v){return (v||'').toString().replace(/&/g,'&amp;').replace(/</g,'&l
 
 // BOOT
 document.addEventListener('DOMContentLoaded', function() {
-  // ── QR MODE: if ?name= param present, show simple check-in/out form ──
+  // ── QR MODE: ALWAYS check ?name= FIRST, even if logged in ──
   var urlParams = new URLSearchParams(window.location.search);
   var qrItemName = urlParams.get('name');
   if (qrItemName) {
+    // Hide dashboard PIN gate completely, show QR overlay
+    document.getElementById('pin-gate').classList.add('hidden');
+    document.getElementById('app').style.display = 'none';
     showQRMode(qrItemName);
     return;
   }
