@@ -1564,6 +1564,18 @@ function qrSubmit(action) {
   if (!call)   { alert('Please enter the call number.'); return; }
   if (!ccnc)   { alert('Please select a status.'); return; }
   if (ccnc === 'CNC' && !cncNote) { alert('Please describe where the item is.'); return; }
+  // Block wrong direction — check scanned item status
+  var mainItem = _qrAllItems.find(function(i){ return i.name === _qrName; });
+  if (mainItem) {
+    if (action === 'IN' && mainItem.status === 'IN') {
+      alert('⚠️ Item already IN — contact BC-38 if you need help');
+      return;
+    }
+    if (action === 'OUT' && mainItem.status === 'OUT') {
+      alert('⚠️ Item already OUT — contact BC-38 if you need help');
+      return;
+    }
+  }
   var allNames = [_qrName].concat(_qrExtraItems);
   var done = 0; var total = allNames.length;
   allNames.forEach(function(name) {
