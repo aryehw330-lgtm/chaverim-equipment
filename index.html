@@ -861,8 +861,7 @@ function openCheckout(row, action) {
   if(!it) return;
   // Block wrong direction
   if (action === 'OUT' && it.status === 'OUT') {
-    var who = it.member ? 'BC-'+it.member : 'BC-38';
-    showToast('⚠️ Item already OUT — contact '+who+' if you need help');
+    showToast('⚠️ Item already OUT — contact BC-38 if you need help');
     return;
   }
   if ((!action || action === 'IN') && it.status === 'IN') {
