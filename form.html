@@ -313,6 +313,7 @@ textarea{resize:vertical;min-height:70px}
     <!-- CHECKLIST -->
     <div class="page" id="page-checklist">
       <div class="loc-tabs" id="loc-tabs"></div>
+      <div id="chk-last-submitted" style="display:none;background:#e8f5e9;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:13px;color:#2e7d32;font-weight:600">🗂 Last submitted: <span id="chk-last-submitted-text"></span></div>
       <div id="chk-alerts-wrap" style="display:none;margin-bottom:10px">
         <div class="section-label">⚠️ Active Alerts</div>
         <div id="chk-alerts"></div>
@@ -936,8 +937,13 @@ var blocked = [];
 }
 
 function renderChecklist() {
-  var locs=[];
-  items.forEach(function(i){if(i.homeLocation&&locs.indexOf(i.homeLocation)<0) locs.push(i.homeLocation);});
+  var locItems = items.filter(function(i){ return i.homeLocation === curLoc; });
+  var lastChk = '';
+  locItems.forEach(function(i){ if(i.lastChecked && (!lastChk || i.lastChecked > lastChk)) lastChk = i.lastChecked; });
+  var lsEl = document.getElementById('chk-last-submitted');
+  if (lastChk) { lsEl.style.display='block'; document.getElementById('chk-last-submitted-text').textContent = lastChk; }
+  else { lsEl.style.display='none'; }
+  var locs=[];  items.forEach(function(i){if(i.homeLocation&&locs.indexOf(i.homeLocation)<0) locs.push(i.homeLocation);});
   if(!curLoc||locs.indexOf(curLoc)<0) curLoc=locs[0]||null;
   document.getElementById('loc-tabs').innerHTML = locs.map(function(loc){
     var li=items.filter(function(i){return i.homeLocation===loc && i.equipStatus!=='Not Active';});
