@@ -308,6 +308,7 @@ textarea{resize:vertical;min-height:70px}
         <button class="fchip" onclick="setFilter('damaged',this)">Damaged</button>
       </div>
       <div id="inv-cat-row" style="display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px"></div>
+      <div id="inv-loc-row" class="filter-row"></div>
       <div id="inv-list"></div>
     </div>
     <!-- CHECKLIST -->
@@ -478,7 +479,7 @@ const PASSWORDS = {
 };
 var userLevel = 0;
 var items=[], members=[], locations=['COBC'];
-var curFilter='all', curPage='dashboard', curLoc=null, curCat='all';
+var curFilter='all', curPage='dashboard', curLoc=null, curCat='all', curInvLoc='all';
 var checked={}, rptType='', modalItem=null;
 var chkStatus={}, chkNotes={}, chkFilter='all';
 var modalItems=[];
@@ -631,7 +632,7 @@ function loadData() {
         applyAccessLevel(); // refresh header with name
       }
     }
-    updateStats(); renderDashboard(); renderInventory(); renderCatChips(); populateRptItems(); renderAdmin(); renderAdmCatChips(); renderMembers(); renderHlocList();
+    updateStats(); renderDashboard(); renderInventory(); renderInvLocChips(); renderCatChips(); populateRptItems(); renderAdmin(); renderAdmCatChips(); renderMembers(); renderHlocList();
   }).catch(function(){ showToast('Failed to load — check connection'); })
   .finally(function(){ showLoad(false); document.getElementById('sync-btn').textContent='↻ Sync'; });
 }
@@ -746,6 +747,30 @@ function getCat(name) {
   }
   return 'Other';
 }
+function renderInvLocChips() {
+  var counts = {};
+  items.forEach(function(it){
+    if (it.equipStatus === 'Not Active') return;
+    var loc = it.homeLocation || 'Unknown';
+    counts[loc] = (counts[loc]||0) + 1;
+  });
+  var locs = Object.keys(counts).sort();
+  var el = document.getElementById('inv-loc-row');
+  if (!el) return;
+  var totalCount = items.filter(function(i){return i.equipStatus!=='Not Active';}).length;
+  var html = '<button class="fchip'+(curInvLoc==='all'?' active':'')+'" data-loc="all" onclick="setInvLoc(this.dataset.loc,this)">📍 All Locations <span style="opacity:.7;font-weight:400">('+totalCount+')</span></button>';
+  html += locs.map(function(loc){
+    var active = curInvLoc === loc;
+    return '<button class="fchip'+(active?' active':'')+'" data-loc="'+esc(loc)+'" onclick="setInvLoc(this.dataset.loc,this)">'+esc(loc)+' <span style="opacity:.7;font-weight:400">('+counts[loc]+')</span></button>';
+  }).join('');
+  el.innerHTML = html;
+}
+function setInvLoc(loc, btn) {
+  curInvLoc = loc;
+  document.querySelectorAll('#inv-loc-row .fchip').forEach(function(c){ c.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  renderInventory();
+}
 function renderCatChips() {
   var present = {};
   items.forEach(function(it){
@@ -778,6 +803,7 @@ function renderInventory() {
   var q = document.getElementById('inv-search').value.toLowerCase().trim();
   var filtered = items.filter(function(it) {
     if(it.equipStatus==='Not Active') return false;
+    if(curInvLoc !== 'all' && it.homeLocation !== curInvLoc) return false;
     if(q && it.name.toLowerCase().indexOf(q)<0 && it.homeLocation.toLowerCase().indexOf(q)<0) return false;
     if(curFilter==='out')     return it.status==='OUT'     && (curCat==='all'||getCat(it.name)===curCat);
     if(curFilter==='in')      return it.status==='IN'      && (curCat==='all'||getCat(it.name)===curCat);
@@ -1224,7 +1250,7 @@ function addItem(){
   if(!name){alert('Please enter an item name.');return;}
   showLoad(true);
   postJ({action:'addItem',name:name,location:loc}).then(function(data){
-    if(data.success){items.push({row:data.row,name:name,homeLocation:loc,status:'IN',equipStatus:'OK',isCNC:false,cncNote:'',ccnc:'CC',member:'',call:'',lastUpdated:''});document.getElementById('add-name').value='';updateStats();renderInventory();populateRptItems();showToast('Item added');}
+    if(data.success){items.push({row:data.row,name:name,homeLocation:loc,status:'IN',equipStatus:'OK',isCNC:false,cncNote:'',ccnc:'CC',member:'',call:'',lastUpdated:''});document.getElementById('add-name').value='';updateStats();renderInventory();renderInvLocChips();populateRptItems();showToast('Item added');}
     else{showToast('Error: '+(data.error||'Unknown'));}
   }).catch(function(){showToast('Network error');}).finally(function(){showLoad(false);});
 }
@@ -1300,7 +1326,7 @@ function saveHloc(row) {
       ok.style.display = 'inline';
       setTimeout(function(){ ok.style.display='none'; }, 2500);
       // Refresh other views
-      updateStats(); renderInventory(); renderDashboard();
+      updateStats(); renderInventory(); renderInvLocChips(); renderDashboard();
       showToast('📍 '+esc(it.name)+' → '+newLoc);
     } else {
       showToast('Error: '+(data.error||'Unknown'));
@@ -1388,7 +1414,7 @@ function adminSetStatus(row, status) {
         items[idx].equipStatus = status;
         if (status==='OK') { items[idx].equipNote=''; items[idx].ccnc='CC'; }
       }
-      updateStats(); renderInventory(); renderAdminItems(); renderDashboard();
+      updateStats(); renderInventory(); renderInvLocChips(); renderAdminItems(); renderDashboard();
       showToast('Status updated to '+status);
     } else { showToast('Error: '+(data.error||'Unknown')); }
   }).catch(function(){ showToast('Network error'); })
