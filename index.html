@@ -1812,6 +1812,15 @@ function renderCarDay(dateStr) {
                      active:  '<span style="color:#c0392b;font-size:11px;font-weight:700">🚗 Active</span>',
                      done:    '<span style="color:#888;font-size:11px;font-weight:700">✓ Done</span>'}[b.status] || '';
       var actions = '';
+      // Cancel button: only the booking owner can cancel (pending or approved, not yet started)
+      var cancelBtn = isMine && (b.status === 'approved' || b.status === 'pending')
+        ? '<button onclick="cancelCarShift(\''+b.id+'\')" style="margin-top:7px;padding:6px 12px;background:#fdecea;color:#c0392b;border:1.5px solid #ffcdd2;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">✕ Cancel</button>'
+        : '';
+      // Delete button: admin only — removes booking entirely from the sheet
+      var deleteBtn = isAdm
+        ? '<button onclick="deleteCarShift(\''+b.id+'\')" style="margin-top:7px;padding:6px 12px;background:#fff0f0;color:#9b1c1c;border:1.5px solid #fca5a5;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">🗑 Delete</button>'
+        : '';
+
       if (isMine || isAdm) {
         if (b.status === 'approved') {
           // 🔑 Start Shift only appears within 1 hour of shift start
@@ -1819,18 +1828,25 @@ function renderCarDay(dateStr) {
           var startDtChk = new Date(b.date + 'T' + start24chk + ':00');
           var minsUntilChk = (startDtChk - new Date()) / 60000;
           if (minsUntilChk <= 60) {
-            actions = '<button onclick="startCarShift(\''+b.id+'\')" style="margin-top:8px;width:100%;padding:9px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">🔑 Start Shift</button>';
+            actions = '<button onclick="startCarShift(\''+b.id+'\')" style="margin-top:8px;width:100%;padding:9px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">🔑 Start Shift</button>'
+              + cancelBtn + deleteBtn;
           } else {
             var hLeft = Math.floor(minsUntilChk/60), mLeft = Math.round(minsUntilChk%60);
             var cdTxt = hLeft > 0 ? hLeft+'h '+mLeft+'m' : mLeft+'m';
             actions = '<div style="margin-top:8px;font-size:11px;color:#888;padding:7px 10px;background:#f0f4ff;border-radius:7px;border:1px solid #d0d8f0;text-align:center">'
               +'🔑 Start Shift available in <strong>'+cdTxt+'</strong><br>'
-              +'<span style="color:#1a3a5c">Unlocks 1 hour before '+esc(b.startTime)+'</span></div>';
+              +'<span style="color:#1a3a5c">Unlocks 1 hour before '+esc(b.startTime)+'</span></div>'
+              + cancelBtn + deleteBtn;
           }
         } else if (b.status === 'active') {
-          actions = '<button onclick="endCarShift(\''+b.id+'\')" style="margin-top:8px;width:100%;padding:9px;background:#c0392b;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">🏁 Return Car</button>';
-        } else if (b.status !== 'done') {
-          actions = '<button onclick="cancelCarShift(\''+b.id+'\')" style="margin-top:7px;padding:6px 12px;background:#fdecea;color:#c0392b;border:1.5px solid #ffcdd2;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">✕ Cancel Booking</button>';
+          actions = '<button onclick="endCarShift(\''+b.id+'\')" style="margin-top:8px;width:100%;padding:9px;background:#c0392b;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">🏁 Return Car</button>'
+            + deleteBtn;
+        } else if (b.status === 'pending') {
+          actions = cancelBtn + deleteBtn;
+        } else if (b.status === 'done') {
+          actions = deleteBtn;
+        } else {
+          actions = cancelBtn + deleteBtn;
         }
       }
       // Admin approve button for pending
@@ -1970,6 +1986,20 @@ function cancelCarShift(bookingId) {
         carSchedule = carSchedule.filter(function(x){ return x.id!==bookingId; });
         renderCarCalendar(); if (carSelectedDate) renderCarDay(carSelectedDate);
         showToast('Booking cancelled');
+      } else { showToast('Error: '+(d.error||'Unknown')); }
+    }).catch(function(){ showToast('Network error'); }).finally(function(){ showLoad(false); });
+}
+
+function deleteCarShift(bookingId) {
+  if (!confirm('Permanently delete this booking? This cannot be undone.')) return;
+  showLoad(true);
+  postJ({action:'deleteCarShift', id:bookingId})
+    .then(function(d) {
+      if (d.success) {
+        carSchedule = carSchedule.filter(function(x){ return x.id!==bookingId; });
+        renderCarCalendar(); if (carSelectedDate) renderCarDay(carSelectedDate);
+        renderCarHistory();
+        showToast('Booking deleted');
       } else { showToast('Error: '+(d.error||'Unknown')); }
     }).catch(function(){ showToast('Network error'); }).finally(function(){ showLoad(false); });
 }
