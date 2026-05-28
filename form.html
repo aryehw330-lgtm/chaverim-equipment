@@ -1830,11 +1830,11 @@ function renderCarDay(dateStr) {
                      active:  '<span style="color:#c0392b;font-size:11px;font-weight:700">🚗 Active</span>',
                      done:    '<span style="font-size:11px;font-weight:800;padding:3px 9px;border-radius:8px;background:#e0e0e0;color:#555;letter-spacing:0.3px">✓ Done</span>'}[b.status] || '';
       var actions = '';
-      // Cancel button: only the booking owner can cancel (pending or approved, not yet started)
-      var cancelBtn = isMine && (b.status === 'approved' || b.status === 'pending')
-        ? '<button onclick="cancelCarShift(\''+b.id+'\')" style="margin-top:7px;padding:6px 12px;background:#fdecea;color:#c0392b;border:1.5px solid #ffcdd2;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">✕ Cancel</button>'
+      // Member delete: only for their OWN pending/approved booking (not started, not done)
+      var memberDeleteBtn = isMine && !isAdm && (b.status === 'approved' || b.status === 'pending')
+        ? '<button onclick="deleteCarShift(\''+b.id+'\')" style="margin-top:7px;padding:6px 12px;background:#fdecea;color:#c0392b;border:1.5px solid #ffcdd2;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">🗑 Delete Booking</button>'
         : '';
-      // Delete button: admin only — removes booking entirely from the sheet
+      // Admin delete: can delete ANY booking
       var deleteBtn = isAdm
         ? '<button onclick="deleteCarShift(\''+b.id+'\')" style="margin-top:7px;padding:6px 12px;background:#fff0f0;color:#9b1c1c;border:1.5px solid #fca5a5;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">🗑 Delete</button>'
         : '';
@@ -1847,24 +1847,26 @@ function renderCarDay(dateStr) {
           var minsUntilChk = (startDtChk - new Date()) / 60000;
           if (minsUntilChk <= 60) {
             actions = '<button onclick="startCarShift(\''+b.id+'\')" style="margin-top:8px;width:100%;padding:9px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">🔑 Start Shift</button>'
-              + cancelBtn + deleteBtn;
+              + memberDeleteBtn + deleteBtn;
           } else {
             var hLeft = Math.floor(minsUntilChk/60), mLeft = Math.round(minsUntilChk%60);
             var cdTxt = hLeft > 0 ? hLeft+'h '+mLeft+'m' : mLeft+'m';
             actions = '<div style="margin-top:8px;font-size:11px;color:#888;padding:7px 10px;background:#f0f4ff;border-radius:7px;border:1px solid #d0d8f0;text-align:center">'
               +'🔑 Start Shift available in <strong>'+cdTxt+'</strong><br>'
               +'<span style="color:#1a3a5c">Unlocks 1 hour before '+esc(b.startTime)+'</span></div>'
-              + cancelBtn + deleteBtn;
+              + memberDeleteBtn + deleteBtn;
           }
         } else if (b.status === 'active') {
-          actions = '<button onclick="endCarShift(\''+b.id+'\')" style="margin-top:8px;width:100%;padding:9px;background:#c0392b;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">🏁 Return Car</button>'
+          // Car is out — only the member who started can return it, admin can delete
+          actions = (isMine ? '<button onclick="endCarShift(\''+b.id+'\')" style="margin-top:8px;width:100%;padding:9px;background:#c0392b;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">🏁 Return Car</button>' : '')
             + deleteBtn;
         } else if (b.status === 'pending') {
-          actions = cancelBtn + deleteBtn;
+          actions = memberDeleteBtn + deleteBtn;
         } else if (b.status === 'done') {
+          // Finished — member cannot touch, admin can delete
           actions = deleteBtn;
         } else {
-          actions = cancelBtn + deleteBtn;
+          actions = memberDeleteBtn + deleteBtn;
         }
       }
       // Admin approve button for pending
