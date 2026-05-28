@@ -1868,6 +1868,17 @@ function submitCarBooking() {
   if (!startDisp) { showToast('Please select a start time'); return; }
   if (!endDisp)   { showToast('Please select an end time'); return; }
   if (end24 <= start24) { showToast('End time must be after start time'); return; }
+  // Client-side overlap check against already-loaded schedule
+  var conflict = carSchedule.find(function(b) {
+    if (b.date !== carSelectedDate) return false;
+    if (b.status === 'cancelled' || b.status === 'done') return false;
+    var bS = parse12to24(b.startTime), bE = parse12to24(b.endTime);
+    return start24 < bE && end24 > bS;
+  });
+  if (conflict) {
+    showToast('⚠️ Overlaps BC-' + esc(conflict.memberId) + '\'s shift (' + esc(conflict.startTime) + ' – ' + esc(conflict.endTime) + ')');
+    return;
+  }
   var memberId   = loggedInMember ? loggedInMember.id : (userLevel>=3 ? 'Admin' : '');
   var memberName = loggedInMember ? (loggedInMember.name||loggedInMember.firstName||'') : (userLevel>=3 ? 'Admin' : '');
   var btn = document.getElementById('car-submit-btn');
