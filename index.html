@@ -987,13 +987,35 @@ function renderModalSearch() {
 }
 function addModalItem(row) {
   var it = items.find(function(i){ return i.row===row; });
-  if (it && !modalItems.find(function(m){ return m.row===row; })) { modalItems.push(it); renderModalItemList(); }
+  if (!it) return;
+  // Block adding car item without car access
+  if (isCarItem(it.name)) {
+    var isAdm = userLevel >= 2;
+    if (!isAdm && !(loggedInMember && loggedInMember.carAccess)) {
+      showToast('🚫 No car access — contact chiefs to get approval');
+      document.getElementById('modal-item-search').value = '';
+      document.getElementById('modal-search-results').style.display = 'none';
+      return;
+    }
+  }
+  if (!modalItems.find(function(m){ return m.row===row; })) { modalItems.push(it); renderModalItemList(); }
   document.getElementById('modal-item-search').value = '';
   document.getElementById('modal-search-results').style.display = 'none';
+}
+function isCarItem(name) {
+  return name && name.toString().toLowerCase().replace(/\s+/g,'').indexOf('cobc4') >= 0;
 }
 function openCheckout(row, action) {
   var it = items.find(function(i){return i.row===row;});
   if(!it) return;
+  // Block car check-out/in for members without car access
+  if (isCarItem(it.name)) {
+    var isAdm = userLevel >= 2;
+    if (!isAdm && !(loggedInMember && loggedInMember.carAccess)) {
+      showToast('🚫 No car access — contact chiefs to get approval');
+      return;
+    }
+  }
   // Block wrong direction
   if (action === 'OUT' && it.status === 'OUT') {
     showToast('⚠️ Item already OUT — contact BC-38 if you need help');
