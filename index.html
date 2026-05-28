@@ -1084,7 +1084,7 @@ function openCheckout(row, action) {
         // Must have an approved shift starting within 60 min, or already active
         var booking = getMyActiveCarBookingForInventory();
         if (!booking) {
-          alert('🗓️ No active shift found for you right now.\n\nYou can sign out COBC 4 up to 1 hour before your shift starts.\n\nPlease book a shift on the 🚗 Car tab first.');
+          alert('🔑 Please go to the 🚗 Car tab and tap "Start Shift" before signing COBC 4 out.\n\nThe Start Shift button appears 1 hour before your scheduled time.\n\nIf you don\'t have a shift booked, go to the 🚗 Car tab to schedule one.');
           return;
         }
       }
@@ -2091,6 +2091,8 @@ function getCarTimeDisplay(prefix) {
 // Returns the current member's booking that lets them sign COBC 4 out right now
 // (approved shift starting within 60min, or already active)
 function getMyActiveCarBookingForInventory() {
+  // Only returns a booking if the member has clicked "Start Shift" (status = active).
+  // Approved bookings — even within the 1hr window — do NOT count until Start Shift is clicked.
   if (!loggedInMember || !carSchedule.length) return null;
   var now = new Date();
   var todayStr = now.getFullYear()+'-'+pad2(now.getMonth()+1)+'-'+pad2(now.getDate());
@@ -2098,14 +2100,7 @@ function getMyActiveCarBookingForInventory() {
   return carSchedule.find(function(b) {
     if (String(b.memberId) !== myId) return false;
     if (b.date !== todayStr) return false;
-    if (b.status === 'active') return true;
-    if (b.status === 'approved') {
-      var startDt = new Date(b.date + 'T' + parse12to24(b.startTime) + ':00');
-      var endDt   = new Date(b.date + 'T' + parse12to24(b.endTime)   + ':00');
-      var minsUntil = (startDt - now) / 60000; // positive = future
-      return minsUntil <= 60 && now <= endDt;
-    }
-    return false;
+    return b.status === 'active';
   }) || null;
 }
 // Updates the live status badge at top of car page from inventory data
