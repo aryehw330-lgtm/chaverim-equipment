@@ -2079,8 +2079,23 @@ function toggleCarAccess(memberId, hasAccess) {
         var cntEl = document.getElementById('car-access-count');
         if (cntEl) cntEl.textContent = members.filter(function(m){ return m.carAccess; }).length;
         showToast(hasAccess ? '✅ Car access granted' : '🚫 Car access revoked');
+        // Also sync to Firestore so dispatch app stays in sync
+        _syncCarAccessToFirestore(String(memberId), hasAccess);
       } else { showToast('Error: '+(d.error||'Unknown')); }
     }).catch(function(){ showToast('Network error'); });
+}
+
+function _syncCarAccessToFirestore(memberId, hasAccess) {
+  var projectId = 'cobc-dispatch';
+  var apiKey = 'AIzaSyBYAz3ohsJGX_zo-Yq3faZ2m0uv4tfuSl8';
+  var url = 'https://firestore.googleapis.com/v1/projects/' + projectId
+    + '/databases/(default)/documents/members/' + encodeURIComponent(memberId)
+    + '?updateMask.fieldPaths=carAccess&key=' + apiKey;
+  fetch(url, {
+    method: 'PATCH',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({fields: {carAccess: {booleanValue: hasAccess}}})
+  }).catch(function(){}); // silent fail — Sheet is source of truth for equipment app
 }
 
 // ── Car time helpers ───────────────────────────────────────────────────────────
