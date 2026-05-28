@@ -582,7 +582,14 @@ textarea{resize:vertical;min-height:70px}
       <div class="adm-sec">
         <div class="adm-title" onclick="toggleAdm(this)">🗂 Checklist History<span class="toggle">▼</span></div>
         <div class="adm-body">
-          <div style="font-size:12px;color:#666;margin-bottom:10px">Latest checklist submission per location.</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+            <div style="font-size:12px;color:#666;flex:1">Latest checklist submission per location.</div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <label style="font-size:12px;color:#555;white-space:nowrap">📅 Filter by date:</label>
+              <input type="date" id="adm-chk-date-filter" oninput="renderAdmChkHistory()" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:8px;color:#1a3a5c"/>
+              <button onclick="document.getElementById('adm-chk-date-filter').value='';renderAdmChkHistory();" style="font-size:11px;padding:3px 8px;border:1px solid #ddd;border-radius:8px;background:#f5f5f5;cursor:pointer;color:#555">✕ Clear</button>
+            </div>
+          </div>
           <div id="adm-chk-history"></div>
         </div>
       </div>
@@ -1066,7 +1073,13 @@ function openCheckout(row, action) {
         alert('🚫 You don\'t have COBC 4 access.\n\nContact the chiefs to request car access approval.');
         return;
       }
-      if (!action || action === 'OUT') {
+      // Determine effective direction:
+      // "Check IN" button passes no action — treat as IN when car is currently OUT
+      var carIsOut = it.status === 'OUT';
+      var effectivelyIN = (action === 'IN') || (!action && carIsOut);
+      var effectivelyOUT = (action === 'OUT') || (!action && !carIsOut);
+
+      if (effectivelyOUT) {
         // Must have an approved shift starting within 60 min, or already active
         var booking = getMyActiveCarBookingForInventory();
         if (!booking) {
@@ -1074,7 +1087,7 @@ function openCheckout(row, action) {
           return;
         }
       }
-      if (action === 'IN') {
+      if (effectivelyIN) {
         // Only the member who last signed it out can return it
         var lastMember = it.member ? it.member.toString().replace(/^BC-?/i,'').trim() : '';
         if (!lastMember || String(loggedInMember.id) !== lastMember) {
@@ -1632,36 +1645,54 @@ function esc(v){return (v||'').toString().replace(/&/g,'&amp;').replace(/</g,'&l
 // ═══════════════════════════════════════════
 // ADMIN CHECKLIST HISTORY
 // ═══════════════════════════════════════════
+var _admChkLogCache = null;
 function renderAdmChkHistory() {
   var el = document.getElementById('adm-chk-history');
   if (!el) return;
-  var sixMonthsAgo = new Date();
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  var dateFilter = (document.getElementById('adm-chk-date-filter') || {}).value || '';
+  function buildUI(log) {
+    var sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    var filtered = log.filter(function(entry) {
+      try {
+        if (dateFilter) {
+          // Compare date portion of timestamp to filter date
+          var ts = new Date(entry.timestamp);
+          var tsDate = ts.getFullYear() + '-' + String(ts.getMonth()+1).padStart(2,'0') + '-' + String(ts.getDate()).padStart(2,'0');
+          return tsDate === dateFilter;
+        }
+        return new Date(entry.timestamp) >= sixMonthsAgo;
+      } catch(e) { return true; }
+    });
+    if (!filtered.length) {
+      el.innerHTML = '<div style="color:#aaa;font-size:13px;padding:8px 0">'+(dateFilter?'No entries found for '+dateFilter+'.':'No recent checklist history found.')+'</div>';
+      return;
+    }
+    filtered.sort(function(a,b){ return new Date(b.timestamp)-new Date(a.timestamp); });
+    var grouped = {};
+    filtered.forEach(function(e){ if(!grouped[e.location]) grouped[e.location]=[]; grouped[e.location].push(e); });
+    var html = Object.keys(grouped).sort().map(function(loc){
+      var rows = grouped[loc].map(function(e){
+        var bcNum = (e.bc||'').replace(/^BC-/i,'').trim();
+        var mObj = members.find(function(m){ return String(m.id||m.unit)===bcNum; });
+        var mName = mObj?(mObj.firstName||mObj.name||''): '';
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f8f8f8">'
+          +'<div style="font-size:12px"><b>BC-'+esc(e.bc||'')+'</b>'+(mName?' — '+esc(mName):'')+'</div>'
+          +'<div style="font-size:11px;color:#888">'+esc(e.timestamp||'')+'</div></div>';
+      }).join('');
+      return '<div style="margin-bottom:12px"><div style="font-size:13px;font-weight:700;color:#1a3a5c;margin-bottom:4px">📍 '+esc(loc)+'</div>'+rows+'</div>';
+    }).join('');
+    el.innerHTML = html;
+  }
+  if (_admChkLogCache) {
+    buildUI(_admChkLogCache);
+    return;
+  }
   el.innerHTML = '<div style="color:#aaa;font-size:13px;padding:6px 0">Loading...</div>';
   fetchJ(BASE_URL+'?action=getChecklistLog')
     .then(function(data) {
-      var log = (data.log || []).filter(function(entry) {
-        try { return new Date(entry.timestamp) >= sixMonthsAgo; } catch(e) { return true; }
-      });
-      if (!log.length) {
-        renderAdmChkFromItems(el);
-        return;
-      }
-      log.sort(function(a,b){ return new Date(b.timestamp)-new Date(a.timestamp); });
-      var grouped = {};
-      log.forEach(function(e){ if(!grouped[e.location]) grouped[e.location]=[]; grouped[e.location].push(e); });
-      var html = Object.keys(grouped).sort().map(function(loc){
-        var rows = grouped[loc].map(function(e){
-          var bcNum = (e.bc||''). replace(/^BC-/i,'').trim();
-          var mObj = members.find(function(m){ return String(m.id||m.unit)===bcNum; });
-          var mName = mObj?(mObj.firstName||mObj.name||''): '';
-          return '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f8f8f8">'
-            +'<div style="font-size:12px"><b>BC-'+esc(e.bc||'')+'</b>'+(mName?' — '+esc(mName):'')+'</div>'
-            +'<div style="font-size:11px;color:#888">'+esc(e.timestamp||'')+'</div></div>';
-        }).join('');
-        return '<div style="margin-bottom:12px"><div style="font-size:13px;font-weight:700;color:#1a3a5c;margin-bottom:4px">📍 '+esc(loc)+'</div>'+rows+'</div>';
-      }).join('');
-      el.innerHTML = html;
+      _admChkLogCache = data.log || [];
+      buildUI(_admChkLogCache);
     })
     .catch(function(){ renderAdmChkFromItems(el); });
 }
