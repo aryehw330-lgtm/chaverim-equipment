@@ -1106,12 +1106,14 @@ function openCheckout(row, action) {
         }
       }
       if (effectivelyIN) {
-        // Only the member who last signed it out can return it
+        // Only the member who signed it out, BC-38, or an admin can return it
         var lastMember = it.member ? it.member.toString().replace(/^BC-?/i,'').trim() : '';
-        if (!lastMember || String(loggedInMember.id) !== lastMember) {
+        var myId = String(loggedInMember.id);
+        var canReturn = (myId === lastMember) || (myId === '38');
+        if (!lastMember || !canReturn) {
           var lmObj = lastMember ? members.find(function(m){ return String(m.id||m.unit||'')===lastMember; }) : null;
           var lmName = lmObj ? ' — '+(lmObj.firstName||lmObj.name||'').trim() : '';
-          alert('🔒 Only the member who signed COBC 4 out'+(lastMember?' (BC-'+lastMember+lmName+')':'')+' or an admin can return it.\n\nIf there is an issue please contact the chiefs.');
+          alert('🔒 Only BC-'+(lastMember||'?')+lmName+', BC-38, or an admin can return COBC 4.\n\nIf there is an issue please contact BC-38 or the chiefs.');
           return;
         }
       }
@@ -1988,10 +1990,12 @@ function endCarShift(bookingId) {
     .then(function(d) {
       if (d.success) {
         var b = carSchedule.find(function(x){ return x.id===bookingId; });
-        if (b) b.status = 'done';
+        if (b) { b.status = 'done'; b.actualSignIn = new Date().toISOString(); }
         renderCarCalendar(); if (carSelectedDate) renderCarDay(carSelectedDate);
         renderCarHistory();
         showToast('🏁 Sign COBC 4 IN in Inventory now');
+        // Reload from server after a moment to get the latest data
+        setTimeout(function(){ loadCarSchedule(); }, 3000);
         setTimeout(function(){ navigateToCarCheckout('IN'); }, 900);
       } else { showToast('Error: '+(d.error||'Unknown')); }
     }).catch(function(){ showToast('Network error'); }).finally(function(){ showLoad(false); });
