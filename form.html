@@ -946,6 +946,9 @@ function openCheckout(row, action) {
     if (ccncGrp) ccncGrp.style.display = 'block';
   }
 }
+function isCarItem(name) {
+  return name && name.toString().toLowerCase().replace(/\s+/g,'').indexOf('cobc4') >= 0;
+}
 function closeModal() {
   document.getElementById('checkout-modal').classList.remove('open');
   modalItems=[];
