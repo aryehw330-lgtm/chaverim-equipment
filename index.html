@@ -252,11 +252,11 @@ textarea{resize:vertical;min-height:70px}
       <label class="field-label">Unit # (BC Member)</label>
       <input id="modal-member" type="text" inputmode="numeric" placeholder="e.g. 38"/>
     </div>
-    <div class="input-group">
+    <div class="input-group" id="modal-call-group">
       <label class="field-label">Call Number</label>
       <input id="modal-call" type="text" inputmode="numeric" placeholder="Dispatched call #"/>
     </div>
-    <div class="input-group">
+    <div class="input-group" id="modal-ccnc-group">
       <label class="field-label">Status</label>
       <select id="modal-ccnc" onchange="toggleCNCNote()">
         <option value="">-- Select --</option>
@@ -1152,8 +1152,29 @@ function openCheckout(row, action) {
     if (memDisplay) memDisplay.style.display='none';
     if (memInput) memInput.style.display='block';
   }
+  // ── COBC 4: hide call# and CC/CNC — it's a shift vehicle, not a specific call ──
+  var hasCobc4 = modalItems.some(function(i){ return isCarItem(i.name); });
+  var callGrp  = document.getElementById('modal-call-group');
+  var ccncGrp  = document.getElementById('modal-ccnc-group');
+  var cncGrp   = document.getElementById('cnc-note-group');
+  if (hasCobc4) {
+    if (callGrp) callGrp.style.display  = 'none';
+    if (ccncGrp) ccncGrp.style.display  = 'none';
+    if (cncGrp)  cncGrp.style.display   = 'none';
+    document.getElementById('modal-call').value  = 'SHIFT';
+    document.getElementById('modal-ccnc').value  = 'CC';
+  } else {
+    if (callGrp) callGrp.style.display  = 'block';
+    if (ccncGrp) ccncGrp.style.display  = 'block';
+  }
 }
-function closeModal() { document.getElementById('checkout-modal').classList.remove('open'); modalItems=[]; }
+function closeModal() {
+  document.getElementById('checkout-modal').classList.remove('open');
+  modalItems=[];
+  // Reset field visibility for next open
+  var cg=document.getElementById('modal-call-group'); if(cg) cg.style.display='block';
+  var sg=document.getElementById('modal-ccnc-group'); if(sg) sg.style.display='block';
+}
 function toggleCNCNote() {
   document.getElementById('cnc-note-group').style.display = document.getElementById('modal-ccnc').value==='CNC'?'block':'none';
 }
@@ -1163,10 +1184,13 @@ function submitCheckout(action) {
   var call    = document.getElementById('modal-call').value.trim();
   var ccSel   = document.getElementById('modal-ccnc').value;
   var cncNote = document.getElementById('modal-cnc-note').value.trim();
+  var hasCobc4 = modalItems.some(function(item){ return isCarItem(item.name); });
   if(!member) { alert('Please enter your BC member number.'); return; }
-  if(!call)   { alert('Please enter the call number.'); return; }
-  if(!ccSel)  { alert('Please select CC or CNC.'); return; }
-  if(ccSel==='CNC'&&!cncNote) { alert('Please describe where the item is.'); return; }
+  if(!call   && !hasCobc4) { alert('Please enter the call number.'); return; }
+  if(!ccSel  && !hasCobc4) { alert('Please select CC or CNC.'); return; }
+  if(ccSel==='CNC'&&!cncNote&&!hasCobc4) { alert('Please describe where the item is.'); return; }
+  // COBC 4 defaults — shift vehicle, no dispatched call
+  if(hasCobc4) { if(!call) call='SHIFT'; if(!ccSel) ccSel='CC'; }
 var blocked = [];
   modalItems.forEach(function(item) {
     if (action === 'IN'  && item.status === 'IN')  blocked.push(item.name + ' (already IN)');
@@ -1189,6 +1213,33 @@ var blocked = [];
   })).then(function(){
     updateStats(); renderInventory(); renderDashboard();
     showToast('✓ '+itemsCopy.length+' item'+(itemsCopy.length>1?'s':'')+' checked '+action);
+    // ── Auto-end car shift when COBC 4 is signed back IN ──────────────────────
+    if (action === 'IN') {
+      var hasCobc4 = itemsCopy.some(function(item){ return isCarItem(item.name); });
+      if (hasCobc4 && loggedInMember) {
+        var myId = String(loggedInMember.id || '');
+        var activeBkg = (carSchedule || []).find(function(b) {
+          if (b.status !== 'active') return false;
+          var bMember = (b.memberId || b.member || '').toString().replace(/^BC-?/i,'').trim();
+          return bMember === myId;
+        });
+        if (activeBkg) {
+          // Silently end the shift — member is already returning the car via inventory
+          postJ({action:'endCarShift', id:activeBkg.id}).then(function(d){
+            if (d.success) {
+              activeBkg.status = 'done';
+              activeBkg.actualSignIn = new Date().toISOString();
+              renderCarCalendar();
+              if (carSelectedDate) renderCarDay(carSelectedDate);
+              renderCarHistory();
+              setTimeout(function(){ loadCarSchedule(); }, 3000);
+              showToast('🏁 Car shift ended — COBC 4 returned');
+            }
+          }).catch(function(){});
+        }
+      }
+    }
+    // ──────────────────────────────────────────────────────────────────────────
   }).catch(function(){showToast('Network error');}).finally(function(){showLoad(false);});
 }
 
