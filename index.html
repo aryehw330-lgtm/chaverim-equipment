@@ -2442,16 +2442,20 @@ document.addEventListener('DOMContentLoaded', function() {
         <input id="qr-member" type="text" inputmode="numeric" placeholder="e.g. 38"
           style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:14px 12px;font-size:16px;outline:none;margin-bottom:13px"/>
       </div>
-      <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px">Call Number</label>
-      <input id="qr-call" type="text" inputmode="numeric" placeholder="Dispatched call #"
-        style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:14px 12px;font-size:16px;outline:none;margin-bottom:13px"/>
-      <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px">Status</label>
-      <select id="qr-ccnc" onchange="qrToggleCNC()"
-        style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:14px 12px;font-size:16px;outline:none;background:#fff;-webkit-appearance:none;margin-bottom:13px">
-        <option value="">-- Select --</option>
-        <option value="CC">CC — Correct location</option>
-        <option value="CNC">CNC — Wrong location</option>
-      </select>
+      <div id="qr-call-group">
+        <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px">Call Number</label>
+        <input id="qr-call" type="text" inputmode="numeric" placeholder="Dispatched call #"
+          style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:14px 12px;font-size:16px;outline:none;margin-bottom:13px"/>
+      </div>
+      <div id="qr-ccnc-group">
+        <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px">Status</label>
+        <select id="qr-ccnc" onchange="qrToggleCNC()"
+          style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:14px 12px;font-size:16px;outline:none;background:#fff;-webkit-appearance:none;margin-bottom:13px">
+          <option value="">-- Select --</option>
+          <option value="CC">CC — Correct location</option>
+          <option value="CNC">CNC — Wrong location</option>
+        </select>
+      </div>
       <div id="qr-cnc-wrap" style="display:none">
         <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px">Where is the item?</label>
         <input id="qr-cnc-note" type="text" placeholder="e.g. Left at Teaneck Garage"
@@ -2486,6 +2490,9 @@ var _qrName = null;
 var _qrMember = null;
 var _qrExtraItems = [];
 var _qrAllItems = [];
+var _qrIsCobc4 = false;
+var _qrCarSchedule = [];
+var _qrCarItemData = null;
 
 function showQRMode(name) {
   _qrName = name;
@@ -2515,20 +2522,36 @@ function qrShowForm() {
   document.getElementById('qr-pin-gate').style.display = 'none';
   document.getElementById('qr-form-wrap').style.display = 'block';
   document.getElementById('qr-form-name').textContent = _qrName;
+  // Detect COBC 4 (car item)
+  _qrIsCobc4 = isCarItem(_qrName);
   if (_qrMember) {
     document.getElementById('qr-member').value = _qrMember.id;
     document.getElementById('qr-member-display').style.display = 'block';
     document.getElementById('qr-member-display').textContent = '\ud83d\udc64 BC-' + _qrMember.id + ' \u2014 ' + (_qrMember.name||'');
     document.getElementById('qr-member-wrap').style.display = 'none';
   }
+  // Hide call# and CC/CNC for COBC 4 \u2014 it's a shift vehicle
+  var qrCallGrp = document.getElementById('qr-call-group');
+  var qrCcncGrp = document.getElementById('qr-ccnc-group');
+  var qrCncGrp  = document.getElementById('qr-cnc-wrap');
+  if (_qrIsCobc4) {
+    if (qrCallGrp) qrCallGrp.style.display = 'none';
+    if (qrCcncGrp) qrCcncGrp.style.display = 'none';
+    if (qrCncGrp)  qrCncGrp.style.display  = 'none';
+  } else {
+    if (qrCallGrp) qrCallGrp.style.display = 'block';
+    if (qrCcncGrp) qrCcncGrp.style.display = 'block';
+  }
   _qrExtraItems = [];
   qrRenderItemsList();
+  // Fetch inventory
   fetch(BASE_URL + '?action=getInventory', {redirect:'follow',credentials:'omit'})
     .then(function(r){ return r.json(); })
     .then(function(d) {
       _qrAllItems = d.items || [];
       var it = _qrAllItems.find(function(i){ return i.name === _qrName; });
       if (it) {
+        _qrCarItemData = _qrIsCobc4 ? it : null;
         document.getElementById('qr-form-loc').textContent = '\ud83d\udccd ' + it.homeLocation;
         var isOut = it.status === 'OUT';
         var badge = document.getElementById('qr-form-badge');
@@ -2537,6 +2560,13 @@ function qrShowForm() {
         badge.style.color = isOut ? '#c0392b' : '#2e7d32';
       }
     }).catch(function(){});
+  // For COBC 4, also fetch car schedule for access control
+  if (_qrIsCobc4) {
+    fetch(BASE_URL + '?action=getCarSchedule', {redirect:'follow',credentials:'omit'})
+      .then(function(r){ return r.json(); })
+      .then(function(cs){ _qrCarSchedule = cs.bookings || []; })
+      .catch(function(){ _qrCarSchedule = []; });
+  }
 }
 
 function qrToggleCNC() {
@@ -2591,9 +2621,40 @@ function qrSubmit(action) {
   var ccnc    = document.getElementById('qr-ccnc').value;
   var cncNote = document.getElementById('qr-cnc-note').value.trim();
   if (!member) { alert('Please enter your BC member number.'); return; }
-  if (!call)   { alert('Please enter the call number.'); return; }
-  if (!ccnc)   { alert('Please select a status.'); return; }
-  if (ccnc === 'CNC' && !cncNote) { alert('Please describe where the item is.'); return; }
+  // COBC 4: skip call/CC validation, use shift defaults
+  if (_qrIsCobc4) {
+    call  = call  || 'SHIFT';
+    ccnc  = ccnc  || 'CC';
+    // \u2500\u2500 Access control for COBC 4 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+    var memberStr = member.toString().replace(/^BC-?/i,'').trim();
+    var isAdmin   = (memberStr === '38');
+    if (action === 'OUT') {
+      // Must have an approved booking to take the car out
+      var approvedBkg = _qrCarSchedule.find(function(b) {
+        if (b.status !== 'approved') return false;
+        var bm = (b.memberId || b.member || '').toString().replace(/^BC-?/i,'').trim();
+        return bm === memberStr;
+      });
+      if (!approvedBkg && !isAdmin) {
+        alert('\u26a0\ufe0f No approved car booking found for BC-' + member + '. Book the car first from the app.');
+        return;
+      }
+    } else if (action === 'IN') {
+      // Must be BC-38/admin OR the member who took it out
+      var activeBkgIn = _qrCarSchedule.find(function(b) { return b.status === 'active'; });
+      if (activeBkgIn && !isAdmin) {
+        var lastMember = (activeBkgIn.memberId || activeBkgIn.member || '').toString().replace(/^BC-?/i,'').trim();
+        if (lastMember && lastMember !== memberStr) {
+          alert('\u26a0\ufe0f COBC 4 was taken out by BC-' + lastMember + '. Only they or BC-38 can return it.');
+          return;
+        }
+      }
+    }
+  } else {
+    if (!call)   { alert('Please enter the call number.'); return; }
+    if (!ccnc)   { alert('Please select a status.'); return; }
+    if (ccnc === 'CNC' && !cncNote) { alert('Please describe where the item is.'); return; }
+  }
   // Block wrong direction \u2014 check ALL items including extras
   var allToCheck = [_qrName].concat(_qrExtraItems);
   var blocked = [];
@@ -2627,7 +2688,18 @@ function qrSubmit(action) {
         icon.style.background = action==='IN' ? '#1a3a5c' : '#c0392b';
         icon.textContent = action==='IN' ? '\u2713' : '\u2193';
         document.getElementById('qr-conf-title').textContent = action==='IN' ? 'Checked IN' : 'Checked OUT';
-        document.getElementById('qr-conf-detail').textContent = total + ' item' + (total>1?'s':'') + ' \u00b7 BC-' + member + ' \u00b7 Call #' + call;
+        document.getElementById('qr-conf-detail').textContent = total + ' item' + (total>1?'s':'') + ' \u00b7 BC-' + member + (call !== 'SHIFT' ? ' \u00b7 Call #' + call : '');
+        // \u2500\u2500 Auto-end car shift when COBC 4 signed back IN via QR \u2500\u2500\u2500\u2500\u2500\u2500
+        if (_qrIsCobc4 && action === 'IN') {
+          var activeBkg = _qrCarSchedule.find(function(b) { return b.status === 'active'; });
+          if (activeBkg) {
+            fetch(BASE_URL, {
+              method:'POST', redirect:'follow', credentials:'omit',
+              headers:{'Content-Type':'text/plain;charset=utf-8'},
+              body: JSON.stringify({action:'endCarShift', id:activeBkg.id})
+            }).then(function(r){ return r.json(); }).catch(function(){});
+          }
+        }
       }
     })
     .catch(function(){ done++; });
