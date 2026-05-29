@@ -1528,6 +1528,11 @@ document.addEventListener('DOMContentLoaded', function() {
   var urlParams = new URLSearchParams(window.location.search);
   var qrName = urlParams.get('name');
   if (qrName) {
+    // COBC 4 (car item): skip the QR form — send member straight to the Car section
+    if (qrName && qrName.toString().toLowerCase().replace(/\s+/g,'').indexOf('cobc4') >= 0) {
+      window.location.replace('index.html?page=car');
+      return;
+    }
     document.getElementById('pin-gate').classList.add('hidden');
     showQRMode(qrName);
     return;
