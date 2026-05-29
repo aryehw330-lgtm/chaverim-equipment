@@ -1891,7 +1891,7 @@ function renderCarDay(dateStr) {
     el.innerHTML = '<div style="color:#aaa;font-size:13px;padding:6px 0 10px">No shifts booked for this day yet.</div>';
   } else {
     el.innerHTML = shifts.map(function(b) {
-      var isMine = myId && (b.memberId||'').toString().replace(/^BC-?/i,'').trim() === myId;
+      var isMine = myId && parseInt((b.memberId||'').toString().replace(/^BC-?/i,''),10) === parseInt(myId,10);
       var cls = 'car-shift-card' + (b.status==='pending'?' pending':'') + (isMine?' mine':'') + (b.status==='active'?' active-shift':'') + (b.status==='done'?' done-shift':'');
       var stLabel = {approved:'<span style="color:#2e7d32;font-size:11px;font-weight:700">✓ Approved</span>',
                      pending: '<span style="color:#e65100;font-size:11px;font-weight:700">⏳ Awaiting Approval</span>',
@@ -2229,8 +2229,9 @@ function getMyActiveCarBookingForInventory() {
   var now = new Date();
   var todayStr = now.getFullYear()+'-'+pad2(now.getMonth()+1)+'-'+pad2(now.getDate());
   var myId = String(loggedInMember.id);
+  var myIdNum2 = parseInt(myId, 10);
   return carSchedule.find(function(b) {
-    if ((b.memberId||'').toString().replace(/^BC-?/i,'').trim() !== myId) return false;
+    if (parseInt((b.memberId||'').toString().replace(/^BC-?/i,''),10) !== myIdNum2) return false;
     if (b.date !== todayStr) return false;
     return b.status === 'active';
   }) || null;
@@ -2285,10 +2286,11 @@ function renderCarActionBanner() {
 
   // ── Case 2: COBC 4 is IN → show Start Shift if member has approved or active booking today ──
   if (carItem && carItem.status !== 'OUT' && myId) {
+    var myIdNum = parseInt(myId, 10);
     var myTodayBkg = carSchedule.find(function(b){
       if (b.date !== todayStr) return false;
-      var bMid = (b.memberId||'').toString().replace(/^BC-?/i,'').trim();
-      if (bMid !== myId) return false;
+      var bMid = parseInt((b.memberId||'').toString().replace(/^BC-?/i,''), 10);
+      if (bMid !== myIdNum) return false;
       if (b.status === 'active') return true; // already started — always show Return/Start
       if (b.status !== 'approved') return false;
       // Only show Start Shift within 60 minutes of shift start
