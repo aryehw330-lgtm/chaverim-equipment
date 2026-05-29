@@ -1837,6 +1837,25 @@ function qrSubmit(action) {
         icon.textContent = action==='IN' ? '\u2713' : '\u2193';
         document.getElementById('qr-conf-title').textContent = action==='IN' ? 'Checked IN' : 'Checked OUT';
         document.getElementById('qr-conf-detail').textContent = total + ' item' + (total>1?'s':'') + ' \u00b7 BC-' + member + (_qrIsCobc4 ? ' \u00b7 Shift' : ' \u00b7 Call #' + call);
+        // \u2500\u2500 Auto-end car shift when COBC 4 signed IN via QR \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+        if (_qrIsCobc4 && action === 'IN' && _qrCarSchedule.length) {
+          var myId = String(_qrMember ? _qrMember.id : member).replace(/^BC-?/i,'').trim();
+          var now2 = new Date();
+          var todayStr2 = now2.getFullYear() + '-' + String(now2.getMonth()+1).padStart(2,'0') + '-' + String(now2.getDate()).padStart(2,'0');
+          var activeBkg = _qrCarSchedule.find(function(b) {
+            if (b.status !== 'active') return false;
+            var bMember = (b.memberId || b.member || '').toString().replace(/^BC-?/i,'').trim();
+            return bMember === myId && b.date === todayStr2;
+          });
+          if (activeBkg) {
+            fetch(BASE_URL, {
+              method:'POST', redirect:'follow', credentials:'omit',
+              headers:{'Content-Type':'text/plain;charset=utf-8'},
+              body: JSON.stringify({action:'endCarShift', id:activeBkg.id})
+            }).catch(function(){});
+          }
+        }
+        // \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
       }
     })
     .catch(function(){ done++; });
