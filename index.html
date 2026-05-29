@@ -553,6 +553,18 @@ textarea{resize:vertical;min-height:70px}
           <div id="car-access-list"></div>
         </div>
       </div>
+      <!-- Overdue Alert Recipients -->
+      <div class="adm-sec">
+        <div class="adm-title" onclick="toggleAdm(this);if(this.classList.contains('open')){renderAlertRecipientsAdmin();}">🔔 Overdue Alert Recipients<span class="toggle">▼</span></div>
+        <div class="adm-body">
+          <div style="font-size:13px;color:#666;margin-bottom:10px">Members who receive a notification when COBC 4 has been out for 3+ days.</div>
+          <div class="search-wrap" style="margin-bottom:10px">
+            <span class="search-icon">🔍</span>
+            <input id="alert-recip-search" type="text" placeholder="Search members..." oninput="renderAlertRecipientsAdmin()" style="padding-left:36px;font-size:14px"/>
+          </div>
+          <div id="alert-recipients-list"></div>
+        </div>
+      </div>
       <!-- Add Member -->
       <div class="adm-sec">
         <div class="adm-title" onclick="toggleAdm(this)">👤 Add Member<span class="toggle">▼</span></div>
@@ -807,6 +819,8 @@ function loadData() {
     }
     updateStats(); renderDashboard(); renderInventory(); renderInvLocChips(); renderCatChips(); populateRptItems(); renderAdmin(); renderAdmCatChips(); renderMembers(); renderHlocList();
     loadCarSchedule(); // keep schedule fresh so inventory guard can check bookings
+    if (loggedInMember) { initNotifications(); loadAlertRecipients(); }
+    if (userLevel >= 3) { loadAlertRecipients(); }
     renderCarItemStatus();
   }).catch(function(){ showToast('Failed to load — check connection'); })
   .finally(function(){ showLoad(false); document.getElementById('sync-btn').textContent='↻ Sync'; });
@@ -2262,14 +2276,30 @@ function renderCarActionBanner() {
   var isAdm   = userLevel >= 3 || (myId === '38');
   var todayStr = (function(){ var n=new Date(); return n.getFullYear()+'-'+pad2(n.getMonth()+1)+'-'+pad2(n.getDate()); })();
 
-  // ── Case 1: COBC 4 is OUT → show Return Car to whoever signed it out (or admin) ──
+  // ── Case 1: COBC 4 is OUT → show Return Car (or Ending Soon) to whoever signed it out (or admin) ──
   if (carItem && carItem.status === 'OUT') {
     var outBy   = carItem.member ? String(carItem.member) : null;
-    var canReturn = isAdm || (myId && outBy && outBy === myId);
+    var myIdNum0 = myId ? parseInt(myId, 10) : null;
+    var canReturn = isAdm || (myId && outBy && parseInt(outBy,10) === myIdNum0);
     if (canReturn) {
-      // Find the active booking to end
       var activeBkg = carSchedule.find(function(b){ return b.status === 'active'; });
       var bookingId = activeBkg ? activeBkg.id : null;
+
+      // Sub-case: shift ending in ≤10 min — show ending banner with continue options
+      var isMyBkg = activeBkg && myId && parseInt((activeBkg.memberId||'').toString().replace(/^BC-?/i,''),10) === myIdNum0;
+      if (isMyBkg && activeBkg.endTime) {
+        var endDtCheck = new Date(todayStr + 'T' + parse12to24(activeBkg.endTime) + ':00');
+        var minsLeft = (endDtCheck - new Date()) / 60000;
+        if (minsLeft >= -5 && minsLeft <= 10) {
+          var html = buildEndingBannerHtml(activeBkg, Math.max(0, Math.round(minsLeft)));
+          if (carEl)  { carEl.innerHTML  = html; carEl.style.display  = 'block'; }
+          if (dashEl) { dashEl.innerHTML = html; dashEl.style.display = 'block'; }
+          if (invEl)  { invEl.innerHTML  = html; invEl.style.display  = 'block'; }
+          return;
+        }
+      }
+
+      // Normal Return Car banner
       var html = '<div style="background:linear-gradient(135deg,#c0392b,#e74c3c);border-radius:14px;padding:16px 18px;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 4px 16px rgba(192,57,43,.3)">'
         +'<div><div style="font-size:15px;font-weight:800">🏁 COBC 4 is out</div>'
         +'<div style="font-size:12px;opacity:.85;margin-top:2px">Tap to return it to inventory</div></div>'
@@ -2480,6 +2510,19 @@ function renderAdmChkFromItems(el) {
 }
 // BOOT
 document.addEventListener('DOMContentLoaded', function() {
+  // ── Register Service Worker for notifications ────────────────────────────
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').then(function(reg) {
+      _swReg = reg;
+    }).catch(function(e) { console.warn('SW registration failed:', e); });
+    navigator.serviceWorker.addEventListener('message', function(e) {
+      if (e.data && e.data.type === 'NOTIF_CLICK') {
+        var p = e.data.page;
+        if (p) { var btn = document.querySelector('.tab[data-page="'+p+'"]'); showPage(p, btn); }
+      }
+    });
+  }
+
   // QR MODE: always takes priority over saved session
   var urlParams = new URLSearchParams(window.location.search);
   var qrName = urlParams.get('name');
@@ -2512,6 +2555,312 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 });
+
+// ════════════════════════════════════════════════════════════════════════════
+//  NOTIFICATION SYSTEM + CONTINUE SHIFT
+// ════════════════════════════════════════════════════════════════════════════
+
+var _swReg       = null;
+var _notifTimer  = null;
+var _firedNotifs = {};     // de-dupe fired notifications
+var _alertRecipients = []; // member IDs for overdue alerts (loaded from Apps Script)
+var _notifInited = false;  // prevent double-init
+
+// ── Service worker messaging ─────────────────────────────────────────────────
+function swPost(msg) {
+  if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage(msg);
+  }
+}
+
+// ── OS notification (fires immediately) ──────────────────────────────────────
+function fireNotif(title, body, tag, page) {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try {
+      new Notification(title, { body: body, tag: tag || 'cobc', icon: '/icon-192.png' });
+      return;
+    } catch(e) {}
+  }
+  // Fallback: ask SW to show it (required on some browsers/iOS)
+  swPost({ type: 'SHOW', data: { title: title, body: body, tag: tag, page: page } });
+}
+
+// ── Request permission + start timer ─────────────────────────────────────────
+function initNotifications() {
+  if (_notifInited) return;
+  _notifInited = true;
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+  if (_notifTimer) clearInterval(_notifTimer);
+  _notifTimer = setInterval(checkShiftNotifications, 30000); // every 30 sec
+  checkShiftNotifications();
+  checkOverdueCobc4();
+}
+
+// ── Main per-30s check ────────────────────────────────────────────────────────
+function checkShiftNotifications() {
+  if (!loggedInMember || !carSchedule || !carSchedule.length) return;
+  var now = new Date();
+  var todayStr = now.getFullYear()+'-'+pad2(now.getMonth()+1)+'-'+pad2(now.getDate());
+  var myId = parseInt(String(loggedInMember.id), 10);
+  var carItem = items.find(function(i){ return isCarItem(i.name); });
+  var carIsOut = carItem && carItem.status === 'OUT';
+
+  for (var i = 0; i < carSchedule.length; i++) {
+    var b = carSchedule[i];
+    if (b.date !== todayStr) continue;
+    var bMid = parseInt((b.memberId||'').toString().replace(/^BC-?/i,''), 10);
+    if (bMid !== myId) continue;
+    if (b.status === 'cancelled' || b.status === 'done') continue;
+
+    var start24 = parse12to24(b.startTime);
+    var end24   = parse12to24(b.endTime);
+    var startDt = new Date(todayStr + 'T' + start24 + ':00');
+    var endDt   = new Date(todayStr + 'T' + end24   + ':00');
+    var minsToStart = (startDt - now) / 60000;
+    var minsToEnd   = (endDt   - now) / 60000;
+
+    // ── In-app: 10 min before start (car still IN) ──
+    if (b.status === 'approved' && minsToStart >= 0 && minsToStart <= 10 && !carIsOut) {
+      var key = 'start10_' + b.id;
+      if (!_firedNotifs[key]) {
+        _firedNotifs[key] = true;
+        var m = Math.round(minsToStart);
+        fireNotif('🔑 COBC 4 Shift Starting Soon', 'Your shift starts in ' + m + ' min. Tap to start.', 'shift-start', 'car');
+        showToast('🔑 Shift starts in ' + m + ' min!');
+        renderCarActionBanner();
+      }
+    }
+    // ── Schedule background SW notification 10 min before start ──
+    if (b.status === 'approved' && minsToStart > 10 && minsToStart <= 120) {
+      var swKey = 'sw_start_' + b.id;
+      if (!_firedNotifs[swKey]) {
+        _firedNotifs[swKey] = true;
+        swPost({ type: 'SCHEDULE', data: {
+          id: 'shift_start_' + b.id,
+          delayMs: Math.round((minsToStart - 10) * 60000),
+          title: '🔑 COBC 4 Shift Starting Soon',
+          body: 'Your shift starts in 10 min. Open app to start.',
+          page: 'car', tag: 'shift-start'
+        }});
+      }
+    }
+
+    // ── In-app: 10 min before end (active shift) ──
+    if (b.status === 'active' && minsToEnd >= 0 && minsToEnd <= 10) {
+      var endKey = 'end10_' + b.id;
+      if (!_firedNotifs[endKey]) {
+        _firedNotifs[endKey] = true;
+        var me = Math.round(minsToEnd);
+        fireNotif('⏰ COBC 4 Shift Ending Soon', 'Your shift ends in ' + me + ' min.', 'shift-end', 'car');
+        showToast('⏰ Shift ends in ' + me + ' min!');
+        renderCarActionBanner(); // will show ending banner
+      }
+    }
+    // ── Schedule background SW notification 10 min before end ──
+    if ((b.status === 'active' || b.status === 'approved') && minsToEnd > 10 && minsToEnd <= 240) {
+      var swEndKey = 'sw_end_' + b.id;
+      if (!_firedNotifs[swEndKey]) {
+        _firedNotifs[swEndKey] = true;
+        swPost({ type: 'SCHEDULE', data: {
+          id: 'shift_end_' + b.id,
+          delayMs: Math.round((minsToEnd - 10) * 60000),
+          title: '⏰ COBC 4 Shift Ending Soon',
+          body: 'Your shift ends in 10 min. Tap to continue or return car.',
+          page: 'car', tag: 'shift-end'
+        }});
+      }
+    }
+  }
+}
+
+// ── Overdue COBC 4 alert (3+ days out) ───────────────────────────────────────
+function checkOverdueCobc4() {
+  var carItem = items.find(function(i){ return isCarItem(i.name); });
+  if (!carItem || carItem.status !== 'OUT' || !carItem.lastUpdated) return;
+  var lastTs = parseTs(carItem.lastUpdated);
+  if (!lastTs) return;
+  var daysSince = (Date.now() - lastTs) / (1000 * 60 * 60 * 24);
+  if (daysSince < 3) return;
+  var myIdNum = loggedInMember ? parseInt(String(loggedInMember.id), 10) : null;
+  var isAdm = userLevel >= 3 || myIdNum === 38;
+  var isRecipient = myIdNum && _alertRecipients.indexOf(myIdNum) >= 0;
+  if (!isAdm && !isRecipient) return;
+  var key = 'overdue_' + Math.floor(daysSince);
+  if (_firedNotifs[key]) return;
+  _firedNotifs[key] = true;
+  var days = Math.floor(daysSince);
+  fireNotif('⚠️ COBC 4 Overdue', 'COBC 4 has been out for ' + days + ' days!', 'overdue', 'car');
+  showToast('⚠️ COBC 4 out for ' + days + ' days!');
+}
+
+// ── Ending-soon banner HTML builder ──────────────────────────────────────────
+function buildEndingBannerHtml(booking, minsToEnd) {
+  var nextFree = isNextSlotFree(booking, 20);
+  var continueBtns = nextFree
+    ? '<button onclick="continueCarShift(\''+booking.id+'\',20)" style="background:#fff;color:#e65100;border:none;border-radius:10px;padding:9px 14px;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap">+20 min</button>'
+      + '<button onclick="continueCarShiftCustom(\''+esc(booking.endTime)+'\')" style="background:rgba(255,255,255,.2);color:#fff;border:1.5px solid rgba(255,255,255,.6);border-radius:10px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">More time</button>'
+    : '';
+  var returnBtn = booking.id
+    ? '<button onclick="endCarShift(\''+booking.id+'\')" style="background:rgba(0,0,0,.2);color:#fff;border:1.5px solid rgba(255,255,255,.4);border-radius:10px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">Return Car</button>'
+    : '';
+  return '<div style="background:linear-gradient(135deg,#e65100,#f57c00);border-radius:14px;padding:14px 16px;color:#fff;box-shadow:0 4px 16px rgba(230,81,0,.35)">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">'
+    +'<div><div style="font-size:15px;font-weight:800">⏰ Shift ending in '+minsToEnd+' min</div>'
+    +'<div style="font-size:12px;opacity:.9;margin-top:2px">Ends '+esc(booking.endTime)+(nextFree?' · Next slot is open':'')+'</div></div>'
+    +'<div style="display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end">'
+    + continueBtns + returnBtn
+    +'</div></div></div>';
+}
+
+// ── Check if next 20-min slot after booking end is free ───────────────────────
+function isNextSlotFree(booking, extraMins) {
+  var t24 = parse12to24(booking.endTime);
+  var parts = t24.split(':');
+  var totalMins = parseInt(parts[0],10) * 60 + parseInt(parts[1],10) + (extraMins || 20);
+  var extH = Math.floor(totalMins / 60) % 24;
+  var extM = totalMins % 60;
+  var ext24 = pad2(extH) + ':' + pad2(extM);
+  var end24 = t24;
+  return !carSchedule.find(function(b) {
+    if (b.id === booking.id) return false;
+    if (b.date !== booking.date) return false;
+    if (b.status === 'cancelled' || b.status === 'done') return false;
+    var bS = parse12to24(b.startTime);
+    var bE = parse12to24(b.endTime);
+    return bS < ext24 && bE > end24;
+  });
+}
+
+// ── Add minutes to a 12-hour time string ─────────────────────────────────────
+function addMinsToTime12(time12, mins) {
+  var t24 = parse12to24(time12);
+  var parts = t24.split(':');
+  var total = parseInt(parts[0],10) * 60 + parseInt(parts[1],10) + mins;
+  var h = Math.floor(total / 60) % 24;
+  var m = total % 60;
+  var ap = h >= 12 ? 'PM' : 'AM';
+  var h12 = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+  return h12 + ':' + pad2(m) + ' ' + ap;
+}
+
+// ── Continue shift: auto-extend by extraMins ──────────────────────────────────
+function continueCarShift(bookingId, extraMins) {
+  var bkg = carSchedule.find(function(x){ return x.id===bookingId; });
+  if (!bkg) return;
+  var newEnd = addMinsToTime12(bkg.endTime, extraMins || 20);
+  if (!confirm('Extend your shift to ' + newEnd + '?')) return;
+  showLoad(true);
+  postJ({
+    action: 'bookCarShift',
+    memberId: loggedInMember ? loggedInMember.id : '',
+    memberName: loggedInMember ? loggedInMember.name : '',
+    date: bkg.date,
+    startTime: bkg.endTime,
+    endTime: newEnd,
+    note: 'Shift extension',
+    needsApproval: false
+  }).then(function(d) {
+    if (d.success) {
+      var newBkg = {
+        id: d.id || ('local_' + Date.now()),
+        memberId: loggedInMember ? loggedInMember.id : '',
+        memberName: loggedInMember ? loggedInMember.name : '',
+        date: bkg.date, startTime: bkg.endTime, endTime: newEnd,
+        status: 'approved', note: 'Shift extension'
+      };
+      carSchedule.push(newBkg);
+      // Clear so end notification fires for the new booking
+      delete _firedNotifs['end10_' + newBkg.id];
+      delete _firedNotifs['sw_end_' + newBkg.id];
+      renderCarCalendar();
+      if (carSelectedDate) renderCarDay(carSelectedDate);
+      renderCarHistory();
+      renderCarActionBanner();
+      checkShiftNotifications();
+      showToast('✅ Shift extended to ' + newEnd);
+    } else {
+      showToast('⚠️ ' + (d.error || 'Could not extend — slot may be taken'));
+    }
+  }).catch(function(){ showToast('Network error'); }).finally(function(){ showLoad(false); });
+}
+
+// ── Continue shift: open booking form pre-filled ──────────────────────────────
+function continueCarShiftCustom(currentEndTime) {
+  presetCarBookingTime('start', currentEndTime);
+  if (curPage !== 'car') {
+    showPage('car', document.querySelector('.tab[data-page="car"]'));
+  }
+  setTimeout(function() {
+    var form = document.getElementById('car-book-form');
+    if (form) {
+      // Make sure form is visible (click today's date if needed)
+      var today = (function(){ var n=new Date(); return n.getFullYear()+'-'+pad2(n.getMonth()+1)+'-'+pad2(n.getDate()); })();
+      if (!carSelectedDate) { carSelectedDate = today; renderCarDay(today); }
+      form.style.display = 'block';
+      form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, 350);
+  showToast('📅 Start time pre-filled — choose end time');
+}
+
+// ── Pre-fill booking form time selects ───────────────────────────────────────
+function presetCarBookingTime(prefix, time12) {
+  var t24 = parse12to24(time12);
+  var parts = t24.split(':');
+  var h24 = parseInt(parts[0], 10);
+  var m   = parseInt(parts[1], 10);
+  var ap  = h24 >= 12 ? 'PM' : 'AM';
+  var h12 = h24 > 12 ? h24 - 12 : (h24 === 0 ? 12 : h24);
+  var mRounded = Math.round(m / 5) * 5;
+  if (mRounded >= 60) mRounded = 55;
+  var hourEl = document.getElementById('car-' + prefix + '-hour');
+  var minEl  = document.getElementById('car-' + prefix + '-min');
+  var apEl   = document.getElementById('car-' + prefix + '-ampm');
+  if (hourEl) hourEl.value = String(h12);
+  if (minEl)  minEl.value  = pad2(mRounded);
+  if (apEl)   apEl.value   = ap;
+}
+
+// ── Admin: Alert Recipients ───────────────────────────────────────────────────
+function loadAlertRecipients() {
+  fetchJ(BASE_URL + '?action=getAlertRecipients').then(function(d) {
+    if (d && Array.isArray(d.recipients)) {
+      _alertRecipients = d.recipients.map(function(id){ return parseInt(id, 10); });
+    }
+  }).catch(function(){});
+}
+
+function renderAlertRecipientsAdmin() {
+  var el = document.getElementById('alert-recipients-list');
+  if (!el) return;
+  var q = ((document.getElementById('alert-recip-search')||{}).value||'').toLowerCase().trim();
+  var list = members.filter(function(m){
+    var nm = ((m.firstName||'')+' '+(m.lastName||m.name||'')).trim().toLowerCase();
+    var id = String(m.id||m.unit||'');
+    return !q || nm.indexOf(q)>=0 || id.indexOf(q)>=0;
+  });
+  if (!list.length) { el.innerHTML='<div style="color:#aaa;font-size:13px;padding:8px">No members found.</div>'; return; }
+  el.innerHTML = list.map(function(m) {
+    var idNum = parseInt(String(m.id||m.unit||''), 10);
+    var enabled = _alertRecipients.indexOf(idNum) >= 0;
+    var nm = ((m.firstName||'')+' '+(m.lastName||m.name||'')).trim() || ('BC-'+idNum);
+    return '<div class="car-access-row">'
+      +'<div><div style="font-size:13px;font-weight:600;color:#1a1a1a">BC-'+idNum+' — '+esc(nm)+'</div></div>'
+      +'<input type="checkbox"'+(enabled?' checked':'')+' onchange="toggleAlertRecipient(\''+idNum+'\',this.checked)"/>'
+      +'</div>';
+  }).join('');
+}
+
+function toggleAlertRecipient(memberId, enabled) {
+  var idNum = parseInt(memberId, 10);
+  if (enabled) { if (_alertRecipients.indexOf(idNum) < 0) _alertRecipients.push(idNum); }
+  else { _alertRecipients = _alertRecipients.filter(function(id){ return id !== idNum; }); }
+  postJ({ action: 'setAlertRecipient', memberId: idNum, enabled: enabled })
+    .then(function(d){ if (d && !d.success) showToast('Error: '+(d.error||'')); })
+    .catch(function(){ showToast('Network error'); });
+}
 </script>
 
 <!-- SUBMIT CHECKLIST MODAL -->
