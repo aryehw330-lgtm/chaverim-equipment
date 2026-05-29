@@ -1702,9 +1702,9 @@ function qrShowForm() {
         if (sg) sg.style.display = 'none';
         document.getElementById('qr-ccnc').value = 'CC';
         // Load car schedule for OUT access control (whose shift is it?)
-        fetch(BASE_URL + '?action=getCarScheduleJSON', {redirect:'follow',credentials:'omit'})
+        fetch(BASE_URL + '?action=getCarSchedule', {redirect:'follow',credentials:'omit'})
           .then(function(r){ return r.json(); })
-          .then(function(cs){ _qrCarSchedule = cs.schedule || []; })
+          .then(function(cs){ _qrCarSchedule = cs.bookings || []; })
           .catch(function(){ _qrCarSchedule = []; });
       }
       // \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
