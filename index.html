@@ -722,10 +722,11 @@ function checkPin() {
         if (d && d.id) {
           loggedInMember = {id: d.id, name: d.name, firstName: d.firstName, lastName: d.lastName, carAccess: !!d.carAccess, status: d.status || 'Member'};
           // Derive userLevel from status
+          // Admin=3, Equipment Team=2 (checklist access), Dispatch/Member/Observer=1
           var statArr = (d.status || 'Member').split(',').map(function(x){ return x.trim(); });
-          if (statArr.indexOf('Admin') >= 0)                                                   userLevel = 3;
-          else if (statArr.indexOf('Equipment Team') >= 0 || statArr.indexOf('Dispatch') >= 0) userLevel = 2;
-          else                                                                                  userLevel = 1;
+          if (statArr.indexOf('Admin') >= 0)              userLevel = 3;
+          else if (statArr.indexOf('Equipment Team') >= 0) userLevel = 2;
+          else                                             userLevel = 1;
           localStorage.setItem('cobc_level', userLevel);
           localStorage.setItem('cobc_member_id', d.id);
           document.getElementById('pin-gate').classList.add('hidden');
@@ -854,8 +855,8 @@ function loadData() {
           loggedInMember.status = fullM.status || 'Member';
           // re-derive userLevel in case it changed
           var statArr2 = loggedInMember.status.split(',').map(function(x){ return x.trim(); });
-          if (statArr2.indexOf('Admin') >= 0)                                                    userLevel = 3;
-          else if (statArr2.indexOf('Equipment Team') >= 0 || statArr2.indexOf('Dispatch') >= 0) userLevel = 2;
+          if (statArr2.indexOf('Admin') >= 0)               userLevel = 3;
+          else if (statArr2.indexOf('Equipment Team') >= 0)  userLevel = 2;
           localStorage.setItem('cobc_level', userLevel);
         }
         applyAccessLevel(); // refresh header with name
@@ -907,7 +908,7 @@ function renderDashboard() {
       +(timeStr?'<span style="display:block;font-size:10px;color:#999;margin-top:2px">'+esc(timeStr)+'</span>':'')
       +'</div></div>'
       +'<div class="alert-detail" style="margin-top:4px">📍 '+esc(it.homeLocation)
-      +(it.member?' · <b>BC-'+esc(it.member)+'</b>':'')
+      +(it.member?' · <b>'+fmtMemberBadge(it.member)+'</b>':'')
       +(it.call?' · Call #'+esc(it.call):'')+'</div>'
       +(hDisplay?'<div style="margin-top:5px;font-size:12px;color:#e65100;font-weight:600;background:#fff8f0;border-radius:6px;padding:4px 8px">📍 Member: '+esc(hDisplay)+'</div>':'')
       +(lNote?'<div style="margin-top:5px;font-size:12px;color:#c0392b;font-weight:700;background:#fff5f5;border-radius:6px;padding:4px 8px">🔧 ET Note: '+esc(lNote)+'</div>':'<div style="margin-top:5px;font-size:11px;color:#aaa;font-style:italic;padding:2px 4px">No ET note yet</div>')
@@ -916,10 +917,9 @@ function renderDashboard() {
   var ow = document.getElementById('dash-out-wrap');
   ow.style.display = out.length ? 'block' : 'none';
   document.getElementById('dash-out').innerHTML = out.map(function(it) {
-    var mn = getMemberName(it.member);
     var cc = it.isCNC ? '<span class="badge badge-cnc">CNC</span>' : '<span class="badge badge-in">CC</span>';
     return '<div class="out-card"><div style="flex:1;min-width:0"><div class="out-name">'+esc(it.name)+'</div>'
-      +'<div class="out-meta">'+esc(it.homeLocation)+(it.member?' · BC-'+esc(it.member):'')+(mn?' '+esc(mn):'')+(it.call?' · Call #'+esc(it.call):'')+'</div>'
+      +'<div class="out-meta">'+esc(it.homeLocation)+(it.member?' · '+fmtMemberBadge(it.member):'')+(it.call?' · Call #'+esc(it.call):'')+'</div>'
       +(it.isCNC?'<div class="out-meta" style="color:#e65100">'+esc(it.cncNote||it.ccnc)+'</div>':'')
       +'</div><div style="text-align:right">'+cc+'<div class="out-time">'+fmtTime(it.lastUpdated)+'</div></div></div>';
   }).join('');
@@ -931,11 +931,10 @@ function renderDashboard() {
   } else {
     rel.innerHTML = recent.map(function(it) {
       var isOut = it.status==='OUT';
-      var mn = getMemberName(it.member);
       return '<div class="recent-card"><div class="rdot '+(isOut?'rdot-out':'rdot-in')+'"></div>'
         +'<div style="flex:1;min-width:0"><div class="r-name">'+esc(it.name)+'</div>'
         +'<div class="r-detail">'+(isOut?'Checked OUT':'Checked IN')
-        +(it.member?' · BC-'+esc(it.member):'')+(mn?' '+esc(mn):'')
+        +(it.member?' · '+fmtMemberBadge(it.member):'')
         +(it.call?' · Call #'+esc(it.call):'')
         +(it.isCNC?' · CNC: '+esc(it.cncNote||it.ccnc):' · CC')
         +' · '+esc(it.homeLocation)+'</div></div>'
@@ -946,8 +945,28 @@ function renderDashboard() {
 }
 function getMemberName(bc) {
   if (!bc) return '';
-  var m = members.find(function(m){return String(m.id)===String(bc)||String(m.unit)===String(bc);});
+  var id = parseMemberField(bc).member; // strip "(by BC-XX)" if present
+  var m = members.find(function(m){return String(m.id)===String(id)||String(m.unit)===String(id);});
   return m ? (m.firstName||m.name||'') : '';
+}
+// Parse "24 (by BC-38)" → {member:'24', loggedBy:'38'} or plain "38" → {member:'38', loggedBy:null}
+function parseMemberField(str) {
+  if (!str) return {member:'', loggedBy:null};
+  var m = String(str).match(/^(.+?)\s*\(by\s*BC-?(\d+)\)\s*$/i);
+  if (m) return {member: m[1].trim(), loggedBy: m[2].trim()};
+  return {member: String(str).trim(), loggedBy: null};
+}
+// Returns display HTML for a member field — e.g. "BC-24 John · by BC-38"
+function fmtMemberBadge(memberStr) {
+  if (!memberStr) return '';
+  var p = parseMemberField(memberStr);
+  var name = getMemberName(p.member);
+  var out = 'BC-' + esc(p.member) + (name ? ' ' + esc(name) : '');
+  if (p.loggedBy) {
+    var lbName = getMemberName(p.loggedBy);
+    out += ' <span style="color:#e65100;font-weight:700">· by BC-' + esc(p.loggedBy) + (lbName ? ' ' + esc(lbName) : '') + '</span>';
+  }
+  return out;
 }
 function parseTs(s) { try{var d=new Date(s);return isNaN(d)?0:d.getTime();}catch(e){return 0;} }
 function fmtTime(s) {
@@ -1060,7 +1079,7 @@ function renderInventory() {
     var fl = it.equipStatus==='Missing'?'fl-miss':it.equipStatus==='Damaged'?'fl-dmg':it.isCNC?'fl-cnc':'';
     return '<div class="inv-card '+fl+'">'
       +'<div class="inv-top"><div class="inv-name">'+esc(it.name)+'</div><div class="inv-badges">'+sb+eb+cb+'</div></div>'
-      +'<div class="inv-meta">📍 '+esc(it.homeLocation)+(it.member?' · BC-'+esc(it.member):'')+(it.call?' · Call #'+esc(it.call):'')+(it.lastUpdated?' · '+fmtTime(it.lastUpdated):'')+'</div>'
+      +'<div class="inv-meta">📍 '+esc(it.homeLocation)+(it.member?' · '+fmtMemberBadge(it.member):'')+(it.call?' · Call #'+esc(it.call):'')+(it.lastUpdated?' · '+fmtTime(it.lastUpdated):'')+'</div>'
       +(it.isCNC?'<div class="inv-cnc">📍 '+esc(it.cncNote||it.ccnc)+'</div>':'')
       +'<div class="inv-actions"><button class="btn-in" onclick="openCheckout('+it.row+')">✓ Check IN</button><button class="btn-out" onclick="openCheckout('+it.row+', &quot;OUT&quot;)">↓ Check OUT</button></div>'
       +((['Missing','Damaged','Need More'].indexOf(it.equipStatus)>=0)?'<div style="margin-top:6px"><button class="btn-reset" onclick="resetStatus('+it.row+')">↺ Mark as OK</button></div>':'')
@@ -1315,7 +1334,7 @@ var blocked = [];
     .then(function(data){
       if(data.success){
         var idx=items.findIndex(function(i){return i.row===item.row;});
-        if(idx>=0){items[idx].status=action;items[idx].member=member;items[idx].call=call;items[idx].isCNC=ccSel==='CNC';items[idx].cncNote=cncNote;items[idx].lastUpdated=new Date().toLocaleString();}
+        if(idx>=0){items[idx].status=action;items[idx].member=loggedBy?member+' (by BC-'+loggedBy+')':member;items[idx].call=call;items[idx].isCNC=ccSel==='CNC';items[idx].cncNote=cncNote;items[idx].lastUpdated=new Date().toLocaleString();}
       }
     });
   })).then(function(){
