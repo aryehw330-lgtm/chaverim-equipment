@@ -313,6 +313,8 @@ textarea{resize:vertical;min-height:70px}
         <div class="kpi kpi-iss"><div class="kpi-val" id="kpi-iss">0</div><div class="kpi-label">Issues</div></div>
         <div class="kpi kpi-cnc"><div class="kpi-val" id="kpi-cnc">0</div><div class="kpi-label">CNC</div></div>
       </div>
+      <!-- COBC 4 car action banner on dashboard -->
+      <div id="dash-car-action" style="display:none;margin-bottom:14px"></div>
       <div id="dash-alerts-wrap" style="display:none">
         <div class="section-label">⚠️ Active Alerts</div>
         <div id="dash-alerts"></div>
@@ -411,6 +413,8 @@ textarea{resize:vertical;min-height:70px}
       </div>
       <!-- Live car status (from inventory) -->
       <div id="car-live-status" style="display:none;margin-bottom:12px"></div>
+      <!-- Prominent action banner — Start Shift or Return Car -->
+      <div id="car-action-banner" style="display:none;margin-bottom:14px"></div>
       <div class="car-cal-nav">
         <button onclick="carPrevMonth()">&#8249;</button>
         <div class="car-cal-month" id="car-cal-title"></div>
@@ -878,6 +882,7 @@ function renderDashboard() {
         +'<div class="r-time">'+fmtTime(it.lastUpdated)+'</div></div>';
     }).join('');
   }
+  renderCarActionBanner();
 }
 function getMemberName(bc) {
   if (!bc) return '';
@@ -1788,6 +1793,7 @@ function loadCarSchedule(cb) {
       carSchedule = d.bookings || [];
       renderCarCalendar();
       renderCarHistory();
+      renderCarActionBanner();
       if (carSelectedDate) renderCarDay(carSelectedDate);
       if (cb) cb();
     }).catch(function(){ if (cb) cb(); });
@@ -1798,6 +1804,7 @@ function renderCarPage() {
   carViewDate = new Date(now.getFullYear(), now.getMonth(), 1);
   renderCarCalendar();
   renderCarItemStatus();
+  renderCarActionBanner();
   loadCarSchedule();
 }
 
@@ -1916,9 +1923,20 @@ function renderCarDay(dateStr) {
               + memberDeleteBtn + deleteBtn;
           }
         } else if (b.status === 'active') {
-          // Car is out — only the member who started can return it, admin can delete
-          actions = (isMine ? '<button onclick="endCarShift(\''+b.id+'\')" style="margin-top:8px;width:100%;padding:9px;background:#c0392b;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">🏁 Return Car</button>' : '')
-            + deleteBtn;
+          // Button depends on whether COBC 4 is actually OUT in inventory
+          var cobc4ItemA = items.find(function(i){ return isCarItem(i.name); });
+          var cobc4IsOutA = cobc4ItemA && cobc4ItemA.status === 'OUT';
+          if (isMine && cobc4IsOutA) {
+            // Car is physically out — show Return Car
+            actions = '<button onclick="endCarShift(\''+b.id+'\')" style="margin-top:8px;width:100%;padding:9px;background:#c0392b;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">🏁 Return Car</button>'
+              + deleteBtn;
+          } else if (isMine && !cobc4IsOutA) {
+            // Shift marked active but COBC 4 never signed out — let them start again
+            actions = '<button onclick="startCarShift(\''+b.id+'\')" style="margin-top:8px;width:100%;padding:9px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">🔑 Start Shift</button>'
+              + deleteBtn;
+          } else {
+            actions = deleteBtn;
+          }
         } else if (b.status === 'pending') {
           actions = memberDeleteBtn + deleteBtn;
         } else if (b.status === 'done') {
@@ -2034,6 +2052,7 @@ function startCarShift(bookingId) {
         if (b) b.status = 'active';
         renderCarCalendar(); if (carSelectedDate) renderCarDay(carSelectedDate);
         renderCarHistory();
+        renderCarActionBanner();
         showToast('🔑 Sign COBC 4 OUT in Inventory now');
         setTimeout(function(){ navigateToCarCheckout('OUT'); }, 900);
       } else { showToast('Error: '+(d.error||'Unknown')); }
@@ -2050,6 +2069,7 @@ function endCarShift(bookingId) {
         if (b) { b.status = 'done'; b.actualSignIn = new Date().toISOString(); }
         renderCarCalendar(); if (carSelectedDate) renderCarDay(carSelectedDate);
         renderCarHistory();
+        renderCarActionBanner();
         showToast('🏁 Sign COBC 4 IN in Inventory now');
         // Reload from server after a moment to get the latest data
         setTimeout(function(){ loadCarSchedule(); }, 3000);
@@ -2217,6 +2237,61 @@ function renderCarItemStatus() {
     +(isOut&&carItem.member?'<div style="font-size:11px;color:#666;margin-top:1px">Signed out by BC-'+esc(carItem.member)+(carItem.lastUpdated?' · '+esc(carItem.lastUpdated):'')+'</div>':'')
     +'</div></div>';
 }
+// Renders the prominent Start Shift / Return Car action banner
+// Logic is driven entirely by COBC 4's actual inventory status — not booking status
+function renderCarActionBanner() {
+  var carEl  = document.getElementById('car-action-banner');
+  var dashEl = document.getElementById('dash-car-action');
+  var carItem = items.find(function(i){ return isCarItem(i.name); });
+  var myId    = loggedInMember ? String(loggedInMember.id) : null;
+  var isAdm   = userLevel >= 3 || (myId === '38');
+  var todayStr = (function(){ var n=new Date(); return n.getFullYear()+'-'+pad2(n.getMonth()+1)+'-'+pad2(n.getDate()); })();
+
+  // ── Case 1: COBC 4 is OUT → show Return Car to whoever signed it out (or admin) ──
+  if (carItem && carItem.status === 'OUT') {
+    var outBy   = carItem.member ? String(carItem.member) : null;
+    var canReturn = isAdm || (myId && outBy && outBy === myId);
+    if (canReturn) {
+      // Find the active booking to end
+      var activeBkg = carSchedule.find(function(b){ return b.status === 'active'; });
+      var bookingId = activeBkg ? activeBkg.id : null;
+      var html = '<div style="background:linear-gradient(135deg,#c0392b,#e74c3c);border-radius:14px;padding:16px 18px;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 4px 16px rgba(192,57,43,.3)">'
+        +'<div><div style="font-size:15px;font-weight:800">🏁 COBC 4 is out</div>'
+        +'<div style="font-size:12px;opacity:.85;margin-top:2px">Tap to return it to inventory</div></div>'
+        +(bookingId
+          ? '<button onclick="endCarShift(\''+bookingId+'\')" style="background:#fff;color:#c0392b;border:none;border-radius:10px;padding:11px 18px;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap">Return Car</button>'
+          : '<button onclick="navigateToCarCheckout(\'IN\')" style="background:#fff;color:#c0392b;border:none;border-radius:10px;padding:11px 18px;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap">Sign IN</button>')
+        +'</div>';
+      if (carEl)  { carEl.innerHTML  = html; carEl.style.display  = 'block'; }
+      if (dashEl) { dashEl.innerHTML = html; dashEl.style.display = 'block'; }
+      return;
+    }
+  }
+
+  // ── Case 2: COBC 4 is IN → show Start Shift if member has approved or active booking today ──
+  if (carItem && carItem.status !== 'OUT' && myId) {
+    var myTodayBkg = carSchedule.find(function(b){
+      if (b.date !== todayStr) return false;
+      if (String(b.memberId) !== myId) return false;
+      return b.status === 'approved' || b.status === 'active'; // active but car still IN = didn't sign out yet
+    });
+    if (myTodayBkg) {
+      var startInHtml = '<div style="background:linear-gradient(135deg,#1a3a5c,#2a5a8c);border-radius:14px;padding:16px 18px;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 4px 16px rgba(26,58,92,.3)">'
+        +'<div><div style="font-size:15px;font-weight:800">🔑 Your shift is ready</div>'
+        +'<div style="font-size:12px;opacity:.85;margin-top:2px">Tap to start and sign COBC 4 out</div></div>'
+        +'<button onclick="startCarShift(\''+myTodayBkg.id+'\')" style="background:#fff;color:#1a3a5c;border:none;border-radius:10px;padding:11px 18px;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap">Start Shift</button>'
+        +'</div>';
+      if (carEl)  { carEl.innerHTML  = startInHtml; carEl.style.display  = 'block'; }
+      if (dashEl) { dashEl.innerHTML = startInHtml; dashEl.style.display = 'block'; }
+      return;
+    }
+  }
+
+  // ── No action needed — hide both banners ──
+  if (carEl)  { carEl.style.display  = 'none'; carEl.innerHTML  = ''; }
+  if (dashEl) { dashEl.style.display = 'none'; dashEl.innerHTML = ''; }
+}
+
 // Renders completed/active shift history in the car page
 function renderCarHistory() {
   var el = document.getElementById('car-history-list');
