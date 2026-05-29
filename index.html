@@ -1955,7 +1955,14 @@ function renderCarCalendar() {
     var isToday = ds === todayStr;
     var isPast  = ds < todayStr;
     var dayBk   = carSchedule.filter(function(b){ return b.date === ds && b.status !== 'cancelled'; });
-    var dots = dayBk.slice(0,3).map(function(b){
+    var statusOrder = {active:0, pending:1, approved:2};
+    var sortedBk = dayBk.slice().sort(function(a,b){
+      var sp = (statusOrder[a.status]||3) - (statusOrder[b.status]||3);
+      if (sp !== 0) return sp;
+      // Same priority — show latest start time first
+      return (parse12to24(b.startTime)||'').localeCompare(parse12to24(a.startTime)||'');
+    });
+    var dots = sortedBk.slice(0,3).map(function(b){
       var col = (b.status==='active') ? '#c0392b' : (b.status==='pending') ? '#e65100' : '#2e7d32';
       return '<div class="car-dot" style="background:'+col+'"></div>';
     }).join('');
