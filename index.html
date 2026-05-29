@@ -678,6 +678,12 @@ function checkPin() {
           document.getElementById('app').style.display = 'flex';
           applyAccessLevel();
           loadData();
+          // Auto-navigate to requested page after login (e.g. from COBC 4 QR code scan)
+          var goPageAfterLogin = new URLSearchParams(window.location.search).get('page');
+          if (goPageAfterLogin) {
+            var btn = document.querySelector('.tab[data-page="' + goPageAfterLogin + '"]');
+            showPage(goPageAfterLogin, btn);
+          }
         } else {
           document.getElementById('pin-error').textContent = '✕ Incorrect PIN';
           document.getElementById('pin-input').value = '';
@@ -2376,6 +2382,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // QR MODE: always takes priority over saved session
   var urlParams = new URLSearchParams(window.location.search);
   var qrName = urlParams.get('name');
+  var goPage = urlParams.get('page'); // e.g. ?page=car from COBC 4 QR redirect
   if (qrName) {
     document.getElementById('pin-gate').classList.add('hidden');
     showQRMode(qrName);
@@ -2397,6 +2404,11 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('app').style.display='flex';
     applyAccessLevel();
     loadData();
+    // Auto-navigate to requested page (e.g. from COBC 4 QR code scan)
+    if (goPage) {
+      var btn = document.querySelector('.tab[data-page="' + goPage + '"]');
+      showPage(goPage, btn);
+    }
   }
 });
 </script>
