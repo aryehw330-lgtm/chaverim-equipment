@@ -328,6 +328,8 @@ textarea{resize:vertical;min-height:70px}
     </div>
     <!-- INVENTORY -->
     <div class="page" id="page-inventory">
+      <!-- COBC 4 car action banner on inventory page -->
+      <div id="inv-car-action" style="display:none;margin-bottom:14px"></div>
       <div class="search-wrap">
         <span class="search-icon">🔍</span>
         <input id="inv-search" type="text" placeholder="Search items..." oninput="renderInventory()" style="padding-left:36px"/>
@@ -2242,6 +2244,7 @@ function renderCarItemStatus() {
 function renderCarActionBanner() {
   var carEl  = document.getElementById('car-action-banner');
   var dashEl = document.getElementById('dash-car-action');
+  var invEl  = document.getElementById('inv-car-action');
   var carItem = items.find(function(i){ return isCarItem(i.name); });
   var myId    = loggedInMember ? String(loggedInMember.id) : null;
   var isAdm   = userLevel >= 3 || (myId === '38');
@@ -2264,6 +2267,7 @@ function renderCarActionBanner() {
         +'</div>';
       if (carEl)  { carEl.innerHTML  = html; carEl.style.display  = 'block'; }
       if (dashEl) { dashEl.innerHTML = html; dashEl.style.display = 'block'; }
+      if (invEl)  { invEl.innerHTML  = html; invEl.style.display  = 'block'; }
       return;
     }
   }
@@ -2283,6 +2287,7 @@ function renderCarActionBanner() {
         +'</div>';
       if (carEl)  { carEl.innerHTML  = startInHtml; carEl.style.display  = 'block'; }
       if (dashEl) { dashEl.innerHTML = startInHtml; dashEl.style.display = 'block'; }
+      if (invEl)  { invEl.innerHTML  = startInHtml; invEl.style.display  = 'block'; }
       return;
     }
   }
@@ -2290,6 +2295,7 @@ function renderCarActionBanner() {
   // ── No action needed — hide both banners ──
   if (carEl)  { carEl.style.display  = 'none'; carEl.innerHTML  = ''; }
   if (dashEl) { dashEl.style.display = 'none'; dashEl.innerHTML = ''; }
+  if (invEl)  { invEl.style.display  = 'none'; invEl.innerHTML  = ''; }
 }
 
 // Renders completed/active shift history in the car page
