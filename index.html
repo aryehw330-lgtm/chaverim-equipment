@@ -276,6 +276,14 @@ textarea{resize:vertical;min-height:70px}
     </div>
     <div id="modal-search-results" style="max-height:140px;overflow-y:auto;margin-bottom:10px;border:1.5px solid #eee;border-radius:8px;display:none"></div>
     <div id="modal-member-display" style="display:none;background:#eef3f8;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px;font-weight:600;color:#1a3a5c"></div>
+    <!-- Admin / Dispatch: log for another member -->
+    <div id="modal-log-for-wrap" style="display:none;border-top:1.5px solid #e0e6ed;padding-top:12px;margin-bottom:12px">
+      <label class="field-label" style="color:#1a3a5c;font-weight:700;margin-bottom:6px">📋 Logging for unit #</label>
+      <select id="modal-log-for" onchange="updateModalLogForNote()" style="width:100%;padding:11px 12px;border:1.5px solid #1a3a5c;border-radius:9px;font-size:15px;font-weight:600;color:#1a3a5c;background:#f0f4f8;outline:none">
+        <option value="">— My own unit —</option>
+      </select>
+      <div id="modal-log-for-note" style="display:none;margin-top:6px;padding:6px 10px;background:#fff8e1;border-radius:7px;font-size:12px;color:#e65100;font-weight:600"></div>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-success" onclick="submitCheckout('IN')">✓ Check IN All</button>
       <button class="btn btn-danger" onclick="submitCheckout('OUT')">↓ Check OUT All</button>
@@ -485,6 +493,14 @@ textarea{resize:vertical;min-height:70px}
           <label class="field-label">Notes (optional)</label>
           <input type="text" id="car-note" placeholder="e.g. airport run, patrol..." style="font-size:14px;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;width:100%;outline:none"/>
         </div>
+        <!-- Admin only: book on behalf of another member -->
+        <div id="car-book-for-wrap" style="display:none;border-top:1.5px solid #e0e6ed;padding-top:12px;margin-bottom:4px">
+          <label class="field-label" style="color:#1a3a5c;font-weight:700;margin-bottom:6px">📋 Booking for unit #</label>
+          <select id="car-book-for" onchange="updateCarBookForNote()" style="width:100%;padding:11px 12px;border:1.5px solid #1a3a5c;border-radius:9px;font-size:15px;font-weight:600;color:#1a3a5c;background:#f0f4f8;outline:none">
+            <option value="">— My own unit —</option>
+          </select>
+          <div id="car-book-for-note" style="display:none;margin-top:6px;padding:6px 10px;background:#fff8e1;border-radius:7px;font-size:12px;color:#e65100;font-weight:600"></div>
+        </div>
         <div style="display:flex;gap:8px;margin-top:4px">
           <button onclick="closeCarBooking()" class="btn btn-ghost" style="flex:1">Cancel</button>
           <button onclick="submitCarBooking()" class="btn btn-primary" style="flex:1" id="car-submit-btn">Book Shift</button>
@@ -662,6 +678,20 @@ const ADMIN_PASS='cobc2026';
 var loggedInMember = null; // set after member PIN login
 var memberPins = []; // loaded from members sheet
 
+// ── Status helpers ─────────────────────────────────────────────────────────────
+function memberHasStatus(s) {
+  if (!loggedInMember || !loggedInMember.status) return false;
+  return loggedInMember.status.split(',').map(function(x){ return x.trim().toLowerCase(); }).indexOf(s.toLowerCase()) >= 0;
+}
+function isAdminUser()    { return userLevel >= 3 || memberHasStatus('Admin'); }
+function isDispatchUser() { return memberHasStatus('Dispatch'); }
+function isEquipTeamUser(){ return userLevel >= 2 || memberHasStatus('Equipment Team'); }
+// Admin can log for others everywhere; Dispatch only for inventory (pass true for car/COBC4 check)
+function canLogForOthers(isCarAction) {
+  if (isCarAction) return isAdminUser();
+  return isAdminUser() || isDispatchUser();
+}
+
 async function hashSHA256(str) {
   var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
@@ -690,9 +720,13 @@ function checkPin() {
       .then(function(r){ return r.json(); })
       .then(function(d) {
         if (d && d.id) {
-          userLevel = 1;
-          loggedInMember = {id: d.id, name: d.name, firstName: d.firstName, lastName: d.lastName, carAccess: !!d.carAccess};
-          localStorage.setItem('cobc_level', 1);
+          loggedInMember = {id: d.id, name: d.name, firstName: d.firstName, lastName: d.lastName, carAccess: !!d.carAccess, status: d.status || 'Member'};
+          // Derive userLevel from status
+          var statArr = (d.status || 'Member').split(',').map(function(x){ return x.trim(); });
+          if (statArr.indexOf('Admin') >= 0)                                                   userLevel = 3;
+          else if (statArr.indexOf('Equipment Team') >= 0 || statArr.indexOf('Dispatch') >= 0) userLevel = 2;
+          else                                                                                  userLevel = 1;
+          localStorage.setItem('cobc_level', userLevel);
           localStorage.setItem('cobc_member_id', d.id);
           document.getElementById('pin-gate').classList.add('hidden');
           document.getElementById('app').style.display = 'flex';
@@ -806,16 +840,24 @@ function loadData() {
     // Ensure carAccess field exists on each member
     members.forEach(function(m){ if (m.carAccess === undefined) m.carAccess = false; });
     // Build member PIN lookup
-    memberPins = members.filter(function(m){ return m.pin; }).map(function(m){ return {id: String(m.id||m.unit||''), name: m.name||((m.firstName||'')+' '+(m.lastName||'')).trim(), pin: String(m.pin), carAccess: !!m.carAccess}; });
+    memberPins = members.filter(function(m){ return m.pin; }).map(function(m){ return {id: String(m.id||m.unit||''), name: m.name||((m.firstName||'')+' '+(m.lastName||'')).trim(), pin: String(m.pin), carAccess: !!m.carAccess, status: m.status||'Member'}; });
     // Restore full member info after data load
     var savedMemberId = localStorage.getItem('cobc_member_id');
     if (savedMemberId) {
       var found = memberPins.find(function(m){ return m.id === savedMemberId; });
       if (found) {
         loggedInMember = found;
-        // also sync carAccess from full members list
+        // sync carAccess and status from full members list
         var fullM = members.find(function(m){ return String(m.id||m.unit)===savedMemberId; });
-        if (fullM) loggedInMember.carAccess = !!fullM.carAccess;
+        if (fullM) {
+          loggedInMember.carAccess = !!fullM.carAccess;
+          loggedInMember.status = fullM.status || 'Member';
+          // re-derive userLevel in case it changed
+          var statArr2 = loggedInMember.status.split(',').map(function(x){ return x.trim(); });
+          if (statArr2.indexOf('Admin') >= 0)                                                    userLevel = 3;
+          else if (statArr2.indexOf('Equipment Team') >= 0 || statArr2.indexOf('Dispatch') >= 0) userLevel = 2;
+          localStorage.setItem('cobc_level', userLevel);
+        }
         applyAccessLevel(); // refresh header with name
       }
     }
@@ -1175,11 +1217,29 @@ function openCheckout(row, action) {
   var memInput = document.getElementById('modal-member').parentElement;
   if (loggedInMember) {
     document.getElementById('modal-member').value = loggedInMember.id;
-    if (memDisplay) { memDisplay.style.display='block'; memDisplay.textContent='👤 Checking out as BC-'+loggedInMember.id+' — '+loggedInMember.name; }
+    if (memDisplay) { memDisplay.style.display='block'; memDisplay.textContent='👤 Logged in as BC-'+loggedInMember.id+' — '+loggedInMember.name; }
     if (memInput) memInput.style.display='none';
   } else {
     if (memDisplay) memDisplay.style.display='none';
     if (memInput) memInput.style.display='block';
+  }
+  // Show "Logging for" dropdown for Admin / Dispatch
+  var logForWrap = document.getElementById('modal-log-for-wrap');
+  var logForSel  = document.getElementById('modal-log-for');
+  var isCobc4    = modalItems.some(function(i){ return isCarItem(i.name); });
+  if (canLogForOthers(isCobc4) && loggedInMember) {
+    logForWrap.style.display = 'block';
+    var myOpt = '<option value="">— My own unit (BC-' + loggedInMember.id + ') —</option>';
+    var memberOpts = members.map(function(m) {
+      var mid = (m.id||m.unit||'').toString().replace(/^BC-?/i,'');
+      var mname = ((m.firstName||'')+ ' '+(m.lastName||'')).trim();
+      return '<option value="'+mid+'">BC-'+mid+(mname?' — '+mname:'')+'</option>';
+    }).join('');
+    logForSel.innerHTML = myOpt + memberOpts;
+    logForSel.value = '';
+    document.getElementById('modal-log-for-note').style.display = 'none';
+  } else {
+    logForWrap.style.display = 'none';
   }
   // ── COBC 4: hide call# and CC/CNC — it's a shift vehicle, not a specific call ──
   var hasCobc4 = modalItems.some(function(i){ return isCarItem(i.name); });
@@ -1203,6 +1263,20 @@ function closeModal() {
   // Reset field visibility for next open
   var cg=document.getElementById('modal-call-group'); if(cg) cg.style.display='block';
   var sg=document.getElementById('modal-ccnc-group'); if(sg) sg.style.display='block';
+  var lfw=document.getElementById('modal-log-for-wrap'); if(lfw) lfw.style.display='none';
+  var lfs=document.getElementById('modal-log-for'); if(lfs) lfs.value='';
+  var lfn=document.getElementById('modal-log-for-note'); if(lfn) lfn.style.display='none';
+}
+function updateModalLogForNote() {
+  var sel  = document.getElementById('modal-log-for');
+  var note = document.getElementById('modal-log-for-note');
+  if (!sel || !note) return;
+  if (sel.value) {
+    note.style.display = 'block';
+    note.textContent   = '📝 This will log as BC-'+sel.value+', recorded by BC-'+(loggedInMember?loggedInMember.id:'?');
+  } else {
+    note.style.display = 'none';
+  }
 }
 function toggleCNCNote() {
   document.getElementById('cnc-note-group').style.display = document.getElementById('modal-ccnc').value==='CNC'?'block':'none';
@@ -1214,6 +1288,11 @@ function submitCheckout(action) {
   var ccSel   = document.getElementById('modal-ccnc').value;
   var cncNote = document.getElementById('modal-cnc-note').value.trim();
   var hasCobc4 = modalItems.some(function(item){ return isCarItem(item.name); });
+  // Handle "log for another" (admin/dispatch)
+  var logForSel = document.getElementById('modal-log-for');
+  var logForVal = (logForSel && document.getElementById('modal-log-for-wrap').style.display !== 'none') ? logForSel.value.trim() : '';
+  var loggedBy  = null;
+  if (logForVal && loggedInMember) { member = logForVal; loggedBy = loggedInMember.id; }
   if(!member) { alert('Please enter your BC member number.'); return; }
   if(!call   && !hasCobc4) { alert('Please enter the call number.'); return; }
   if(!ccSel  && !hasCobc4) { alert('Please select CC or CNC.'); return; }
@@ -1232,7 +1311,7 @@ var blocked = [];
   var itemsCopy = modalItems.slice();
   closeModal(); showLoad(true);
   Promise.all(itemsCopy.map(function(item){
-    return postJ({action:'checkInOut',row:item.row,status:action,member:member,call:call,ccSel:ccSel,cncNote:cncNote})
+    return postJ({action:'checkInOut',row:item.row,status:action,member:member,call:call,ccSel:ccSel,cncNote:cncNote,loggedBy:loggedBy||null})
     .then(function(data){
       if(data.success){
         var idx=items.findIndex(function(i){return i.row===item.row;});
@@ -2010,14 +2089,56 @@ function openCarBooking() {
     document.getElementById('car-'+p+'-ampm').value = 'AM';
   });
   document.getElementById('car-note').value = '';
+  // Admin: show "Booking for unit #" dropdown
+  var bfWrap = document.getElementById('car-book-for-wrap');
+  var bfSel  = document.getElementById('car-book-for');
+  if (isAdminUser() && loggedInMember) {
+    bfWrap.style.display = 'block';
+    var myOpt = '<option value="">— My own unit (BC-' + loggedInMember.id + ') —</option>';
+    var memberOpts = members.map(function(m) {
+      var mid = (m.id||m.unit||'').toString().replace(/^BC-?/i,'');
+      var mname = ((m.firstName||'')+' '+(m.lastName||'')).trim();
+      return '<option value="'+mid+'">BC-'+mid+(mname?' — '+mname:'')+'</option>';
+    }).join('');
+    bfSel.innerHTML = myOpt + memberOpts;
+    bfSel.value = '';
+    document.getElementById('car-book-for-note').style.display = 'none';
+  } else if (isAdminUser() && !loggedInMember) {
+    // cobcadmin special PIN — must pick a member to book for
+    bfWrap.style.display = 'block';
+    var reqOpt = '<option value="">— Select unit to book for —</option>';
+    var memberOpts2 = members.map(function(m) {
+      var mid = (m.id||m.unit||'').toString().replace(/^BC-?/i,'');
+      var mname = ((m.firstName||'')+' '+(m.lastName||'')).trim();
+      return '<option value="'+mid+'">BC-'+mid+(mname?' — '+mname:'')+'</option>';
+    }).join('');
+    bfSel.innerHTML = reqOpt + memberOpts2;
+    bfSel.value = '';
+    document.getElementById('car-book-for-note').style.display = 'none';
+  } else {
+    bfWrap.style.display = 'none';
+  }
   document.getElementById('car-book-form').style.display = 'block';
   submitBtn.textContent = 'Book Shift';
   submitBtn.disabled = false;
   setTimeout(function(){ document.getElementById('car-book-form').scrollIntoView({behavior:'smooth',block:'nearest'}); }, 60);
 }
+function updateCarBookForNote() {
+  var sel  = document.getElementById('car-book-for');
+  var note = document.getElementById('car-book-for-note');
+  if (!sel || !note) return;
+  if (sel.value) {
+    note.style.display = 'block';
+    note.textContent   = '📝 Booking on behalf of BC-'+sel.value+(loggedInMember?' — logged by BC-'+loggedInMember.id:'');
+  } else {
+    note.style.display = 'none';
+  }
+}
 
 function closeCarBooking() {
   document.getElementById('car-book-form').style.display = 'none';
+  var bfSel = document.getElementById('car-book-for'); if (bfSel) bfSel.value = '';
+  var bfNote = document.getElementById('car-book-for-note'); if (bfNote) bfNote.style.display = 'none';
 }
 
 function submitCarBooking() {
@@ -2041,8 +2162,19 @@ function submitCarBooking() {
     showToast('⚠️ Overlaps BC-' + esc(conflict.memberId) + '\'s shift (' + esc(conflict.startTime) + ' – ' + esc(conflict.endTime) + ')');
     return;
   }
-  var memberId   = loggedInMember ? loggedInMember.id : (userLevel>=3 ? 'Admin' : '');
-  var memberName = loggedInMember ? (loggedInMember.name||loggedInMember.firstName||'') : (userLevel>=3 ? 'Admin' : '');
+  var memberId   = loggedInMember ? loggedInMember.id : '';
+  var memberName = loggedInMember ? (loggedInMember.name||loggedInMember.firstName||'') : '';
+  // Admin booking for another member
+  var bfSel = document.getElementById('car-book-for');
+  var bfVal = (bfSel && document.getElementById('car-book-for-wrap').style.display !== 'none') ? bfSel.value.trim() : '';
+  if (bfVal) {
+    var bfMember = members.find(function(m){ return (m.id||m.unit||'').toString().replace(/^BC-?/i,'') === bfVal; });
+    memberId   = bfVal;
+    memberName = bfMember ? ((bfMember.firstName||'')+' '+(bfMember.lastName||'')).trim() : ('BC-'+bfVal);
+  }
+  // cobcadmin special PIN: must have picked a member
+  if (!memberId && userLevel >= 3) { showToast('Please select a unit to book for'); return; }
+  if (!memberId) { showToast('No member logged in'); return; }
   var btn = document.getElementById('car-submit-btn');
   btn.textContent = '...'; btn.disabled = true;
   postJ({action:'bookCarShift', memberId:memberId, memberName:memberName, date:carSelectedDate,
@@ -2463,22 +2595,17 @@ function navigateToCarCheckout(direction) {
   doShowPage('inventory');
   setTimeout(function(){ openCheckout(carItem.row, direction||'OUT'); }, 150);
 }
-// Shows post-booking WhatsApp notification card
+// Shows post-booking success card
 function showCarBookingSuccess(startTime, endTime, date, memberName, note) {
   var wrap = document.getElementById('car-book-wrap');
   if (!wrap) return;
   var dateLabel = new Date(date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
-  var bcId = loggedInMember ? loggedInMember.id : '';
-  var msg = 'Hi! BC-'+bcId+(memberName?' ('+memberName+')':'')+' booked COBC 4 for '+dateLabel
-    +' from '+startTime+' to '+endTime+'.'+(note?' Note: '+note:'')+' Thank you!';
-  var waUrl = CAR_CHIEF_WHATSAPP
-    ? 'https://wa.me/'+CAR_CHIEF_WHATSAPP+'?text='+encodeURIComponent(msg)
-    : 'https://wa.me/?text='+encodeURIComponent(msg);
-  wrap.innerHTML = '<div style="background:#e8f5e9;border:1.5px solid #a5d6a7;border-radius:10px;padding:12px;margin-top:6px">'
-    +'<div style="font-size:13px;font-weight:700;color:#2e7d32;margin-bottom:5px">✅ Shift booked for '+dateLabel+'!</div>'
-    +'<div style="font-size:12px;color:#555;margin-bottom:10px">Let the chiefs know via WhatsApp:</div>'
-    +'<a href="'+waUrl+'" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:6px;background:#25d366;color:#fff;text-decoration:none;border-radius:8px;padding:10px;font-size:14px;font-weight:700">📱 Notify Chiefs on WhatsApp</a>'
-    +'<div style="text-align:center;margin-top:8px"><button onclick="renderCarDay(carSelectedDate)" style="background:none;border:none;color:#888;font-size:12px;cursor:pointer;text-decoration:underline">Dismiss</button></div>'
+  wrap.innerHTML = '<div style="background:#e8f5e9;border:1.5px solid #a5d6a7;border-radius:10px;padding:16px;margin-top:6px;text-align:center">'
+    +'<div style="font-size:28px;margin-bottom:6px">✅</div>'
+    +'<div style="font-size:15px;font-weight:700;color:#2e7d32">Shift booked for '+dateLabel+'!</div>'
+    +'<div style="font-size:13px;color:#555;margin-top:4px">'+startTime+' – '+endTime+(memberName?' · '+memberName:'')+'</div>'
+    +(note?'<div style="font-size:12px;color:#888;margin-top:3px">'+note+'</div>':'')
+    +'<button onclick="renderCarDay(carSelectedDate)" style="margin-top:12px;background:none;border:none;color:#888;font-size:12px;cursor:pointer;text-decoration:underline">Dismiss</button>'
     +'</div>';
 }
 
