@@ -1113,7 +1113,7 @@ function openCheckout(row, action) {
         if (!lastMember || !canReturn) {
           var lmObj = lastMember ? members.find(function(m){ return String(m.id||m.unit||'')===lastMember; }) : null;
           var lmName = lmObj ? ' — '+(lmObj.firstName||lmObj.name||'').trim() : '';
-          alert('🔒 Only BC-'+(lastMember||'?')+lmName+', BC-38, or an admin can return COBC 4.\n\nIf there is an issue please contact BC-38 or the chiefs.');
+          alert('🔒 Only BC-'+(lastMember||'?')+lmName+', BC-38, or an admin can return COBC 4.\n\nPlease contact the Chiefs or BC-38 for assistance.');
           return;
         }
       }
