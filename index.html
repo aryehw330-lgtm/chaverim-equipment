@@ -2045,6 +2045,17 @@ function submitCarBooking() {
 }
 
 function startCarShift(bookingId) {
+  var bkg = carSchedule.find(function(x){ return x.id===bookingId; });
+  if (bkg && bkg.status === 'approved') {
+    var todayStr2 = (function(){ var n=new Date(); return n.getFullYear()+'-'+pad2(n.getMonth()+1)+'-'+pad2(n.getDate()); })();
+    var start24 = parse12to24(bkg.startTime);
+    var startDt = new Date(todayStr2 + 'T' + start24 + ':00');
+    var minsUntil = (startDt - new Date()) / 60000;
+    if (minsUntil > 60) {
+      showToast('🕐 Start Shift is only available within 1 hour of your shift (' + bkg.startTime + ')');
+      return;
+    }
+  }
   if (!confirm('Start your shift? You\'ll be taken to sign COBC 4 out in Inventory.')) return;
   showLoad(true);
   postJ({action:'startCarShift', id:bookingId})
@@ -2219,7 +2230,7 @@ function getMyActiveCarBookingForInventory() {
   var todayStr = now.getFullYear()+'-'+pad2(now.getMonth()+1)+'-'+pad2(now.getDate());
   var myId = String(loggedInMember.id);
   return carSchedule.find(function(b) {
-    if (String(b.memberId) !== myId) return false;
+    if ((b.memberId||'').toString().replace(/^BC-?/i,'').trim() !== myId) return false;
     if (b.date !== todayStr) return false;
     return b.status === 'active';
   }) || null;
@@ -2278,7 +2289,13 @@ function renderCarActionBanner() {
       if (b.date !== todayStr) return false;
       var bMid = (b.memberId||'').toString().replace(/^BC-?/i,'').trim();
       if (bMid !== myId) return false;
-      return b.status === 'approved' || b.status === 'active'; // active but car still IN = didn't sign out yet
+      if (b.status === 'active') return true; // already started — always show Return/Start
+      if (b.status !== 'approved') return false;
+      // Only show Start Shift within 60 minutes of shift start
+      var start24 = parse12to24(b.startTime);
+      var startDt = new Date(todayStr + 'T' + start24 + ':00');
+      var minsUntil = (startDt - new Date()) / 60000;
+      return minsUntil <= 60; // within 1 hour (negative = already past start time)
     });
     if (myTodayBkg) {
       var startInHtml = '<div style="background:linear-gradient(135deg,#1a3a5c,#2a5a8c);border-radius:14px;padding:16px 18px;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 4px 16px rgba(26,58,92,.3)">'
