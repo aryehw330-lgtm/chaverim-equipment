@@ -1891,7 +1891,7 @@ function renderCarDay(dateStr) {
     el.innerHTML = '<div style="color:#aaa;font-size:13px;padding:6px 0 10px">No shifts booked for this day yet.</div>';
   } else {
     el.innerHTML = shifts.map(function(b) {
-      var isMine = myId && String(b.memberId) === myId;
+      var isMine = myId && (b.memberId||'').toString().replace(/^BC-?/i,'').trim() === myId;
       var cls = 'car-shift-card' + (b.status==='pending'?' pending':'') + (isMine?' mine':'') + (b.status==='active'?' active-shift':'') + (b.status==='done'?' done-shift':'');
       var stLabel = {approved:'<span style="color:#2e7d32;font-size:11px;font-weight:700">✓ Approved</span>',
                      pending: '<span style="color:#e65100;font-size:11px;font-weight:700">⏳ Awaiting Approval</span>',
@@ -2276,7 +2276,8 @@ function renderCarActionBanner() {
   if (carItem && carItem.status !== 'OUT' && myId) {
     var myTodayBkg = carSchedule.find(function(b){
       if (b.date !== todayStr) return false;
-      if (String(b.memberId) !== myId) return false;
+      var bMid = (b.memberId||'').toString().replace(/^BC-?/i,'').trim();
+      if (bMid !== myId) return false;
       return b.status === 'approved' || b.status === 'active'; // active but car still IN = didn't sign out yet
     });
     if (myTodayBkg) {
