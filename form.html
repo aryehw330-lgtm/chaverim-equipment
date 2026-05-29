@@ -179,36 +179,6 @@ textarea{resize:vertical;min-height:70px}
 .hloc-select:focus{border-color:#1a3a5c}
 .hloc-save{padding:6px 12px;font-size:12px;font-weight:700;background:#1a3a5c;color:#fff;border:none;border-radius:8px;cursor:pointer;flex-shrink:0}
 .hloc-saved{color:#2e7d32;font-size:11px;font-weight:700;flex-shrink:0}
-/* CAR SCHEDULE */
-.car-cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.car-cal-nav button{background:#1a3a5c;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:18px;font-weight:700;cursor:pointer;line-height:1}
-.car-cal-month{font-size:17px;font-weight:700;color:#1a3a5c;text-align:center}
-.car-cal-header{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:3px}
-.car-cal-dow{text-align:center;font-size:10px;font-weight:700;color:#888;text-transform:uppercase;padding:4px 0}
-.car-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
-.car-cal-day{min-height:52px;background:#fff;border-radius:7px;border:1.5px solid #e8ecf0;padding:4px 3px;cursor:pointer;position:relative;transition:border-color .15s}
-.car-cal-day:hover{border-color:#1a3a5c}
-.car-cal-day.today{border-color:#1a3a5c;background:#eef2f8}
-.car-cal-day.other-month{opacity:.3;cursor:default;background:#f8f9fa;pointer-events:none}
-.car-cal-day.past{background:#f8f9fa;cursor:default;opacity:.5;pointer-events:none}
-.car-cal-day.has-booking{background:#f0fdf4}
-.car-day-num{font-size:11px;font-weight:700;color:#333;line-height:1.2}
-.car-day-num.today-num{color:#1a3a5c;font-size:12px}
-.car-dot{width:7px;height:7px;border-radius:50%;margin:1px}
-.car-day-panel{background:#fff;border-radius:12px;padding:16px;margin-top:14px;box-shadow:0 2px 10px rgba(0,0,0,.1)}
-.car-shift-card{border-radius:10px;padding:11px 13px;margin-bottom:8px;border-left:3px solid #2e7d32;background:#f8fafc}
-.car-shift-card.pending{border-left-color:#e65100;background:#fff8f0}
-.car-shift-card.mine{border-left-color:#1a3a5c;background:#f0f4f8}
-.car-shift-card.active-shift{border-left-color:#c0392b;background:#fef9f9}
-.car-shift-card.done-shift{opacity:0.45;filter:grayscale(40%);border-left-color:#bbb;background:#f5f5f5}
-.car-access-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0}
-.car-access-row:last-child{border-bottom:none}
-.car-toggle{position:relative;width:44px;height:24px;flex-shrink:0;display:inline-block}
-.car-toggle input{opacity:0;width:0;height:0;position:absolute}
-.car-toggle-slider{position:absolute;inset:0;background:#ccc;border-radius:24px;cursor:pointer;transition:.2s}
-.car-toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
-.car-toggle input:checked+.car-toggle-slider{background:#2e7d32}
-.car-toggle input:checked+.car-toggle-slider:before{transform:translateX(20px)}
 </style>
 </head>
 <body>
@@ -252,11 +222,11 @@ textarea{resize:vertical;min-height:70px}
       <label class="field-label">Unit # (BC Member)</label>
       <input id="modal-member" type="text" inputmode="numeric" placeholder="e.g. 38"/>
     </div>
-    <div class="input-group">
+    <div class="input-group" id="modal-call-group">
       <label class="field-label">Call Number</label>
       <input id="modal-call" type="text" inputmode="numeric" placeholder="Dispatched call #"/>
     </div>
-    <div class="input-group">
+    <div class="input-group" id="modal-ccnc-group">
       <label class="field-label">Status</label>
       <select id="modal-ccnc" onchange="toggleCNCNote()">
         <option value="">-- Select --</option>
@@ -301,7 +271,6 @@ textarea{resize:vertical;min-height:70px}
     <button class="tab" data-page="checklist" onclick="showPage('checklist',this)"><span class="ti">✅</span>Checklist<span class="tab-badge" id="issues-badge" style="display:none">0</span></button>
     <button class="tab" data-page="report" onclick="showPage('report',this)"><span class="ti">🚨</span>Report</button>
     <button class="tab" data-page="members" onclick="showPage('members',this)"><span class="ti">👥</span>Members</button>
-    <button class="tab" data-page="car" onclick="showPage('car',this)"><span class="ti">🚗</span>Car</button>
     <button class="tab" data-page="admin" onclick="showPage('admin',this)"><span class="ti">⚙️</span>Admin</button>
   </div>
   <div id="content">
@@ -403,93 +372,6 @@ textarea{resize:vertical;min-height:70px}
       <div id="mem-count" style="font-size:13px;color:#666;margin-bottom:10px"></div>
       <div id="mem-list"></div>
     </div>
-    <!-- CAR SCHEDULE -->
-    <div class="page" id="page-car">
-      <div style="display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#1a3a5c,#2a5a8c);color:#fff;border-radius:12px;padding:14px 16px;margin-bottom:14px">
-        <div style="font-size:28px">🚗</div>
-        <div><div style="font-size:16px;font-weight:700">COBC 4 — Car Schedule</div><div style="font-size:11px;opacity:.7;margin-top:2px">Book shifts · Sign up anytime</div></div>
-      </div>
-      <!-- Live car status (from inventory) -->
-      <div id="car-live-status" style="display:none;margin-bottom:12px"></div>
-      <div class="car-cal-nav">
-        <button onclick="carPrevMonth()">&#8249;</button>
-        <div class="car-cal-month" id="car-cal-title"></div>
-        <button onclick="carNextMonth()">&#8250;</button>
-      </div>
-      <div class="car-cal-header">
-        <div class="car-cal-dow">Sun</div><div class="car-cal-dow">Mon</div><div class="car-cal-dow">Tue</div>
-        <div class="car-cal-dow">Wed</div><div class="car-cal-dow">Thu</div><div class="car-cal-dow">Fri</div>
-        <div class="car-cal-dow">Sat</div>
-      </div>
-      <div class="car-cal-grid" id="car-cal-grid"></div>
-      <!-- Day detail panel -->
-      <div id="car-day-panel" class="car-day-panel" style="display:none">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <div id="car-day-title" style="font-size:15px;font-weight:700;color:#1a3a5c"></div>
-          <button onclick="closeCarDay()" style="background:none;border:none;font-size:20px;color:#999;cursor:pointer;padding:0 4px">✕</button>
-        </div>
-        <div id="car-day-shifts"></div>
-        <div id="car-book-wrap" style="margin-top:8px"></div>
-      </div>
-      <!-- Booking form -->
-      <div id="car-book-form" style="display:none;background:#fff;border-radius:12px;padding:16px;margin-top:10px;box-shadow:0 2px 8px rgba(0,0,0,.08)">
-        <div style="font-size:15px;font-weight:700;color:#1a3a5c;margin-bottom:12px">📅 Book a Shift — <span id="car-form-date-label"></span></div>
-        <div id="car-book-warning" style="display:none;background:#fff8e1;border:1.5px solid #ffe082;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px;color:#e65100;font-weight:600"></div>
-        <div class="input-group">
-          <label class="field-label">Start Time</label>
-          <div style="display:flex;gap:6px">
-            <select id="car-start-hour" style="flex:1;padding:10px 6px;border:1.5px solid #ddd;border-radius:8px;font-size:15px;outline:none;text-align:center">
-              <option value="">Hr</option>
-              <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option>
-              <option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option>
-            </select>
-            <select id="car-start-min" style="flex:1;padding:10px 6px;border:1.5px solid #ddd;border-radius:8px;font-size:15px;outline:none;text-align:center">
-              <option value="">Min</option>
-              <option value="00">:00</option><option value="05">:05</option><option value="10">:10</option><option value="15">:15</option>
-              <option value="20">:20</option><option value="25">:25</option><option value="30">:30</option><option value="35">:35</option>
-              <option value="40">:40</option><option value="45">:45</option><option value="50">:50</option><option value="55">:55</option>
-            </select>
-            <select id="car-start-ampm" style="flex:0.9;padding:10px 6px;border:1.5px solid #ddd;border-radius:8px;font-size:15px;outline:none;text-align:center">
-              <option value="AM">AM</option><option value="PM">PM</option>
-            </select>
-          </div>
-        </div>
-        <div class="input-group">
-          <label class="field-label">End Time</label>
-          <div style="display:flex;gap:6px">
-            <select id="car-end-hour" style="flex:1;padding:10px 6px;border:1.5px solid #ddd;border-radius:8px;font-size:15px;outline:none;text-align:center">
-              <option value="">Hr</option>
-              <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option>
-              <option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option>
-            </select>
-            <select id="car-end-min" style="flex:1;padding:10px 6px;border:1.5px solid #ddd;border-radius:8px;font-size:15px;outline:none;text-align:center">
-              <option value="">Min</option>
-              <option value="00">:00</option><option value="05">:05</option><option value="10">:10</option><option value="15">:15</option>
-              <option value="20">:20</option><option value="25">:25</option><option value="30">:30</option><option value="35">:35</option>
-              <option value="40">:40</option><option value="45">:45</option><option value="50">:50</option><option value="55">:55</option>
-            </select>
-            <select id="car-end-ampm" style="flex:0.9;padding:10px 6px;border:1.5px solid #ddd;border-radius:8px;font-size:15px;outline:none;text-align:center">
-              <option value="AM">AM</option><option value="PM">PM</option>
-            </select>
-          </div>
-        </div>
-        <div class="input-group">
-          <label class="field-label">Notes (optional)</label>
-          <input type="text" id="car-note" placeholder="e.g. airport run, patrol..." style="font-size:14px;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;width:100%;outline:none"/>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:4px">
-          <button onclick="closeCarBooking()" class="btn btn-ghost" style="flex:1">Cancel</button>
-          <button onclick="submitCarBooking()" class="btn btn-primary" style="flex:1" id="car-submit-btn">Book Shift</button>
-        </div>
-      </div>
-      <!-- COBC 4 History -->
-      <div style="margin-top:18px">
-        <div class="section-label">📋 COBC 4 History</div>
-        <div id="car-history-list" style="background:#fff;border-radius:12px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,.08)">
-          <div style="color:#aaa;font-size:13px;padding:4px 0">Loading…</div>
-        </div>
-      </div>
-    </div>
     <!-- ADMIN -->
     <div class="page" id="page-admin">
       <a href="https://aryehw330-lgtm.github.io/Chaverim-Statistics/" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:10px;background:linear-gradient(135deg,#1a3a5c,#2a5a9c);color:#fff;text-decoration:none;border-radius:12px;padding:16px;margin-bottom:10px;font-size:15px;font-weight:700;box-shadow:0 2px 8px rgba(26,58,92,.3)">
@@ -535,18 +417,6 @@ textarea{resize:vertical;min-height:70px}
           <div id="hloc-list"></div>
         </div>
       </div>
-      <!-- Car Access -->
-      <div class="adm-sec">
-        <div class="adm-title" onclick="toggleAdm(this)">🚗 Car Access (<span id="car-access-count">0</span> approved)<span class="toggle">▼</span></div>
-        <div class="adm-body">
-          <div style="font-size:13px;color:#666;margin-bottom:10px">Toggle to grant or revoke COBC 4 access for each member.</div>
-          <div class="search-wrap" style="margin-bottom:10px">
-            <span class="search-icon">🔍</span>
-            <input id="car-access-search" type="text" placeholder="Search members..." oninput="renderCarAccessAdmin()" style="padding-left:36px;font-size:14px"/>
-          </div>
-          <div id="car-access-list"></div>
-        </div>
-      </div>
       <!-- Add Member -->
       <div class="adm-sec">
         <div class="adm-title" onclick="toggleAdm(this)">👤 Add Member<span class="toggle">▼</span></div>
@@ -583,32 +453,8 @@ textarea{resize:vertical;min-height:70px}
       <div class="adm-sec">
         <div class="adm-title" onclick="toggleAdm(this)">🗂 Checklist History<span class="toggle">▼</span></div>
         <div class="adm-body">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
-            <div style="font-size:12px;color:#666;flex:1">Latest checklist submission per location.</div>
-            <div style="display:flex;align-items:center;gap:6px">
-              <label style="font-size:12px;color:#555;white-space:nowrap">📅 Filter by date:</label>
-              <input type="date" id="adm-chk-date-filter" oninput="renderAdmChkHistory()" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:8px;color:#1a3a5c"/>
-              <button onclick="document.getElementById('adm-chk-date-filter').value='';renderAdmChkHistory();" style="font-size:11px;padding:3px 8px;border:1px solid #ddd;border-radius:8px;background:#f5f5f5;cursor:pointer;color:#555">✕ Clear</button>
-            </div>
-          </div>
+          <div style="font-size:12px;color:#666;margin-bottom:10px">Latest checklist submission per location.</div>
           <div id="adm-chk-history"></div>
-        </div>
-      </div>
-      <!-- COBC 4 Car History -->
-      <div class="adm-sec">
-        <div class="adm-title" onclick="toggleAdm(this);if(this.classList.contains('open'))loadAdminCarHistory();">🚗 COBC 4 History<span class="toggle">▼</span></div>
-        <div class="adm-body">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1">
-              <label style="font-size:12px;color:#555;white-space:nowrap">From</label>
-              <input type="date" id="adm-car-hist-from" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:8px;color:#1a3a5c"/>
-              <label style="font-size:12px;color:#555;white-space:nowrap">To</label>
-              <input type="date" id="adm-car-hist-to" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:8px;color:#1a3a5c"/>
-              <button onclick="renderAdminCarHistory()" style="padding:5px 14px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">Search</button>
-              <button onclick="clearAdminCarHistoryFilter()" style="padding:5px 10px;background:#f5f5f5;color:#555;border:1px solid #ddd;border-radius:8px;font-size:12px;cursor:pointer">✕ Clear</button>
-            </div>
-          </div>
-          <div id="adm-car-hist-list"><div style="color:#aaa;font-size:13px;padding:4px 0">Open to load history.</div></div>
         </div>
       </div>
       <!-- Equipment Status -->
@@ -671,7 +517,7 @@ function checkPin() {
       .then(function(d) {
         if (d && d.id) {
           userLevel = 1;
-          loggedInMember = {id: d.id, name: d.name, firstName: d.firstName, lastName: d.lastName, carAccess: !!d.carAccess};
+          loggedInMember = {id: d.id, name: d.name, firstName: d.firstName, lastName: d.lastName};
           localStorage.setItem('cobc_level', 1);
           localStorage.setItem('cobc_member_id', d.id);
           document.getElementById('pin-gate').classList.add('hidden');
@@ -694,7 +540,7 @@ function checkPin() {
 document.getElementById('pin-input').addEventListener('keydown', function(e){ if(e.key==='Enter') checkPin(); });
 
 function applyAccessLevel() {
-  var tabs = {'dashboard':1,'inventory':1,'report':1,'members':1,'car':1,'checklist':2,'admin':3};
+  var tabs = {'dashboard':1,'inventory':1,'report':1,'members':1,'checklist':2,'admin':3};
   document.querySelectorAll('.tab').forEach(function(t){
     var page = t.dataset.page;
     var required = tabs[page] || 1;
@@ -743,7 +589,6 @@ function showPage(page, btn) {
   if (page==='checklist' && userLevel < 2) { showToast('Equipment Team access required'); return; }
   doShowPage(page);
 }
-
 function doShowPage(page) {
   document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
   document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
@@ -754,8 +599,7 @@ function doShowPage(page) {
   if (page==='dashboard') renderDashboard();
   if (page==='members')   renderMembers();
   if (page==='checklist') renderChecklist();
-  if (page==='car')       renderCarPage();
-  if (page==='admin')     { renderAdmin(); renderHlocList(); renderAdmChkHistory(); renderCarAccessAdmin(); }
+  if (page==='admin')     { renderAdmin(); renderHlocList(); renderAdmChkHistory(); }
 }
 
 function fetchJ(url) { return fetch(url,{redirect:'follow',credentials:'omit'}).then(function(r){return r.json();}); }
@@ -777,25 +621,18 @@ function loadData() {
     var locs = res[2].locations || [];
     if (locs.length) locations = locs;
     items.forEach(function(it){ if(it.homeLocation && locations.indexOf(it.homeLocation)<0) locations.push(it.homeLocation); });
-    // Ensure carAccess field exists on each member
-    members.forEach(function(m){ if (m.carAccess === undefined) m.carAccess = false; });
     // Build member PIN lookup
-    memberPins = members.filter(function(m){ return m.pin; }).map(function(m){ return {id: String(m.id||m.unit||''), name: m.name||((m.firstName||'')+' '+(m.lastName||'')).trim(), pin: String(m.pin), carAccess: !!m.carAccess}; });
+    memberPins = members.filter(function(m){ return m.pin; }).map(function(m){ return {id: String(m.id||m.unit||''), name: m.name||((m.firstName||'')+' '+(m.lastName||'')).trim(), pin: String(m.pin)}; });
     // Restore full member info after data load
     var savedMemberId = localStorage.getItem('cobc_member_id');
     if (savedMemberId) {
       var found = memberPins.find(function(m){ return m.id === savedMemberId; });
       if (found) {
         loggedInMember = found;
-        // also sync carAccess from full members list
-        var fullM = members.find(function(m){ return String(m.id||m.unit)===savedMemberId; });
-        if (fullM) loggedInMember.carAccess = !!fullM.carAccess;
         applyAccessLevel(); // refresh header with name
       }
     }
     updateStats(); renderDashboard(); renderInventory(); renderInvLocChips(); renderCatChips(); populateRptItems(); renderAdmin(); renderAdmCatChips(); renderMembers(); renderHlocList();
-    loadCarSchedule(); // keep schedule fresh so inventory guard can check bookings
-    renderCarItemStatus();
   }).catch(function(){ showToast('Failed to load — check connection'); })
   .finally(function(){ showLoad(false); document.getElementById('sync-btn').textContent='↻ Sync'; });
 }
@@ -1053,72 +890,13 @@ function renderModalSearch() {
 }
 function addModalItem(row) {
   var it = items.find(function(i){ return i.row===row; });
-  if (!it) return;
-  // ── COBC 4 — same access rules as openCheckout ─────────────────────────────
-  if (isCarItem(it.name)) {
-    var isAdm = userLevel >= 2;
-    if (!isAdm) {
-      var clearSearch = function(){ document.getElementById('modal-item-search').value=''; document.getElementById('modal-search-results').style.display='none'; };
-      if (!loggedInMember || !loggedInMember.carAccess) {
-        alert('🚫 You don\'t have COBC 4 access.\nContact the chiefs to request car access approval.');
-        clearSearch(); return;
-      }
-      if (!getMyActiveCarBookingForInventory()) {
-        alert('🗓️ No active shift found.\n\nYou can sign out COBC 4 up to 1 hour before your shift.\nPlease book a shift on the 🚗 Car tab first.');
-        clearSearch(); return;
-      }
-    }
-  }
-  if (!modalItems.find(function(m){ return m.row===row; })) { modalItems.push(it); renderModalItemList(); }
+  if (it && !modalItems.find(function(m){ return m.row===row; })) { modalItems.push(it); renderModalItemList(); }
   document.getElementById('modal-item-search').value = '';
   document.getElementById('modal-search-results').style.display = 'none';
-}
-function isCarItem(name) {
-  return name && name.toString().toLowerCase().replace(/\s+/g,'').indexOf('cobc4') >= 0;
 }
 function openCheckout(row, action) {
   var it = items.find(function(i){return i.row===row;});
   if(!it) return;
-  // ── COBC 4 access rules ───────────────────────────────────────────────────
-  if (isCarItem(it.name)) {
-    var isAdm = userLevel >= 2;
-    if (!isAdm) {
-      if (!loggedInMember) {
-        alert('🔒 Please log in with your member PIN to access COBC 4.');
-        return;
-      }
-      if (!loggedInMember.carAccess) {
-        alert('🚫 You don\'t have COBC 4 access.\n\nContact the chiefs to request car access approval.');
-        return;
-      }
-      // Determine effective direction:
-      // "Check IN" button passes no action — treat as IN when car is currently OUT
-      var carIsOut = it.status === 'OUT';
-      var effectivelyIN = (action === 'IN') || (!action && carIsOut);
-      var effectivelyOUT = (action === 'OUT') || (!action && !carIsOut);
-
-      if (effectivelyOUT) {
-        // Must have an approved shift starting within 60 min, or already active
-        var booking = getMyActiveCarBookingForInventory();
-        if (!booking) {
-          alert('🔑 Please go to the 🚗 Car tab and tap "Start Shift" before signing COBC 4 out.\n\nThe Start Shift button appears 1 hour before your scheduled time.\n\nIf you don\'t have a shift booked, go to the 🚗 Car tab to schedule one.');
-          return;
-        }
-      }
-      if (effectivelyIN) {
-        // Only the member who signed it out, BC-38, or an admin can return it
-        var lastMember = it.member ? it.member.toString().replace(/^BC-?/i,'').trim() : '';
-        var myId = String(loggedInMember.id);
-        var canReturn = (myId === lastMember) || (myId === '38');
-        if (!lastMember || !canReturn) {
-          var lmObj = lastMember ? members.find(function(m){ return String(m.id||m.unit||'')===lastMember; }) : null;
-          var lmName = lmObj ? ' — '+(lmObj.firstName||lmObj.name||'').trim() : '';
-          alert('🔒 Only BC-'+(lastMember||'?')+lmName+', BC-38, or an admin can return COBC 4.\n\nPlease contact the Chiefs or BC-38 for assistance.');
-          return;
-        }
-      }
-    }
-  }
   // Block wrong direction
   if (action === 'OUT' && it.status === 'OUT') {
     showToast('⚠️ Item already OUT — contact BC-38 if you need help');
@@ -1152,8 +930,28 @@ function openCheckout(row, action) {
     if (memDisplay) memDisplay.style.display='none';
     if (memInput) memInput.style.display='block';
   }
+  // COBC 4: hide call# and CC/CNC — shift vehicle, not a specific call
+  var hasCobc4 = modalItems.some(function(i){ return isCarItem(i.name); });
+  var callGrp = document.getElementById('modal-call-group');
+  var ccncGrp = document.getElementById('modal-ccnc-group');
+  var cncGrp  = document.getElementById('cnc-note-group');
+  if (hasCobc4) {
+    if (callGrp) callGrp.style.display = 'none';
+    if (ccncGrp) ccncGrp.style.display = 'none';
+    if (cncGrp)  cncGrp.style.display  = 'none';
+    document.getElementById('modal-call').value = 'SHIFT';
+    document.getElementById('modal-ccnc').value = 'CC';
+  } else {
+    if (callGrp) callGrp.style.display = 'block';
+    if (ccncGrp) ccncGrp.style.display = 'block';
+  }
 }
-function closeModal() { document.getElementById('checkout-modal').classList.remove('open'); modalItems=[]; }
+function closeModal() {
+  document.getElementById('checkout-modal').classList.remove('open');
+  modalItems=[];
+  var cg=document.getElementById('modal-call-group'); if(cg) cg.style.display='block';
+  var sg=document.getElementById('modal-ccnc-group'); if(sg) sg.style.display='block';
+}
 function toggleCNCNote() {
   document.getElementById('cnc-note-group').style.display = document.getElementById('modal-ccnc').value==='CNC'?'block':'none';
 }
@@ -1163,10 +961,12 @@ function submitCheckout(action) {
   var call    = document.getElementById('modal-call').value.trim();
   var ccSel   = document.getElementById('modal-ccnc').value;
   var cncNote = document.getElementById('modal-cnc-note').value.trim();
+  var hasCobc4 = modalItems.some(function(item){ return isCarItem(item.name); });
   if(!member) { alert('Please enter your BC member number.'); return; }
-  if(!call)   { alert('Please enter the call number.'); return; }
-  if(!ccSel)  { alert('Please select CC or CNC.'); return; }
-  if(ccSel==='CNC'&&!cncNote) { alert('Please describe where the item is.'); return; }
+  if(!call   && !hasCobc4) { alert('Please enter the call number.'); return; }
+  if(!ccSel  && !hasCobc4) { alert('Please select CC or CNC.'); return; }
+  if(ccSel==='CNC'&&!cncNote&&!hasCobc4) { alert('Please describe where the item is.'); return; }
+  if(hasCobc4) { if(!call) call='SHIFT'; if(!ccSel) ccSel='CC'; }
 var blocked = [];
   modalItems.forEach(function(item) {
     if (action === 'IN'  && item.status === 'IN')  blocked.push(item.name + ' (already IN)');
@@ -1665,640 +1465,39 @@ function esc(v){return (v||'').toString().replace(/&/g,'&amp;').replace(/</g,'&l
 // ═══════════════════════════════════════════
 // ADMIN CHECKLIST HISTORY
 // ═══════════════════════════════════════════
-var _admChkLogCache = null;
 function renderAdmChkHistory() {
   var el = document.getElementById('adm-chk-history');
   if (!el) return;
-  var dateFilter = (document.getElementById('adm-chk-date-filter') || {}).value || '';
-  function buildUI(log) {
-    var sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-    var filtered = log.filter(function(entry) {
-      try {
-        if (dateFilter) {
-          // Compare date portion of timestamp to filter date
-          var ts = new Date(entry.timestamp);
-          var tsDate = ts.getFullYear() + '-' + String(ts.getMonth()+1).padStart(2,'0') + '-' + String(ts.getDate()).padStart(2,'0');
-          return tsDate === dateFilter;
-        }
-        return new Date(entry.timestamp) >= sixMonthsAgo;
-      } catch(e) { return true; }
-    });
-    if (!filtered.length) {
-      el.innerHTML = '<div style="color:#aaa;font-size:13px;padding:8px 0">'+(dateFilter?'No entries found for '+dateFilter+'.':'No recent checklist history found.')+'</div>';
-      return;
-    }
-    filtered.sort(function(a,b){ return new Date(b.timestamp)-new Date(a.timestamp); });
-    var grouped = {};
-    filtered.forEach(function(e){ if(!grouped[e.location]) grouped[e.location]=[]; grouped[e.location].push(e); });
-    var html = Object.keys(grouped).sort().map(function(loc){
-      var rows = grouped[loc].map(function(e){
-        var bcNum = (e.bc||'').replace(/^BC-/i,'').trim();
-        var mObj = members.find(function(m){ return String(m.id||m.unit)===bcNum; });
-        var mName = mObj?(mObj.firstName||mObj.name||''): '';
-        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f8f8f8">'
-          +'<div style="font-size:12px"><b>BC-'+esc(e.bc||'')+'</b>'+(mName?' — '+esc(mName):'')+'</div>'
-          +'<div style="font-size:11px;color:#888">'+esc(e.timestamp||'')+'</div></div>';
-      }).join('');
-      return '<div style="margin-bottom:12px"><div style="font-size:13px;font-weight:700;color:#1a3a5c;margin-bottom:4px">📍 '+esc(loc)+'</div>'+rows+'</div>';
-    }).join('');
-    el.innerHTML = html;
-  }
-  if (_admChkLogCache) {
-    buildUI(_admChkLogCache);
-    return;
-  }
+  var sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
   el.innerHTML = '<div style="color:#aaa;font-size:13px;padding:6px 0">Loading...</div>';
   fetchJ(BASE_URL+'?action=getChecklistLog')
     .then(function(data) {
-      _admChkLogCache = data.log || [];
-      buildUI(_admChkLogCache);
+      var log = (data.log || []).filter(function(entry) {
+        try { return new Date(entry.timestamp) >= sixMonthsAgo; } catch(e) { return true; }
+      });
+      if (!log.length) {
+        renderAdmChkFromItems(el);
+        return;
+      }
+      log.sort(function(a,b){ return new Date(b.timestamp)-new Date(a.timestamp); });
+      var grouped = {};
+      log.forEach(function(e){ if(!grouped[e.location]) grouped[e.location]=[]; grouped[e.location].push(e); });
+      var html = Object.keys(grouped).sort().map(function(loc){
+        var rows = grouped[loc].map(function(e){
+          var bcNum = (e.bc||''). replace(/^BC-/i,'').trim();
+          var mObj = members.find(function(m){ return String(m.id||m.unit)===bcNum; });
+          var mName = mObj?(mObj.firstName||mObj.name||''): '';
+          return '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f8f8f8">'
+            +'<div style="font-size:12px"><b>BC-'+esc(e.bc||'')+'</b>'+(mName?' — '+esc(mName):'')+'</div>'
+            +'<div style="font-size:11px;color:#888">'+esc(e.timestamp||'')+'</div></div>';
+        }).join('');
+        return '<div style="margin-bottom:12px"><div style="font-size:13px;font-weight:700;color:#1a3a5c;margin-bottom:4px">📍 '+esc(loc)+'</div>'+rows+'</div>';
+      }).join('');
+      el.innerHTML = html;
     })
     .catch(function(){ renderAdmChkFromItems(el); });
 }
-// ═══════════════════════════════════════════
-// COBC 4 — CAR SCHEDULE
-// ═══════════════════════════════════════════
-// Set to chief's WhatsApp number (digits only, include country code, e.g. '12015551234')
-var CAR_CHIEF_WHATSAPP = '';
-var carSchedule = [];
-var carViewDate = new Date();
-var carSelectedDate = null;
-
-function loadCarSchedule(cb) {
-  fetchJ(BASE_URL + '?action=getCarSchedule')
-    .then(function(d) {
-      carSchedule = d.bookings || [];
-      renderCarCalendar();
-      renderCarHistory();
-      if (carSelectedDate) renderCarDay(carSelectedDate);
-      if (cb) cb();
-    }).catch(function(){ if (cb) cb(); });
-}
-
-function renderCarPage() {
-  var now = new Date();
-  carViewDate = new Date(now.getFullYear(), now.getMonth(), 1);
-  renderCarCalendar();
-  renderCarItemStatus();
-  loadCarSchedule();
-}
-
-function carPrevMonth() {
-  carViewDate.setMonth(carViewDate.getMonth() - 1);
-  renderCarCalendar();
-}
-function carNextMonth() {
-  carViewDate.setMonth(carViewDate.getMonth() + 1);
-  renderCarCalendar();
-}
-
-function renderCarCalendar() {
-  var now = new Date();
-  var year = carViewDate.getFullYear();
-  var month = carViewDate.getMonth();
-  var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  document.getElementById('car-cal-title').textContent = monthNames[month] + ' ' + year;
-  var firstDay = new Date(year, month, 1).getDay();
-  var daysInMonth = new Date(year, month + 1, 0).getDate();
-  var todayStr = now.getFullYear() + '-' + pad2(now.getMonth()+1) + '-' + pad2(now.getDate());
-  var grid = document.getElementById('car-cal-grid');
-  var html = '';
-  // Leading blanks from prev month
-  var dPrev = new Date(year, month, 0).getDate();
-  for (var i = 0; i < firstDay; i++) {
-    html += '<div class="car-cal-day other-month"><div class="car-day-num">'+(dPrev - firstDay + 1 + i)+'</div></div>';
-  }
-  // Days of this month
-  for (var d = 1; d <= daysInMonth; d++) {
-    var ds = year + '-' + pad2(month+1) + '-' + pad2(d);
-    var isToday = ds === todayStr;
-    var isPast  = ds < todayStr;
-    var dayBk   = carSchedule.filter(function(b){ return b.date === ds; });
-    var dots = dayBk.slice(0,3).map(function(b){
-      var col = (b.status==='active') ? '#c0392b' : (b.status==='pending') ? '#e65100' : '#2e7d32';
-      return '<div class="car-dot" style="background:'+col+'"></div>';
-    }).join('');
-    var cls = 'car-cal-day';
-    if (isToday) cls += ' today';
-    else if (isPast) cls += ' past';
-    if (!isPast && dayBk.length) cls += ' has-booking';
-    var onclick = isPast ? '' : 'onclick="openCarDay(\''+ds+'\')"';
-    html += '<div class="'+cls+'" '+onclick+'>'
-      + '<div class="car-day-num'+(isToday?' today-num':'')+'">'+d+'</div>'
-      + '<div style="display:flex;flex-wrap:wrap;gap:1px;margin-top:2px">'+dots+'</div>'
-      + '</div>';
-  }
-  // Trailing blanks
-  var total = firstDay + daysInMonth;
-  var trail = total % 7 === 0 ? 0 : 7 - (total % 7);
-  for (var j = 1; j <= trail; j++) {
-    html += '<div class="car-cal-day other-month"><div class="car-day-num">'+j+'</div></div>';
-  }
-  grid.innerHTML = html;
-}
-
-function openCarDay(dateStr) {
-  carSelectedDate = dateStr;
-  var panel = document.getElementById('car-day-panel');
-  panel.style.display = 'block';
-  document.getElementById('car-book-form').style.display = 'none';
-  var d = new Date(dateStr + 'T12:00:00');
-  document.getElementById('car-day-title').textContent = d.toLocaleDateString('en-US', {weekday:'long',month:'long',day:'numeric',year:'numeric'});
-  renderCarDay(dateStr);
-  setTimeout(function(){ panel.scrollIntoView({behavior:'smooth', block:'nearest'}); }, 60);
-}
-
-function closeCarDay() {
-  carSelectedDate = null;
-  document.getElementById('car-day-panel').style.display = 'none';
-  document.getElementById('car-book-form').style.display = 'none';
-}
-
-function renderCarDay(dateStr) {
-  var shifts = carSchedule.filter(function(b){ return b.date === dateStr; });
-  var myId   = loggedInMember ? String(loggedInMember.id) : null;
-  var isAdm  = userLevel >= 3;
-  var el     = document.getElementById('car-day-shifts');
-
-  if (!shifts.length) {
-    el.innerHTML = '<div style="color:#aaa;font-size:13px;padding:6px 0 10px">No shifts booked for this day yet.</div>';
-  } else {
-    el.innerHTML = shifts.map(function(b) {
-      var isMine = myId && String(b.memberId) === myId;
-      var cls = 'car-shift-card' + (b.status==='pending'?' pending':'') + (isMine?' mine':'') + (b.status==='active'?' active-shift':'') + (b.status==='done'?' done-shift':'');
-      var stLabel = {approved:'<span style="color:#2e7d32;font-size:11px;font-weight:700">✓ Approved</span>',
-                     pending: '<span style="color:#e65100;font-size:11px;font-weight:700">⏳ Awaiting Approval</span>',
-                     active:  '<span style="color:#c0392b;font-size:11px;font-weight:700">🚗 Active</span>',
-                     done:    '<span style="font-size:11px;font-weight:800;padding:3px 9px;border-radius:8px;background:#e0e0e0;color:#555;letter-spacing:0.3px">✓ Done</span>'}[b.status] || '';
-      var actions = '';
-      // Member delete: only for their OWN pending/approved booking (not started, not done)
-      var memberDeleteBtn = isMine && !isAdm && (b.status === 'approved' || b.status === 'pending')
-        ? '<button onclick="deleteCarShift(\''+b.id+'\')" style="margin-top:7px;padding:6px 12px;background:#fdecea;color:#c0392b;border:1.5px solid #ffcdd2;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">🗑 Delete Booking</button>'
-        : '';
-      // Admin delete: can delete ANY booking
-      var deleteBtn = isAdm
-        ? '<button onclick="deleteCarShift(\''+b.id+'\')" style="margin-top:7px;padding:6px 12px;background:#fff0f0;color:#9b1c1c;border:1.5px solid #fca5a5;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">🗑 Delete</button>'
-        : '';
-
-      if (isMine || isAdm) {
-        if (b.status === 'approved') {
-          // 🔑 Start Shift only appears within 1 hour of shift start
-          var start24chk = parse12to24(b.startTime);
-          var startDtChk = new Date(b.date + 'T' + start24chk + ':00');
-          var minsUntilChk = (startDtChk - new Date()) / 60000;
-          if (minsUntilChk <= 60) {
-            actions = '<button onclick="startCarShift(\''+b.id+'\')" style="margin-top:8px;width:100%;padding:9px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">🔑 Start Shift</button>'
-              + memberDeleteBtn + deleteBtn;
-          } else {
-            var hLeft = Math.floor(minsUntilChk/60), mLeft = Math.round(minsUntilChk%60);
-            var cdTxt = hLeft > 0 ? hLeft+'h '+mLeft+'m' : mLeft+'m';
-            actions = '<div style="margin-top:8px;font-size:11px;color:#888;padding:7px 10px;background:#f0f4ff;border-radius:7px;border:1px solid #d0d8f0;text-align:center">'
-              +'🔑 Start Shift available in <strong>'+cdTxt+'</strong><br>'
-              +'<span style="color:#1a3a5c">Unlocks 1 hour before '+esc(b.startTime)+'</span></div>'
-              + memberDeleteBtn + deleteBtn;
-          }
-        } else if (b.status === 'active') {
-          // Car is out — only the member who started can return it, admin can delete
-          actions = (isMine ? '<button onclick="endCarShift(\''+b.id+'\')" style="margin-top:8px;width:100%;padding:9px;background:#c0392b;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">🏁 Return Car</button>' : '')
-            + deleteBtn;
-        } else if (b.status === 'pending') {
-          actions = memberDeleteBtn + deleteBtn;
-        } else if (b.status === 'done') {
-          // Finished — member cannot touch, admin can delete
-          actions = deleteBtn;
-        } else {
-          actions = memberDeleteBtn + deleteBtn;
-        }
-      }
-      // Admin approve button for pending
-      if (isAdm && b.status === 'pending') {
-        actions += '<button onclick="approveCarShift(\''+b.id+'\')" style="margin-top:7px;margin-left:6px;padding:6px 12px;background:#e8f5e9;color:#2e7d32;border:1.5px solid #a5d6a7;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">✓ Approve</button>';
-      }
-      return '<div class="'+cls+'">'
-        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
-        + '<div><div style="font-size:13px;font-weight:700;color:#1a1a1a">BC-'+esc(b.memberId)+' '+esc(b.memberName||'')+(isMine?' <span style="font-size:10px;color:#1a3a5c;background:#dbeafe;padding:1px 6px;border-radius:8px">You</span>':'')+'</div>'
-        + '<div style="font-size:12px;color:#555;margin-top:3px">🕐 '+esc(b.startTime)+' – '+esc(b.endTime)+'</div>'
-        + (b.note?'<div style="font-size:11px;color:#888;margin-top:2px">📝 '+esc(b.note)+'</div>':'')
-        + '</div><div style="text-align:right">'+stLabel+'</div></div>'
-        + (actions?'<div style="display:flex;flex-wrap:wrap;gap:4px">'+actions+'</div>':'')
-        + '</div>';
-    }).join('');
-  }
-
-  // Book button / blocked message
-  var wrap = document.getElementById('car-book-wrap');
-  var now = new Date();
-  var selMidnight = new Date(dateStr + 'T00:00:00');
-  var isPast = selMidnight < new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  if (isPast) {
-    wrap.innerHTML = '';
-  } else {
-    var hasAccess = isAdm || (loggedInMember && loggedInMember.carAccess);
-    if (hasAccess) {
-      wrap.innerHTML = '<button onclick="openCarBooking()" class="btn btn-primary" style="width:100%">+ Book a Shift</button>';
-    } else if (loggedInMember) {
-      wrap.innerHTML = '<div style="background:#fdecea;border:1.5px solid #ffcdd2;border-radius:8px;padding:11px 13px;font-size:13px;color:#c0392b;font-weight:600;text-align:center">🚫 You need car access to book — contact chiefs to get approval</div>';
-    } else {
-      wrap.innerHTML = '<div style="background:#fdecea;border:1.5px solid #ffcdd2;border-radius:8px;padding:11px 13px;font-size:13px;color:#c0392b;font-weight:600;text-align:center">🚫 Log in with your member PIN to book a shift</div>';
-    }
-  }
-}
-
-function openCarBooking() {
-  if (!carSelectedDate) return;
-  var submitBtn = document.getElementById('car-submit-btn');
-  document.getElementById('car-form-date-label').textContent = new Date(carSelectedDate+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
-  document.getElementById('car-book-warning').style.display = 'none';
-  // Reset time scroll selects
-  ['start','end'].forEach(function(p){
-    document.getElementById('car-'+p+'-hour').value = '';
-    document.getElementById('car-'+p+'-min').value = '';
-    document.getElementById('car-'+p+'-ampm').value = 'AM';
-  });
-  document.getElementById('car-note').value = '';
-  document.getElementById('car-book-form').style.display = 'block';
-  submitBtn.textContent = 'Book Shift';
-  submitBtn.disabled = false;
-  setTimeout(function(){ document.getElementById('car-book-form').scrollIntoView({behavior:'smooth',block:'nearest'}); }, 60);
-}
-
-function closeCarBooking() {
-  document.getElementById('car-book-form').style.display = 'none';
-}
-
-function submitCarBooking() {
-  if (!carSelectedDate) return;
-  var startDisp = getCarTimeDisplay('start');
-  var endDisp   = getCarTimeDisplay('end');
-  var start24   = getCarTime('start');
-  var end24     = getCarTime('end');
-  var note      = document.getElementById('car-note').value.trim();
-  if (!startDisp) { showToast('Please select a start time'); return; }
-  if (!endDisp)   { showToast('Please select an end time'); return; }
-  if (end24 <= start24) { showToast('End time must be after start time'); return; }
-  // Client-side overlap check against already-loaded schedule
-  var conflict = carSchedule.find(function(b) {
-    if (b.date !== carSelectedDate) return false;
-    if (b.status === 'cancelled' || b.status === 'done') return false;
-    var bS = parse12to24(b.startTime), bE = parse12to24(b.endTime);
-    return start24 < bE && end24 > bS;
-  });
-  if (conflict) {
-    showToast('⚠️ Overlaps BC-' + esc(conflict.memberId) + '\'s shift (' + esc(conflict.startTime) + ' – ' + esc(conflict.endTime) + ')');
-    return;
-  }
-  var memberId   = loggedInMember ? loggedInMember.id : (userLevel>=3 ? 'Admin' : '');
-  var memberName = loggedInMember ? (loggedInMember.name||loggedInMember.firstName||'') : (userLevel>=3 ? 'Admin' : '');
-  var btn = document.getElementById('car-submit-btn');
-  btn.textContent = '...'; btn.disabled = true;
-  postJ({action:'bookCarShift', memberId:memberId, memberName:memberName, date:carSelectedDate,
-         startTime:startDisp, endTime:endDisp, note:note, needsApproval:false})
-    .then(function(d) {
-      if (d.success) {
-        var newBooking = {id:d.id||('local_'+Date.now()), memberId:memberId, memberName:memberName,
-          date:carSelectedDate, startTime:startDisp, endTime:endDisp, note:note, status:'approved'};
-        carSchedule.push(newBooking);
-        renderCarCalendar();
-        renderCarDay(carSelectedDate);
-        closeCarBooking();
-        showCarBookingSuccess(startDisp, endDisp, carSelectedDate, memberName, note);
-      } else { showToast('Error: '+(d.error||'Unknown')); btn.disabled=false; btn.textContent='Book Shift'; }
-    }).catch(function(){ showToast('Network error'); btn.disabled=false; btn.textContent='Book Shift'; });
-}
-
-function startCarShift(bookingId) {
-  if (!confirm('Start your shift? You\'ll be taken to sign COBC 4 out in Inventory.')) return;
-  showLoad(true);
-  postJ({action:'startCarShift', id:bookingId})
-    .then(function(d) {
-      if (d.success) {
-        var b = carSchedule.find(function(x){ return x.id===bookingId; });
-        if (b) b.status = 'active';
-        renderCarCalendar(); if (carSelectedDate) renderCarDay(carSelectedDate);
-        renderCarHistory();
-        showToast('🔑 Sign COBC 4 OUT in Inventory now');
-        setTimeout(function(){ navigateToCarCheckout('OUT'); }, 900);
-      } else { showToast('Error: '+(d.error||'Unknown')); }
-    }).catch(function(){ showToast('Network error'); }).finally(function(){ showLoad(false); });
-}
-
-function endCarShift(bookingId) {
-  if (!confirm('Return COBC 4? You\'ll be taken to sign it back IN in Inventory.')) return;
-  showLoad(true);
-  postJ({action:'endCarShift', id:bookingId})
-    .then(function(d) {
-      if (d.success) {
-        var b = carSchedule.find(function(x){ return x.id===bookingId; });
-        if (b) { b.status = 'done'; b.actualSignIn = new Date().toISOString(); }
-        renderCarCalendar(); if (carSelectedDate) renderCarDay(carSelectedDate);
-        renderCarHistory();
-        showToast('🏁 Sign COBC 4 IN in Inventory now');
-        // Reload from server after a moment to get the latest data
-        setTimeout(function(){ loadCarSchedule(); }, 3000);
-        setTimeout(function(){ navigateToCarCheckout('IN'); }, 900);
-      } else { showToast('Error: '+(d.error||'Unknown')); }
-    }).catch(function(){ showToast('Network error'); }).finally(function(){ showLoad(false); });
-}
-
-function cancelCarShift(bookingId) {
-  if (!confirm('Cancel this booking?')) return;
-  showLoad(true);
-  postJ({action:'cancelCarShift', id:bookingId})
-    .then(function(d) {
-      if (d.success) {
-        carSchedule = carSchedule.filter(function(x){ return x.id!==bookingId; });
-        renderCarCalendar(); if (carSelectedDate) renderCarDay(carSelectedDate);
-        showToast('Booking cancelled');
-      } else { showToast('Error: '+(d.error||'Unknown')); }
-    }).catch(function(){ showToast('Network error'); }).finally(function(){ showLoad(false); });
-}
-
-function deleteCarShift(bookingId, fromAdminHistory) {
-  if (!confirm('Permanently delete this booking? This cannot be undone.')) return;
-  showLoad(true);
-  postJ({action:'deleteCarShift', id:bookingId})
-    .then(function(d) {
-      if (d.success) {
-        carSchedule = carSchedule.filter(function(x){ return x.id!==bookingId; });
-        if (fromAdminHistory) {
-          renderAdminCarHistory();
-        } else {
-          renderCarCalendar(); if (carSelectedDate) renderCarDay(carSelectedDate);
-          renderCarHistory();
-        }
-        showToast('Booking deleted');
-      } else { showToast('Error: '+(d.error||'Unknown')); }
-    }).catch(function(){ showToast('Network error'); }).finally(function(){ showLoad(false); });
-}
-
-function approveCarShift(bookingId) {
-  showLoad(true);
-  postJ({action:'approveCarShift', id:bookingId})
-    .then(function(d) {
-      if (d.success) {
-        var b = carSchedule.find(function(x){ return x.id===bookingId; });
-        if (b) b.status = 'approved';
-        renderCarCalendar(); if (carSelectedDate) renderCarDay(carSelectedDate);
-        showToast('✅ Shift approved');
-      } else { showToast('Error: '+(d.error||'Unknown')); }
-    }).catch(function(){ showToast('Network error'); }).finally(function(){ showLoad(false); });
-}
-
-// ─── ADMIN: Car Access Toggles ─────────────────────────
-function renderCarAccessAdmin() {
-  var el = document.getElementById('car-access-list');
-  if (!el) return;
-  var q = ((document.getElementById('car-access-search')||{}).value||'').toLowerCase().trim();
-  var filtered = members.filter(function(m){
-    var name = m.name||((m.firstName||'')+' '+(m.lastName||'')).trim();
-    return !q || name.toLowerCase().indexOf(q)>=0 || String(m.id||m.unit||'').indexOf(q)>=0;
-  }).sort(function(a,b){
-    return (parseInt((a.unit||a.id||'0').toString().replace(/^BC-/i,''))||0)
-         - (parseInt((b.unit||b.id||'0').toString().replace(/^BC-/i,''))||0);
-  });
-  var approved = members.filter(function(m){ return m.carAccess; }).length;
-  var cntEl = document.getElementById('car-access-count');
-  if (cntEl) cntEl.textContent = approved;
-  if (!filtered.length) { el.innerHTML='<div style="color:#aaa;font-size:13px;padding:8px 0">No members found</div>'; return; }
-  el.innerHTML = filtered.map(function(m) {
-    var unit = (m.unit||m.id||'?').toString().replace(/^BC-/i,'');
-    var name = m.name||((m.firstName||'')+' '+(m.lastName||'')).trim()||'Unknown';
-    var idSafe = esc(String(m.id||m.unit));
-    return '<div class="car-access-row">'
-      + '<div><div style="font-size:13px;font-weight:600;color:#1a1a1a">'+esc(name)+'</div>'
-      + '<div style="font-size:11px;color:#888">BC-'+esc(unit)+'</div></div>'
-      + '<label class="car-toggle">'
-      + '<input type="checkbox" '+(m.carAccess?'checked':'')+' onchange="toggleCarAccess(\''+idSafe+'\',this.checked)"/>'
-      + '<span class="car-toggle-slider"></span>'
-      + '</label>'
-      + '</div>';
-  }).join('');
-}
-
-function toggleCarAccess(memberId, hasAccess) {
-  postJ({action:'setCarAccess', memberId:memberId, hasAccess:hasAccess})
-    .then(function(d) {
-      if (d.success) {
-        var m = members.find(function(m){ return String(m.id||m.unit)===String(memberId); });
-        if (m) m.carAccess = hasAccess;
-        var cntEl = document.getElementById('car-access-count');
-        if (cntEl) cntEl.textContent = members.filter(function(m){ return m.carAccess; }).length;
-        showToast(hasAccess ? '✅ Car access granted' : '🚫 Car access revoked');
-        // Also sync to Firestore so dispatch app stays in sync
-        _syncCarAccessToFirestore(String(memberId), hasAccess);
-      } else { showToast('Error: '+(d.error||'Unknown')); }
-    }).catch(function(){ showToast('Network error'); });
-}
-
-function _syncCarAccessToFirestore(memberId, hasAccess) {
-  var projectId = 'cobc-dispatch';
-  var apiKey = 'AIzaSyBYAz3ohsJGX_zo-Yq3faZ2m0uv4tfuSl8';
-  var url = 'https://firestore.googleapis.com/v1/projects/' + projectId
-    + '/databases/(default)/documents/members/' + encodeURIComponent(memberId)
-    + '?updateMask.fieldPaths=carAccess&key=' + apiKey;
-  fetch(url, {
-    method: 'PATCH',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({fields: {carAccess: {booleanValue: hasAccess}}})
-  }).catch(function(){}); // silent fail — Sheet is source of truth for equipment app
-}
-
-// ── Car time helpers ───────────────────────────────────────────────────────────
-function parse12to24(t) {
-  var m = (t||'').match(/(\d+):(\d+)\s*(AM|PM)/i);
-  if (!m) return '00:00';
-  var h = parseInt(m[1]), mn = m[2], ap = m[3].toUpperCase();
-  if (ap === 'PM' && h !== 12) h += 12;
-  if (ap === 'AM' && h === 12) h = 0;
-  return pad2(h) + ':' + mn;
-}
-function getCarTime(prefix) {
-  var h  = ((document.getElementById('car-'+prefix+'-hour')||{}).value||'');
-  var mn = ((document.getElementById('car-'+prefix+'-min')||{}).value||'');
-  var ap = ((document.getElementById('car-'+prefix+'-ampm')||{}).value||'AM');
-  if (!h || !mn) return '';
-  var h24 = parseInt(h);
-  if (ap === 'PM' && h24 !== 12) h24 += 12;
-  if (ap === 'AM' && h24 === 12) h24 = 0;
-  return pad2(h24) + ':' + mn;
-}
-function getCarTimeDisplay(prefix) {
-  var h  = ((document.getElementById('car-'+prefix+'-hour')||{}).value||'');
-  var mn = ((document.getElementById('car-'+prefix+'-min')||{}).value||'');
-  var ap = ((document.getElementById('car-'+prefix+'-ampm')||{}).value||'AM');
-  if (!h || !mn) return '';
-  return h + ':' + mn + ' ' + ap;
-}
-// Returns the current member's booking that lets them sign COBC 4 out right now
-// (approved shift starting within 60min, or already active)
-function getMyActiveCarBookingForInventory() {
-  // Only returns a booking if the member has clicked "Start Shift" (status = active).
-  // Approved bookings — even within the 1hr window — do NOT count until Start Shift is clicked.
-  if (!loggedInMember || !carSchedule.length) return null;
-  var now = new Date();
-  var todayStr = now.getFullYear()+'-'+pad2(now.getMonth()+1)+'-'+pad2(now.getDate());
-  var myId = String(loggedInMember.id);
-  return carSchedule.find(function(b) {
-    if (String(b.memberId) !== myId) return false;
-    if (b.date !== todayStr) return false;
-    return b.status === 'active';
-  }) || null;
-}
-// Updates the live status badge at top of car page from inventory data
-function renderCarItemStatus() {
-  var el = document.getElementById('car-live-status');
-  if (!el) return;
-  var carItem = items.find(function(i){ return isCarItem(i.name); });
-  if (!carItem) { el.style.display='none'; return; }
-  el.style.display = 'block';
-  var isOut = carItem.status === 'OUT';
-  el.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;'
-    +'background:'+(isOut?'#fdecea':'#e8f5e9')+';border:1.5px solid '+(isOut?'#ffcdd2':'#a5d6a7')+'">'
-    +'<span style="font-size:20px">'+(isOut?'🔴':'🟢')+'</span>'
-    +'<div><div style="font-size:13px;font-weight:700;color:'+(isOut?'#c0392b':'#2e7d32')+'">COBC 4 is currently '+(isOut?'OUT — in use':'IN — available')+'</div>'
-    +(isOut&&carItem.member?'<div style="font-size:11px;color:#666;margin-top:1px">Signed out by BC-'+esc(carItem.member)+(carItem.lastUpdated?' · '+esc(carItem.lastUpdated):'')+'</div>':'')
-    +'</div></div>';
-}
-// Renders completed/active shift history in the car page
-function renderCarHistory() {
-  var el = document.getElementById('car-history-list');
-  if (!el) return;
-  var cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - 7);
-  var cutoffStr = cutoff.getFullYear()+'-'+pad2(cutoff.getMonth()+1)+'-'+pad2(cutoff.getDate());
-  var hist = carSchedule.filter(function(b){
-    return (b.status==='done'||b.status==='active') && b.date >= cutoffStr;
-  }).sort(function(a,b){
-      var ka = a.date+parse12to24(a.startTime), kb = b.date+parse12to24(b.startTime);
-      return ka < kb ? 1 : -1;
-    });
-  if (!hist.length) { el.innerHTML='<div style="color:#aaa;font-size:13px;padding:4px 0">No completed shifts yet.</div>'; return; }
-  el.innerHTML = hist.slice(0,30).map(function(b){
-    var d = new Date(b.date+'T12:00:00');
-    var ds = d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
-    // Format actual timestamps to 12hr time if available
-    function fmtActual(ts) {
-      if (!ts) return null;
-      // Normalize space-separated format to ISO (Safari fix)
-      var dt = new Date(typeof ts === 'string' ? ts.replace(' ', 'T') : ts);
-      if (isNaN(dt.getTime())) return null;
-      return dt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/New_York'});
-    }
-    var actualOut = fmtActual(b.actualSignOut);
-    var actualIn  = fmtActual(b.actualSignIn);
-    var timeRow = actualOut || actualIn
-      ? '<div style="font-size:11px;color:#555;margin-top:3px">'
-          +(actualOut ? '🔑 Took out: <b>'+esc(actualOut)+'</b>' : '🔑 Took out: —')
-          +' &nbsp;·&nbsp; '
-          +(actualIn  ? '🏁 Returned: <b>'+esc(actualIn)+'</b>'  : '🏁 Returned: —')
-        +'</div>'
-      : '<div style="font-size:11px;color:#aaa;margin-top:3px">🕐 Scheduled: '+esc(b.startTime)+' – '+esc(b.endTime)+'</div>';
-    return '<div style="padding:9px 0;border-bottom:1px solid #f0f0f0">'
-      +'<div style="display:flex;justify-content:space-between;align-items:flex-start">'
-      +'<div><div style="font-size:13px;font-weight:600;color:#1a1a1a">BC-'+esc(b.memberId)+(b.memberName?' · '+esc(b.memberName):'')+'</div>'
-      +timeRow+'</div>'
-      +'<div style="text-align:right"><div style="font-size:12px;color:#555">'+ds+'</div>'
-      +'<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;display:inline-block;margin-top:3px;'
-      +(b.status==='active'?'background:#fdecea;color:#c0392b':'background:#f0f0f0;color:#666')+'">'
-      +esc(b.status==='active'?'Out Now':'Done')+'</span></div>'
-      +'</div></div>';
-  }).join('');
-}
-// ── Admin COBC 4 History ───────────────────────────────────────────────────────
-function loadAdminCarHistory() {
-  // Ensure carSchedule is loaded before rendering
-  if (!carSchedule.length) {
-    var el = document.getElementById('adm-car-hist-list');
-    if (el) el.innerHTML = '<div style="color:#aaa;font-size:13px;padding:4px 0">Loading...</div>';
-    loadCarSchedule(function(){ renderAdminCarHistory(); });
-  } else {
-    renderAdminCarHistory();
-  }
-}
-function clearAdminCarHistoryFilter() {
-  var f = document.getElementById('adm-car-hist-from'), t = document.getElementById('adm-car-hist-to');
-  if (f) f.value = ''; if (t) t.value = '';
-  renderAdminCarHistory();
-}
-function renderAdminCarHistory() {
-  var el = document.getElementById('adm-car-hist-list');
-  if (!el) return;
-  var fromVal = (document.getElementById('adm-car-hist-from')||{}).value || '';
-  var toVal   = (document.getElementById('adm-car-hist-to')||{}).value || '';
-  var hist = carSchedule.filter(function(b){
-    if (b.status !== 'done' && b.status !== 'active' && b.status !== 'cancelled') return false;
-    if (fromVal && b.date < fromVal) return false;
-    if (toVal   && b.date > toVal)   return false;
-    return true;
-  }).sort(function(a,b){
-    var ka = a.date+parse12to24(a.startTime), kb = b.date+parse12to24(b.startTime);
-    return ka < kb ? 1 : -1;
-  });
-  if (!hist.length) {
-    el.innerHTML = '<div style="color:#aaa;font-size:13px;padding:8px 0">'+(fromVal||toVal?'No records found for that date range.':'No history yet.')+'</div>';
-    return;
-  }
-  function fmtActual(ts) {
-    if (!ts) return null;
-    var dt = new Date(ts);
-    return isNaN(dt) ? null : dt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
-  }
-  el.innerHTML = hist.map(function(b){
-    var d = new Date(b.date+'T12:00:00');
-    var ds = d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
-    var actualOut = fmtActual(b.actualSignOut), actualIn = fmtActual(b.actualSignIn);
-    var timeRow = (actualOut || actualIn)
-      ? '🔑 <b>'+(actualOut||'—')+'</b> → 🏁 <b>'+(actualIn||'—')+'</b>'
-      : '🕐 Scheduled '+esc(b.startTime)+' – '+esc(b.endTime);
-    var statusBadge = {done:'background:#e0e0e0;color:#555', active:'background:#fdecea;color:#c0392b', cancelled:'background:#fff3e0;color:#e65100'}[b.status]||'background:#e0e0e0;color:#555';
-    var statusLabel = {done:'✓ Done', active:'🚗 Out Now', cancelled:'✕ Cancelled'}[b.status]||b.status;
-    return '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:9px 0;border-bottom:1px solid #f0f0f0;gap:8px">'
-      +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:13px;font-weight:600;color:#1a1a1a">BC-'+esc(b.memberId)+(b.memberName?' · '+esc(b.memberName):'')+'</div>'
-      +'<div style="font-size:11px;color:#666;margin-top:2px">'+timeRow+'</div>'
-      +(b.note?'<div style="font-size:11px;color:#aaa;margin-top:1px">📝 '+esc(b.note)+'</div>':'')
-      +'</div>'
-      +'<div style="text-align:right;flex-shrink:0">'
-      +'<div style="font-size:11px;color:#888;margin-bottom:3px">'+esc(ds)+'</div>'
-      +'<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;display:inline-block;'+statusBadge+'">'+statusLabel+'</span>'
-      +'<br><button onclick="deleteCarShift(\''+b.id+'\',true)" style="margin-top:5px;padding:3px 9px;background:#fff0f0;color:#9b1c1c;border:1.5px solid #fca5a5;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer">🗑 Delete</button>'
-      +'</div></div>';
-  }).join('');
-}
-// Navigates to inventory tab and opens the COBC 4 checkout modal
-function navigateToCarCheckout(direction) {
-  var carItem = items.find(function(i){ return isCarItem(i.name); });
-  if (!carItem) { showToast('COBC 4 not found in inventory'); return; }
-  doShowPage('inventory');
-  setTimeout(function(){ openCheckout(carItem.row, direction||'OUT'); }, 150);
-}
-// Shows post-booking WhatsApp notification card
-function showCarBookingSuccess(startTime, endTime, date, memberName, note) {
-  var wrap = document.getElementById('car-book-wrap');
-  if (!wrap) return;
-  var dateLabel = new Date(date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
-  var bcId = loggedInMember ? loggedInMember.id : '';
-  var msg = 'Hi! BC-'+bcId+(memberName?' ('+memberName+')':'')+' booked COBC 4 for '+dateLabel
-    +' from '+startTime+' to '+endTime+'.'+(note?' Note: '+note:'')+' Thank you!';
-  var waUrl = CAR_CHIEF_WHATSAPP
-    ? 'https://wa.me/'+CAR_CHIEF_WHATSAPP+'?text='+encodeURIComponent(msg)
-    : 'https://wa.me/?text='+encodeURIComponent(msg);
-  wrap.innerHTML = '<div style="background:#e8f5e9;border:1.5px solid #a5d6a7;border-radius:10px;padding:12px;margin-top:6px">'
-    +'<div style="font-size:13px;font-weight:700;color:#2e7d32;margin-bottom:5px">✅ Shift booked for '+dateLabel+'!</div>'
-    +'<div style="font-size:12px;color:#555;margin-bottom:10px">Let the chiefs know via WhatsApp:</div>'
-    +'<a href="'+waUrl+'" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:6px;background:#25d366;color:#fff;text-decoration:none;border-radius:8px;padding:10px;font-size:14px;font-weight:700">📱 Notify Chiefs on WhatsApp</a>'
-    +'<div style="text-align:center;margin-top:8px"><button onclick="renderCarDay(carSelectedDate)" style="background:none;border:none;color:#888;font-size:12px;cursor:pointer;text-decoration:underline">Dismiss</button></div>'
-    +'</div>';
-}
-
-function pad2(n){ return n < 10 ? '0'+n : String(n); }
-function fmt12(t) {
-  if (!t) return t;
-  var p = t.split(':'), h = parseInt(p[0]), m = p[1]||'00';
-  return (h%12||12)+':'+m+' '+(h>=12?'PM':'AM');
-}
-
 function renderAdmChkFromItems(el) {
   var byLoc = {};
   items.forEach(function(i){
@@ -2391,9 +1590,12 @@ document.addEventListener('DOMContentLoaded', function() {
         <input id="qr-member" type="text" inputmode="numeric" placeholder="e.g. 38"
           style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:14px 12px;font-size:16px;outline:none;margin-bottom:13px"/>
       </div>
+      <div id="qr-call-group">
       <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px">Call Number</label>
       <input id="qr-call" type="text" inputmode="numeric" placeholder="Dispatched call #"
         style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:14px 12px;font-size:16px;outline:none;margin-bottom:13px"/>
+      </div>
+      <div id="qr-ccnc-group">
       <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px">Status</label>
       <select id="qr-ccnc" onchange="qrToggleCNC()"
         style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:14px 12px;font-size:16px;outline:none;background:#fff;-webkit-appearance:none;margin-bottom:13px">
@@ -2401,6 +1603,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <option value="CC">CC — Correct location</option>
         <option value="CNC">CNC — Wrong location</option>
       </select>
+      </div>
       <div id="qr-cnc-wrap" style="display:none">
         <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px">Where is the item?</label>
         <input id="qr-cnc-note" type="text" placeholder="e.g. Left at Teaneck Garage"
@@ -2435,6 +1638,9 @@ var _qrName = null;
 var _qrMember = null;
 var _qrExtraItems = [];
 var _qrAllItems = [];
+var _qrIsCobc4 = false;
+var _qrCarSchedule = [];
+var _qrCarItemData = null; // current inventory state for the scanned COBC 4
 
 function showQRMode(name) {
   _qrName = name;
@@ -2478,6 +1684,7 @@ function qrShowForm() {
       _qrAllItems = d.items || [];
       var it = _qrAllItems.find(function(i){ return i.name === _qrName; });
       if (it) {
+        _qrCarItemData = it;
         document.getElementById('qr-form-loc').textContent = '\ud83d\udccd ' + it.homeLocation;
         var isOut = it.status === 'OUT';
         var badge = document.getElementById('qr-form-badge');
@@ -2485,6 +1692,22 @@ function qrShowForm() {
         badge.style.background = isOut ? '#fdecea' : '#e8f5e9';
         badge.style.color = isOut ? '#c0392b' : '#2e7d32';
       }
+      // \u2500\u2500 COBC 4 special mode \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+      _qrIsCobc4 = _qrName && _qrName.toLowerCase().replace(/\s+/g,'').indexOf('cobc4') >= 0;
+      if (_qrIsCobc4) {
+        // Hide call number and CC/CNC \u2014 this is a shift vehicle, not a specific call
+        var cg = document.getElementById('qr-call-group');
+        var sg = document.getElementById('qr-ccnc-group');
+        if (cg) cg.style.display = 'none';
+        if (sg) sg.style.display = 'none';
+        document.getElementById('qr-ccnc').value = 'CC';
+        // Load car schedule for OUT access control (whose shift is it?)
+        fetch(BASE_URL + '?action=getCarScheduleJSON', {redirect:'follow',credentials:'omit'})
+          .then(function(r){ return r.json(); })
+          .then(function(cs){ _qrCarSchedule = cs.schedule || []; })
+          .catch(function(){ _qrCarSchedule = []; });
+      }
+      // \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
     }).catch(function(){});
 }
 
@@ -2539,10 +1762,47 @@ function qrSubmit(action) {
   var call    = document.getElementById('qr-call').value.trim();
   var ccnc    = document.getElementById('qr-ccnc').value;
   var cncNote = document.getElementById('qr-cnc-note').value.trim();
+  var isAdmin = (_qrMember === null); // null = cobcadmin/cobcet login
   if (!member) { alert('Please enter your BC member number.'); return; }
-  if (!call)   { alert('Please enter the call number.'); return; }
-  if (!ccnc)   { alert('Please select a status.'); return; }
-  if (ccnc === 'CNC' && !cncNote) { alert('Please describe where the item is.'); return; }
+  if (_qrIsCobc4) {
+    // Shift vehicle — no call number or CC/CNC needed
+    call = call || 'SHIFT';
+    ccnc = 'CC';
+    cncNote = '';
+    // ── Access control ──────────────────────────────────────────────────────
+    if (!isAdmin) {
+      var myId = String(_qrMember ? _qrMember.id : member).replace(/^BC-?/i,'').trim();
+      if (action === 'IN') {
+        // Only who signed it out, BC-38, or admin can return it
+        var lastMember = (_qrCarItemData && _qrCarItemData.member)
+          ? _qrCarItemData.member.toString().replace(/^BC-?/i,'').trim() : '';
+        var canReturn = !lastMember || myId === lastMember || myId === '38';
+        if (!canReturn) {
+          alert('🔒 Only BC-' + lastMember + ', BC-38, or an admin can return COBC 4.\n\nPlease contact the Chiefs or BC-38 for assistance.');
+          return;
+        }
+      }
+      if (action === 'OUT') {
+        // Must have an active car schedule booking today
+        var now = new Date();
+        var todayStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+        var myBooking = _qrCarSchedule.find(function(b) {
+          if (b.status !== 'active') return false;
+          var bMember = (b.memberId || b.member || '').toString().replace(/^BC-?/i,'').trim();
+          return bMember === myId && b.date === todayStr;
+        });
+        if (!myBooking) {
+          alert('🔑 No active shift found.\n\nPlease go to the 🚗 Car tab and tap "Start Shift" before signing COBC 4 out.\n\nThe Start Shift button appears 1 hour before your scheduled time.');
+          return;
+        }
+      }
+    }
+    // ────────────────────────────────────────────────────────────────────────
+  } else {
+    if (!call)   { alert('Please enter the call number.'); return; }
+    if (!ccnc)   { alert('Please select a status.'); return; }
+    if (ccnc === 'CNC' && !cncNote) { alert('Please describe where the item is.'); return; }
+  }
   // Block wrong direction \u2014 check ALL items including extras
   var allToCheck = [_qrName].concat(_qrExtraItems);
   var blocked = [];
@@ -2576,7 +1836,7 @@ function qrSubmit(action) {
         icon.style.background = action==='IN' ? '#1a3a5c' : '#c0392b';
         icon.textContent = action==='IN' ? '\u2713' : '\u2193';
         document.getElementById('qr-conf-title').textContent = action==='IN' ? 'Checked IN' : 'Checked OUT';
-        document.getElementById('qr-conf-detail').textContent = total + ' item' + (total>1?'s':'') + ' \u00b7 BC-' + member + ' \u00b7 Call #' + call;
+        document.getElementById('qr-conf-detail').textContent = total + ' item' + (total>1?'s':'') + ' \u00b7 BC-' + member + (_qrIsCobc4 ? ' \u00b7 Shift' : ' \u00b7 Call #' + call);
       }
     })
     .catch(function(){ done++; });
