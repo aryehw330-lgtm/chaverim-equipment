@@ -2664,6 +2664,9 @@ function renderAdmChkFromItems(el) {
   }).join('');
 }
 // GOOGLE SIGN-IN CONFIG — replace with your OAuth Client ID from console.cloud.google.com
+  var GOOGLE_CLIENT_ID = '1083295682041-ssk7ah1msjlgrj5o2l6t2astj556mblj.apps.googleusercontent.com';
+  function initGoogleSignIn() { if (typeof google === 'undefined') return; google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogleCredential, auto_select: false }); }
+  window.addEventListener('load', initGoogleSignIn);
 document.addEventListener('DOMContentLoaded', function() {
   // ── Register Service Worker for notifications ────────────────────────────
   if ('serviceWorker' in navigator) {
