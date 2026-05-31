@@ -224,21 +224,11 @@ textarea{resize:vertical;min-height:70px}
     <div class="pin-logo">🔒</div>
     <div class="pin-title">Bergen County Chaverim</div>
     <div class="pin-sub">Equipment Dashboard</div>
-    <button class="google-btn" onclick="triggerGoogleSignIn()" id="google-sign-in-btn">
-      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google"/>
-      Sign in with Google
-    </button>
+    <div id="google-btn-container" style="display:flex;justify-content:center;margin-bottom:4px;min-height:44px;"></div>
     <div class="pin-divider">or use your PIN</div>
     <input id="pin-input" class="pin-inp" type="password" autocomplete="off" placeholder="Enter PIN" style="letter-spacing:2px;font-size:18px"/>
     <div id="pin-error" class="pin-err"></div>
     <button class="pin-btn" onclick="checkPin()">Enter</button>
-    <!-- Hidden Google Identity Services div -->
-    <div id="g_id_onload"
-         data-client_id="1083295682041-ssk7ah1msjlgrj5o2l6t2astj556mblj.apps.googleusercontent.com"
-         data-context="signin"
-         data-callback="handleGoogleCredential"
-         data-auto_prompt="false">
-    </div>
   </div>
 </div>
 <!-- SEC PIN -->
@@ -763,27 +753,18 @@ function checkPin() {
 document.getElementById('pin-input').addEventListener('keydown', function(e){ if(e.key==='Enter') checkPin(); });
 
 // ── Google Sign-In ─────────────────────────────────────────────────────────────
-function triggerGoogleSignIn() {
-  if (typeof google === 'undefined' || !google.accounts) {
-    document.getElementById('pin-error').textContent = '⚠️ Google Sign-In not loaded yet, try again';
-    setTimeout(function(){ document.getElementById('pin-error').textContent=''; }, 3000);
-    return;
-  }
+// Called automatically by the GIS library once it finishes loading
+window.onGoogleLibraryLoad = function() {
   google.accounts.id.initialize({
-    client_id: document.getElementById('g_id_onload').dataset.clientId,
+    client_id: '1083295682041-ssk7ah1msjlgrj5o2l6t2astj556mblj.apps.googleusercontent.com',
     callback: handleGoogleCredential,
-    context: 'signin'
+    ux_mode: 'popup'
   });
-  google.accounts.id.prompt(function(notification) {
-    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-      // One-tap was suppressed — fall back to popup
-      google.accounts.id.renderButton(
-        document.getElementById('google-sign-in-btn'),
-        { theme:'outline', size:'large', width:272, text:'signin_with' }
-      );
-    }
-  });
-}
+  google.accounts.id.renderButton(
+    document.getElementById('google-btn-container'),
+    { theme: 'outline', size: 'large', width: 272, text: 'signin_with', shape: 'rectangular' }
+  );
+};
 
 function handleGoogleCredential(response) {
   var errEl = document.getElementById('pin-error');
