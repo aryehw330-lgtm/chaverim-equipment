@@ -752,6 +752,49 @@ function checkPin() {
 }
 document.getElementById('pin-input').addEventListener('keydown', function(e){ if(e.key==='Enter') checkPin(); });
 
+// ── Inventory in/out notifications ────────────────────────────────────────────
+var _lastInventoryEventTs = null; // tracks last seen event so we don't double-fire
+
+function fireInventoryNotif(action, itemNames, member, loggedBy) {
+  // Only fire for dispatch/admin with notifications enabled
+  var isDispAdm = isAdminUser() || isDispatchUser();
+  if (!isDispAdm) return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  var who = 'BC-' + member;
+  if (loggedBy) who = 'BC-' + member + ' (by BC-' + loggedBy + ')';
+  var title = action === 'OUT' ? '📦 Item Checked OUT' : '📦 Item Returned IN';
+  var body  = who + ': ' + itemNames;
+  fireNotif(title, body, 'inv-' + action + '-' + Date.now());
+}
+
+function checkInventoryNotifications() {
+  // Only poll for dispatch/admin with notifications enabled
+  var isDispAdm = isAdminUser() || isDispatchUser();
+  if (!isDispAdm) return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  fetchJ(BASE_URL + '?action=getRecentInventoryEvents')
+    .then(function(d) {
+      var events = d.events || [];
+      if (!events.length) return;
+      // Sort oldest first
+      events.sort(function(a,b){ return a.ts < b.ts ? -1 : 1; });
+      events.forEach(function(ev) {
+        // Skip if already seen or if it was logged by current user (they already got the notif)
+        if (_lastInventoryEventTs && ev.ts <= _lastInventoryEventTs) return;
+        var myId = loggedInMember ? String(loggedInMember.id) : null;
+        var isMine = myId && (String(ev.member) === myId || String(ev.loggedBy) === myId);
+        if (!isMine) { // Only notify if someone ELSE did it
+          var who = 'BC-' + ev.member;
+          if (ev.loggedBy) who += ' (by BC-' + ev.loggedBy + ')';
+          var title = ev.action === 'OUT' ? '📦 Item Checked OUT' : '📦 Item Returned IN';
+          fireNotif(title, who + ': ' + ev.items, 'inv-poll-' + ev.ts);
+        }
+        _lastInventoryEventTs = ev.ts;
+      });
+    }).catch(function(){});
+}
+// ──────────────────────────────────────────────────────────────────────────────
+
 // ── Google Sign-In ─────────────────────────────────────────────────────────────
 // Called automatically by the GIS library once it finishes loading
 window.onGoogleLibraryLoad = function() {
@@ -1403,6 +1446,11 @@ var blocked = [];
   })).then(function(){
     updateStats(); renderInventory(); renderDashboard();
     showToast('✓ '+itemsCopy.length+' item'+(itemsCopy.length>1?'s':'')+' checked '+action);
+    // ── Fire inventory notification + log event for other dispatch/admin users ──
+    var itemNames = itemsCopy.map(function(i){ return i.name; }).join(', ');
+    fireInventoryNotif(action, itemNames, member, loggedBy);
+    postJ({action:'logInventoryEvent', action2:action, items:itemNames, member:member, loggedBy:loggedBy||''}).catch(function(){});
+    // ─────────────────────────────────────────────────────────────────────────
     // ── Auto-end car shift when COBC 4 is signed back IN ──────────────────────
     if (action === 'IN') {
       var hasCobc4 = itemsCopy.some(function(item){ return isCarItem(item.name); });
@@ -2823,7 +2871,10 @@ function initNotifications() {
   _notifInited = true;
   // Do NOT auto-prompt — member opts in from Members tab
   if (_notifTimer) clearInterval(_notifTimer);
-  _notifTimer = setInterval(checkShiftNotifications, 30000); // every 30 sec
+  _notifTimer = setInterval(function(){
+    checkShiftNotifications();
+    checkInventoryNotifications();
+  }, 30000); // every 30 sec
   checkShiftNotifications();
   checkOverdueCobc4();
 }
@@ -2836,12 +2887,16 @@ function renderNotifCard() {
     return;
   }
   var perm = Notification.permission;
+  var isDispAdm = isAdminUser() || isDispatchUser();
+  var notifDesc = isDispAdm
+    ? 'Get notified when items are checked in/out and about your upcoming shifts.'
+    : 'Get notified 10 min before your shift starts and ends.';
   if (perm === 'granted') {
-    el.innerHTML = '<div style="background:#e8f5e9;border:1.5px solid #a5d6a7;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:10px"><span style="font-size:22px">🔔</span><div><div style="font-size:14px;font-weight:700;color:#2e7d32">Notifications Enabled</div><div style="font-size:12px;color:#388e3c;margin-top:2px">You\'ll be notified about your upcoming and ending shifts.</div></div></div>';
+    el.innerHTML = '<div style="background:#e8f5e9;border:1.5px solid #a5d6a7;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:10px"><span style="font-size:22px">🔔</span><div><div style="font-size:14px;font-weight:700;color:#2e7d32">Notifications Enabled</div><div style="font-size:12px;color:#388e3c;margin-top:2px">'+notifDesc+'</div></div></div>';
   } else if (perm === 'denied') {
     el.innerHTML = '<div style="background:#fdecea;border:1.5px solid #ef9a9a;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:10px"><span style="font-size:22px">🔕</span><div><div style="font-size:14px;font-weight:700;color:#c0392b">Notifications Blocked</div><div style="font-size:12px;color:#c0392b;margin-top:2px">Go to your browser settings and allow notifications for this site, then reload.</div></div></div>';
   } else {
-    el.innerHTML = '<div style="background:#fff;border:1.5px solid #ddd;border-radius:12px;padding:14px 16px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:22px">🔔</span><div><div style="font-size:14px;font-weight:700;color:#1a3a5c">Enable Shift Notifications</div><div style="font-size:12px;color:#666;margin-top:2px">Get notified 10 min before your shift starts and ends.</div></div></div><button onclick="requestNotifPermission()" style="width:100%;padding:12px;background:#1a3a5c;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer">Enable Notifications</button></div>';
+    el.innerHTML = '<div style="background:#fff;border:1.5px solid #ddd;border-radius:12px;padding:14px 16px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:22px">🔔</span><div><div style="font-size:14px;font-weight:700;color:#1a3a5c">Enable Notifications</div><div style="font-size:12px;color:#666;margin-top:2px">'+notifDesc+'</div></div></div><button onclick="requestNotifPermission()" style="width:100%;padding:12px;background:#1a3a5c;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer">Enable Notifications</button></div>';
   }
 }
 
