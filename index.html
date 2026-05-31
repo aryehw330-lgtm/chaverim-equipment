@@ -11,6 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="COBC Equipment"/>
 <meta name="theme-color" content="#1a3a5c"/>
 <title>COBC Equipment</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#f4f6f9;color:#1a1a1a;-webkit-tap-highlight-color:transparent}
@@ -24,7 +25,12 @@ html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Ar
 .pin-inp{width:100%;border:2px solid #ddd;border-radius:10px;padding:12px;font-size:28px;text-align:center;letter-spacing:10px;outline:none;margin-bottom:8px}
 .pin-inp:focus{border-color:#1a3a5c}
 .pin-err{color:#c0392b;font-size:13px;height:18px;margin-bottom:8px}
-.pin-btn{width:100%;padding:13px;background:#1a3a5c;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer}.pin-divider{display:flex;align-items:center;gap:10px;margin:14px 0;color:#aaa;font-size:13px}.pin-divider::before,.pin-divider::after{content:'';flex:1;height:1px;background:#e0e0e0}.google-btn{width:100%;padding:11px;background:#fff;color:#444;border:1.5px solid #ddd;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;font-family:inherit;transition:box-shadow .2s}.google-btn:hover{box-shadow:0 2px 8px rgba(0,0,0,.15)}.google-btn svg{flex-shrink:0}
+.pin-btn{width:100%;padding:13px;background:#1a3a5c;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer}
+.pin-divider{display:flex;align-items:center;gap:8px;margin:14px 0;color:#aaa;font-size:12px}
+.pin-divider::before,.pin-divider::after{content:'';flex:1;height:1px;background:#e0e0e0}
+.google-btn{width:100%;padding:12px;background:#fff;color:#444;border:1.5px solid #ddd;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px}
+.google-btn:hover{background:#f8f8f8;border-color:#ccc}
+.google-btn img{width:20px;height:20px}
 #sec-gate{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:800;align-items:center;justify-content:center}
 #sec-gate.open{display:flex}
 .sec-card{background:#fff;border-radius:16px;padding:2rem 1.5rem;width:min(300px,88vw);text-align:center}
@@ -209,7 +215,7 @@ textarea{resize:vertical;min-height:70px}
 .car-toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .car-toggle input:checked+.car-toggle-slider{background:#2e7d32}
 .car-toggle input:checked+.car-toggle-slider:before{transform:translateX(20px)}
-</style><script src="https://accounts.google.com/gsi/client" async defer></script>
+</style>
 </head>
 <body>
 <!-- PIN GATE -->
@@ -217,10 +223,22 @@ textarea{resize:vertical;min-height:70px}
   <div class="pin-card">
     <div class="pin-logo">🔒</div>
     <div class="pin-title">Bergen County Chaverim</div>
-    <div class="pin-sub">Equipment Dashboard — Enter your PIN</div>
-    <input id="pin-input" class="pin-inp" type="password" autocomplete="off" placeholder="Enter password" style="letter-spacing:2px;font-size:18px"/>
+    <div class="pin-sub">Equipment Dashboard</div>
+    <button class="google-btn" onclick="triggerGoogleSignIn()" id="google-sign-in-btn">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google"/>
+      Sign in with Google
+    </button>
+    <div class="pin-divider">or use your PIN</div>
+    <input id="pin-input" class="pin-inp" type="password" autocomplete="off" placeholder="Enter PIN" style="letter-spacing:2px;font-size:18px"/>
     <div id="pin-error" class="pin-err"></div>
-    <button class="pin-btn" onclick="checkPin()">Enter</button>        <div class="pin-divider">or</div>
+    <button class="pin-btn" onclick="checkPin()">Enter</button>
+    <!-- Hidden Google Identity Services div -->
+    <div id="g_id_onload"
+         data-client_id="YOUR_GOOGLE_CLIENT_ID"
+         data-context="signin"
+         data-callback="handleGoogleCredential"
+         data-auto_prompt="false">
+    </div>
   </div>
 </div>
 <!-- SEC PIN -->
@@ -696,7 +714,7 @@ async function hashSHA256(str) {
   var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
 }
-function signInWithGoogle() {
+function checkPin() {
   var raw = document.getElementById('pin-input').value.trim();
   if (!raw) return;
   // First check ET/admin hashed passwords
@@ -715,44 +733,108 @@ function signInWithGoogle() {
       return;
     }
     // Not ET/admin — check against member PINs from sheet via API
+    var errEl = document.getElementById('pin-error');
+    errEl.textContent = 'Checking...';
     var url = BASE_URL + '?action=getMemberByPin&pin=' + encodeURIComponent(raw);
-    fetch(url, {redirect:'follow', credentials:'omit'})
-      .then(function(r){ return r.json(); })
-      .then(function(d) {
+    fetch(url, {redirect:'follow', mode:'cors', credentials:'omit'})
+      .then(function(r){
+        if (!r.ok && r.status !== 0) throw new Error('HTTP ' + r.status);
+        return r.text();
+      })
+      .then(function(txt) {
+        var d;
+        try { d = JSON.parse(txt); } catch(e) { throw new Error('Bad response from server'); }
         if (d && d.id) {
-          loggedInMember = {id: d.id, name: d.name, firstName: d.firstName, lastName: d.lastName, carAccess: !!d.carAccess, status: d.status || 'Member'};
-          // Derive userLevel from status
-          // Admin=3, Equipment Team=2 (checklist access), Dispatch/Member/Observer=1
-          var statArr = (d.status || 'Member').split(',').map(function(x){ return x.trim(); });
-          if (statArr.indexOf('Admin') >= 0)              userLevel = 3;
-          else if (statArr.indexOf('Equipment Team') >= 0) userLevel = 2;
-          else                                             userLevel = 1;
-          localStorage.setItem('cobc_level', userLevel);
-          localStorage.setItem('cobc_member_id', d.id);
-          document.getElementById('pin-gate').classList.add('hidden');
-          document.getElementById('app').style.display = 'flex';
-          applyAccessLevel();
-          loadData();
-          // Auto-navigate to requested page after login (e.g. from COBC 4 QR code scan)
-          var goPageAfterLogin = new URLSearchParams(window.location.search).get('page');
-          if (goPageAfterLogin) {
-            var btn = document.querySelector('.tab[data-page="' + goPageAfterLogin + '"]');
-            showPage(goPageAfterLogin, btn);
-          }
+          finishMemberLogin(d);
+          errEl.textContent = '';
         } else {
-          document.getElementById('pin-error').textContent = '✕ Incorrect PIN';
+          errEl.textContent = '✕ Incorrect PIN';
           document.getElementById('pin-input').value = '';
-          setTimeout(function(){ document.getElementById('pin-error').textContent=''; }, 2000);
+          setTimeout(function(){ errEl.textContent=''; }, 2000);
         }
       })
-      .catch(function() {
-        document.getElementById('pin-error').textContent = '✕ Connection error, try again';
+      .catch(function(err) {
+        errEl.textContent = '✕ Connection error — try again';
         document.getElementById('pin-input').value = '';
-        setTimeout(function(){ document.getElementById('pin-error').textContent=''; }, 3000);
+        setTimeout(function(){ errEl.textContent=''; }, 3000);
       });
   });
 }
 document.getElementById('pin-input').addEventListener('keydown', function(e){ if(e.key==='Enter') checkPin(); });
+
+// ── Google Sign-In ─────────────────────────────────────────────────────────────
+function triggerGoogleSignIn() {
+  if (typeof google === 'undefined' || !google.accounts) {
+    document.getElementById('pin-error').textContent = '⚠️ Google Sign-In not loaded yet, try again';
+    setTimeout(function(){ document.getElementById('pin-error').textContent=''; }, 3000);
+    return;
+  }
+  google.accounts.id.initialize({
+    client_id: document.getElementById('g_id_onload').dataset.clientId,
+    callback: handleGoogleCredential,
+    context: 'signin'
+  });
+  google.accounts.id.prompt(function(notification) {
+    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+      // One-tap was suppressed — fall back to popup
+      google.accounts.id.renderButton(
+        document.getElementById('google-sign-in-btn'),
+        { theme:'outline', size:'large', width:272, text:'signin_with' }
+      );
+    }
+  });
+}
+
+function handleGoogleCredential(response) {
+  var errEl = document.getElementById('pin-error');
+  errEl.textContent = 'Signing in...';
+  // Parse the JWT to get the email (client-side, no secret needed)
+  try {
+    var payload = JSON.parse(atob(response.credential.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+    var email = payload.email;
+    if (!email) { errEl.textContent = '✕ Could not read Google email'; return; }
+    var url = BASE_URL + '?action=getMemberByEmail&email=' + encodeURIComponent(email);
+    fetch(url, {redirect:'follow', credentials:'omit'})
+      .then(function(r){ return r.json(); })
+      .then(function(d) {
+        if (d && d.id) {
+          finishMemberLogin(d);
+          errEl.textContent = '';
+        } else {
+          errEl.textContent = '✕ Google email not linked to a member. Ask admin to add your Gmail to your profile.';
+          setTimeout(function(){ errEl.textContent=''; }, 5000);
+        }
+      })
+      .catch(function() {
+        errEl.textContent = '✕ Connection error, try again';
+        setTimeout(function(){ errEl.textContent=''; }, 3000);
+      });
+  } catch(e) {
+    errEl.textContent = '✕ Google Sign-In error';
+    setTimeout(function(){ errEl.textContent=''; }, 3000);
+  }
+}
+
+// Shared login completion (called by both PIN and Google login)
+function finishMemberLogin(d) {
+  loggedInMember = {id: d.id, name: d.name, firstName: d.firstName, lastName: d.lastName, carAccess: !!d.carAccess, status: d.status || 'Member'};
+  var statArr = (d.status || 'Member').split(',').map(function(x){ return x.trim(); });
+  if (statArr.indexOf('Admin') >= 0)              userLevel = 3;
+  else if (statArr.indexOf('Equipment Team') >= 0) userLevel = 2;
+  else                                             userLevel = 1;
+  localStorage.setItem('cobc_level', userLevel);
+  localStorage.setItem('cobc_member_id', d.id);
+  document.getElementById('pin-gate').classList.add('hidden');
+  document.getElementById('app').style.display = 'flex';
+  applyAccessLevel();
+  loadData();
+  var goPageAfterLogin = new URLSearchParams(window.location.search).get('page');
+  if (goPageAfterLogin) {
+    var btn = document.querySelector('.tab[data-page="' + goPageAfterLogin + '"]');
+    showPage(goPageAfterLogin, btn);
+  }
+}
+// ──────────────────────────────────────────────────────────────────────────────
 
 function applyAccessLevel() {
   var tabs = {'dashboard':1,'inventory':1,'report':1,'members':1,'car':1,'checklist':2,'admin':3};
@@ -1343,26 +1425,26 @@ var blocked = [];
     // ── Auto-end car shift when COBC 4 is signed back IN ──────────────────────
     if (action === 'IN') {
       var hasCobc4 = itemsCopy.some(function(item){ return isCarItem(item.name); });
-      if (hasCobc4 && loggedInMember) {
-        var myId = String(loggedInMember.id || '');
-        var activeBkg = (carSchedule || []).find(function(b) {
-          if (b.status !== 'active') return false;
-          var bMember = (b.memberId || b.member || '').toString().replace(/^BC-?/i,'').trim();
-          return bMember === myId;
-        });
+      if (hasCobc4) {
+        var activeBkg = (carSchedule || []).find(function(b) { return b.status === 'active'; });
         if (activeBkg) {
-          // Silently end the shift — member is already returning the car via inventory
-          postJ({action:'endCarShift', id:activeBkg.id}).then(function(d){
-            if (d.success) {
-              activeBkg.status = 'done';
-              activeBkg.actualSignIn = new Date().toISOString();
-              renderCarCalendar();
-              if (carSelectedDate) renderCarDay(carSelectedDate);
-              renderCarHistory();
-              setTimeout(function(){ loadCarSchedule(); }, 3000);
-              showToast('🏁 Car shift ended — COBC 4 returned');
-            }
-          }).catch(function(){});
+          var myId2 = loggedInMember ? String(loggedInMember.id || '') : '';
+          var bMember2 = (activeBkg.memberId || activeBkg.member || '').toString().replace(/^BC-?/i,'').trim();
+          var canEndShift = isAdminUser() || (myId2 && bMember2 === myId2);
+          if (canEndShift) {
+            // Silently end the shift — member is already returning the car via inventory
+            postJ({action:'endCarShift', id:activeBkg.id}).then(function(d){
+              if (d.success) {
+                activeBkg.status = 'done';
+                activeBkg.actualSignIn = new Date().toISOString();
+                renderCarCalendar();
+                if (carSelectedDate) renderCarDay(carSelectedDate);
+                renderCarHistory();
+                setTimeout(function(){ loadCarSchedule(); }, 3000);
+                showToast('🏁 Car shift ended — COBC 4 returned');
+              }
+            }).catch(function(){});
+          }
         }
       }
     }
@@ -2073,9 +2155,14 @@ function renderCarDay(dateStr) {
       if (isAdm && b.status === 'pending') {
         actions += '<button onclick="approveCarShift(\''+b.id+'\')" style="margin-top:7px;margin-left:6px;padding:6px 12px;background:#e8f5e9;color:#2e7d32;border:1.5px solid #a5d6a7;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">✓ Approve</button>';
       }
+      var bookedByLine = b.bookedBy ? (function(){
+        var lbName = getMemberName(b.bookedBy);
+        return '<div style="font-size:11px;font-weight:700;color:#e65100;margin-top:1px">· booked by BC-'+esc(b.bookedBy)+(lbName?' '+esc(lbName):'')+'</div>';
+      })() : '';
       return '<div class="'+cls+'">'
         + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
         + '<div><div style="font-size:13px;font-weight:700;color:#1a1a1a">BC-'+esc(b.memberId)+' '+esc(b.memberName||'')+(isMine?' <span style="font-size:10px;color:#1a3a5c;background:#dbeafe;padding:1px 6px;border-radius:8px">You</span>':'')+'</div>'
+        + bookedByLine
         + '<div style="font-size:12px;color:#555;margin-top:3px">🕐 '+esc(b.startTime)+' – '+esc(b.endTime)+'</div>'
         + (b.note?'<div style="font-size:11px;color:#888;margin-top:2px">📝 '+esc(b.note)+'</div>':'')
         + '</div><div style="text-align:right">'+stLabel+'</div></div>'
@@ -2193,8 +2280,10 @@ function submitCarBooking() {
   // Admin booking for another member
   var bfSel = document.getElementById('car-book-for');
   var bfVal = (bfSel && document.getElementById('car-book-for-wrap').style.display !== 'none') ? bfSel.value.trim() : '';
+  var bookedByVal = null;
   if (bfVal) {
     var bfMember = members.find(function(m){ return (m.id||m.unit||'').toString().replace(/^BC-?/i,'') === bfVal; });
+    bookedByVal = loggedInMember ? String(loggedInMember.id) : null;
     memberId   = bfVal;
     memberName = bfMember ? ((bfMember.firstName||'')+' '+(bfMember.lastName||'')).trim() : ('BC-'+bfVal);
   }
@@ -2204,11 +2293,12 @@ function submitCarBooking() {
   var btn = document.getElementById('car-submit-btn');
   btn.textContent = '...'; btn.disabled = true;
   postJ({action:'bookCarShift', memberId:memberId, memberName:memberName, date:carSelectedDate,
-         startTime:startDisp, endTime:endDisp, note:note, needsApproval:false})
+         startTime:startDisp, endTime:endDisp, note:note, needsApproval:false, bookedBy:bookedByVal||null})
     .then(function(d) {
       if (d.success) {
         var newBooking = {id:d.id||('local_'+Date.now()), memberId:memberId, memberName:memberName,
-          date:carSelectedDate, startTime:startDisp, endTime:endDisp, note:note, status:'approved'};
+          date:carSelectedDate, startTime:startDisp, endTime:endDisp, note:note, status:'approved',
+          bookedBy:bookedByVal||null};
         carSchedule.push(newBooking);
         renderCarCalendar();
         renderCarDay(carSelectedDate);
@@ -2422,7 +2512,7 @@ function renderCarItemStatus() {
     +'background:'+(isOut?'#fdecea':'#e8f5e9')+';border:1.5px solid '+(isOut?'#ffcdd2':'#a5d6a7')+'">'
     +'<span style="font-size:20px">'+(isOut?'🔴':'🟢')+'</span>'
     +'<div><div style="font-size:13px;font-weight:700;color:'+(isOut?'#c0392b':'#2e7d32')+'">COBC 4 is currently '+(isOut?'OUT — in use':'IN — available')+'</div>'
-    +(isOut&&carItem.member?'<div style="font-size:11px;color:#666;margin-top:1px">Signed out by BC-'+esc(carItem.member)+(carItem.lastUpdated?' · '+esc(carItem.lastUpdated):'')+'</div>':'')
+    +(isOut&&carItem.member?'<div style="font-size:11px;color:#666;margin-top:1px">Signed out by '+fmtMemberBadge(carItem.member)+(carItem.lastUpdated?' · '+esc(carItem.lastUpdated):'')+'</div>':'')
     +'</div></div>';
 }
 // Renders the prominent Start Shift / Return Car action banner
@@ -2542,9 +2632,14 @@ function renderCarHistory() {
           +(actualIn  ? '🏁 Returned: <b>'+esc(actualIn)+'</b>'  : '🏁 Returned: —')
         +'</div>'
       : '<div style="font-size:11px;color:#aaa;margin-top:3px">🕐 Scheduled: '+esc(b.startTime)+' – '+esc(b.endTime)+'</div>';
+    var histBookedByLine = b.bookedBy ? (function(){
+      var lbName = getMemberName(b.bookedBy);
+      return '<div style="font-size:11px;font-weight:700;color:#e65100;margin-top:1px">· booked by BC-'+esc(b.bookedBy)+(lbName?' '+esc(lbName):'')+'</div>';
+    })() : '';
     return '<div style="padding:9px 0;border-bottom:1px solid #f0f0f0">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start">'
       +'<div><div style="font-size:13px;font-weight:600;color:#1a1a1a">BC-'+esc(b.memberId)+(b.memberName?' · '+esc(b.memberName):'')+'</div>'
+      +histBookedByLine
       +timeRow+'</div>'
       +'<div style="text-align:right"><div style="font-size:12px;color:#555">'+ds+'</div>'
       +'<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;display:inline-block;margin-top:3px;'
@@ -2604,6 +2699,7 @@ function renderAdminCarHistory() {
     return '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:9px 0;border-bottom:1px solid #f0f0f0;gap:8px">'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:13px;font-weight:600;color:#1a1a1a">BC-'+esc(b.memberId)+(b.memberName?' · '+esc(b.memberName):'')+'</div>'
+      +(b.bookedBy?(function(){ var lbName=getMemberName(b.bookedBy); return '<div style="font-size:11px;font-weight:700;color:#e65100;margin-top:1px">· booked by BC-'+esc(b.bookedBy)+(lbName?' '+esc(lbName):'')+' </div>'; })():'')
       +'<div style="font-size:11px;color:#666;margin-top:2px">'+timeRow+'</div>'
       +(b.note?'<div style="font-size:11px;color:#aaa;margin-top:1px">📝 '+esc(b.note)+'</div>':'')
       +'</div>'
@@ -2663,10 +2759,7 @@ function renderAdmChkFromItems(el) {
       +'<div style="font-size:11px;color:#888;margin-top:1px">🕐 '+esc(dt)+'</div></div>';
   }).join('');
 }
-// GOOGLE SIGN-IN CONFIG — replace with your OAuth Client ID from console.cloud.google.com
-  var GOOGLE_CLIENT_ID = '1083295682041-ssk7ah1msjlgrj5o2l6t2astj556mblj.apps.googleusercontent.com';
-  function initGoogleSignIn() { if (typeof google === 'undefined') return; google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogleCredential, auto_select: false }); }
-  window.addEventListener('load', initGoogleSignIn);
+// BOOT
 document.addEventListener('DOMContentLoaded', function() {
   // ── Register Service Worker for notifications ────────────────────────────
   if ('serviceWorker' in navigator) {
