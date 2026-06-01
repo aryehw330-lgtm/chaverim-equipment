@@ -750,7 +750,6 @@ body.dark .recent-card{background:var(--surface)}
             <div style="display:flex;align-items:center;gap:6px">
               <label style="font-size:12px;color:#555;white-space:nowrap">📅 Filter by date:</label>
               <input type="date" id="adm-chk-date-filter" oninput="renderAdmChkHistory()" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:8px;color:#1a3a5c"/>
-              <button onclick="document.getElementById('adm-chk-date-filter').value='';renderAdmChkHistory();" style="font-size:11px;padding:3px 8px;border:1px solid #ddd;border-radius:8px;background:#f5f5f5;cursor:pointer;color:#555">✕ Clear</button>
             </div>
           </div>
           <div id="adm-chk-history"></div>
@@ -767,7 +766,6 @@ body.dark .recent-card{background:var(--surface)}
               <label style="font-size:12px;color:#555;white-space:nowrap">To</label>
               <input type="date" id="adm-car-hist-to" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:8px;color:#1a3a5c"/>
               <button onclick="renderAdminCarHistory()" style="padding:5px 14px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">Search</button>
-              <button onclick="clearAdminCarHistoryFilter()" style="padding:5px 10px;background:#f5f5f5;color:#555;border:1px solid #ddd;border-radius:8px;font-size:12px;cursor:pointer">✕ Clear</button>
             </div>
           </div>
           <div id="adm-car-hist-list"><div style="color:#aaa;font-size:13px;padding:4px 0">Open to load history.</div></div>
