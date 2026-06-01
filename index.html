@@ -791,16 +791,17 @@ body.dark .recent-card{background:var(--surface)}
 
 // ── Pull-to-refresh ───────────────────────────────────────────────────────────
 (function() {
-  var startY = 0, pulling = false, threshold = 70;
+  var startY = 0, pulling = false, threshold = 130;
   var indicator = document.createElement('div');
   indicator.style.cssText = 'position:fixed;top:0;left:50%;transform:translateX(-50%) translateY(-60px);background:#1a3a5c;color:#fff;padding:8px 20px;border-radius:0 0 20px 20px;font-size:13px;font-weight:700;z-index:9990;transition:transform .2s ease;pointer-events:none';
   indicator.textContent = '↓ Pull to refresh';
   document.body.appendChild(indicator);
   document.addEventListener('touchstart', function(e){ startY = e.touches[0].clientY; pulling = window.scrollY === 0; }, {passive:true});
+
   document.addEventListener('touchmove', function(e){
     if (!pulling) return;
     var dist = e.touches[0].clientY - startY;
-    if (dist > 10 && dist < threshold + 30) {
+    if (dist > 25 && dist < threshold + 40) {
       indicator.style.transform = 'translateX(-50%) translateY(' + Math.min(dist - 40, 20) + 'px)';
       indicator.textContent = dist > threshold ? '↑ Release to refresh' : '↓ Pull to refresh';
     }
