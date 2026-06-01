@@ -1510,11 +1510,9 @@ function finishMemberLogin(d) {
   document.getElementById('app').style.display = 'flex';
   applyAccessLevel();
   loadData();
-  var goPageAfterLogin = new URLSearchParams(window.location.search).get('page');
-  if (goPageAfterLogin) {
-    var btn = document.querySelector('.tab[data-page="' + goPageAfterLogin + '"]');
-    showPage(goPageAfterLogin, btn);
-  }
+  var goPageAfterLogin = new URLSearchParams(window.location.search).get('page') || 'dashboard';
+  var btn = document.querySelector('.tab[data-page="' + goPageAfterLogin + '"]');
+  showPage(goPageAfterLogin, btn);
 }
 // ──────────────────────────────────────────────────────────────────────────────
 
