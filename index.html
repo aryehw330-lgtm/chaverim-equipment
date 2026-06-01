@@ -16,8 +16,8 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#f4f6f9;--surface:#fff;--surface2:#f0f4f8;--text:#1a1a1a;--text2:#555;--text3:#888;--border:#e0e6ed;--border2:#d0d8e4;--navy:#1a3a5c;--tabbar:#fff}
 body.dark{--bg:#0f1923;--surface:#1a2840;--surface2:#162234;--text:#e0eaf4;--text2:#8aa8c8;--text3:#5a7a9a;--border:#2a3f5a;--border2:#1e3248;--tabbar:#162234}
-html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior:none;overflow:hidden}
-#app{display:flex;flex-direction:column;height:100dvh}
+html,body{height:100%;max-height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior:none;overflow:hidden;position:fixed;width:100%}
+#app{display:flex;flex-direction:column;position:fixed;top:0;left:0;right:0;bottom:0;overflow:hidden}
 #pin-gate{position:fixed;inset:0;background:#1a3a5c;z-index:9999;display:flex;align-items:center;justify-content:center}
 #pin-gate.hidden{display:none}
 .pin-card{background:#fff;border-radius:16px;padding:2rem 1.5rem;width:min(320px,90vw);text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.2);animation:cardIn .5s cubic-bezier(.34,1.56,.64,1) both}
@@ -48,7 +48,7 @@ html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Ar
 .sec-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .sec-ok{padding:11px;background:#1a3a5c;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer}
 .sec-cancel{padding:11px;background:#f0f0f0;color:#444;border:none;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer}
-#header{background:#1a3a5c;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:100}
+#header{background:#1a3a5c;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;z-index:100}
 #member-avatar{width:34px;height:34px;border-radius:50%;background:#2e5f8a;border:2px solid rgba(255,255,255,.3);display:none;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;margin-right:8px;cursor:pointer}
 #header-member-wrap{display:flex;align-items:center}
 .h-title{font-size:16px;font-weight:700;color:#fff}
@@ -1223,12 +1223,28 @@ function handleNotifToggle() {
 
 // ── Haptic feedback ───────────────────────────────────────────────────────────
 function haptic(type) {
-  if (!navigator.vibrate) return;
-  if (type === 'light') navigator.vibrate(15);
-  else if (type === 'success') navigator.vibrate([20, 50, 20]);
-  else if (type === 'error') navigator.vibrate([40, 30, 40, 30, 40]);
-  else if (type === 'heavy') navigator.vibrate(60);
-  else navigator.vibrate(25);
+  // Android vibration
+  if (navigator.vibrate) {
+    if (type === 'light') navigator.vibrate(10);
+    else if (type === 'success') navigator.vibrate([15, 40, 15]);
+    else if (type === 'error') navigator.vibrate([30, 20, 30]);
+    else if (type === 'heavy') navigator.vibrate(40);
+    else navigator.vibrate(10);
+  }
+  // iOS: use a silent audio trick to trigger taptic engine feel via audio pulse
+  try {
+    var ctx = getAudioCtx();
+    var buf = ctx.createBuffer(1, ctx.sampleRate * 0.02, ctx.sampleRate);
+    var data = buf.getChannelData(0);
+    var pulses = type === 'success' ? 2 : type === 'error' ? 3 : 1;
+    for (var i = 0; i < data.length; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length / (pulses * 2))) * 0.15;
+    }
+    var src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start();
+  } catch(e) {}
 }
 
 var _audioCtx = null;
@@ -1244,38 +1260,39 @@ function playSound(type) {
     osc.connect(gain); gain.connect(ctx.destination);
     if (type === 'success') {
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(520, ctx.currentTime);
-      osc.frequency.setValueAtTime(780, ctx.currentTime + 0.1);
-      gain.gain.setValueAtTime(0.25, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.35);
+      osc.frequency.setValueAtTime(660, ctx.currentTime);
+      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12);
+      gain.gain.setValueAtTime(0.07, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
     } else if (type === 'error') {
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(180, ctx.currentTime);
-      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(220, ctx.currentTime);
+      osc.frequency.setValueAtTime(180, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.06, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
       osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.3);
     } else if (type === 'click') {
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(400, ctx.currentTime);
-      gain.gain.setValueAtTime(0.1, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
-      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.08);
+      osc.frequency.setValueAtTime(800, ctx.currentTime);
+      gain.gain.setValueAtTime(0.04, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.06);
     } else if (type === 'refresh') {
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(300, ctx.currentTime);
-      osc.frequency.linearRampToValueAtTime(600, ctx.currentTime + 0.15);
-      gain.gain.setValueAtTime(0.15, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
-      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.2);
+      osc.frequency.setValueAtTime(440, ctx.currentTime);
+      osc.frequency.linearRampToValueAtTime(660, ctx.currentTime + 0.12);
+      gain.gain.setValueAtTime(0.05, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.18);
     } else if (type === 'submit') {
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(440, ctx.currentTime);
-      osc.frequency.setValueAtTime(660, ctx.currentTime + 0.08);
-      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.18);
-      gain.gain.setValueAtTime(0.2, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
+      osc.frequency.setValueAtTime(528, ctx.currentTime);
+      osc.frequency.setValueAtTime(660, ctx.currentTime + 0.1);
+      osc.frequency.setValueAtTime(792, ctx.currentTime + 0.2);
+      gain.gain.setValueAtTime(0.07, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.45);
     }
   } catch(e) {}
 }
