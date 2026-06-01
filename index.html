@@ -14,7 +14,9 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#f4f6f9;color:#1a1a1a;-webkit-tap-highlight-color:transparent}
+:root{--bg:#f4f6f9;--surface:#fff;--surface2:#f0f4f8;--text:#1a1a1a;--text2:#555;--text3:#888;--border:#e0e6ed;--border2:#d0d8e4;--navy:#1a3a5c;--tabbar:#fff}
+body.dark{--bg:#0f1923;--surface:#1a2840;--surface2:#162234;--text:#e0eaf4;--text2:#8aa8c8;--text3:#5a7a9a;--border:#2a3f5a;--border2:#1e3248;--tabbar:#162234}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent}
 #app{display:flex;flex-direction:column;height:100dvh}
 #pin-gate{position:fixed;inset:0;background:#1a3a5c;z-index:9999;display:flex;align-items:center;justify-content:center}
 #pin-gate.hidden{display:none}
@@ -55,9 +57,9 @@ html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Ar
 .stat-pill{background:rgba(255,255,255,.15);color:#fff;border-radius:20px;padding:4px 10px;font-size:12px;font-weight:600}
 .stat-pill.red{background:#c0392b}
 #sync-btn{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer}
-#tabbar{display:flex;background:#fff;border-bottom:2px solid #e0e6ed;flex-shrink:0;overflow-x:auto;scrollbar-width:none}
+#tabbar{display:flex;background:var(--tabbar);border-bottom:2px solid var(--border);flex-shrink:0;overflow-x:auto;scrollbar-width:none}
 #tabbar::-webkit-scrollbar{display:none}
-.tab{flex:1;min-width:52px;padding:10px 4px 8px;border:none;background:none;color:#888;font-size:10px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;position:relative;border-bottom:3px solid transparent;margin-bottom:-2px}
+.tab{flex:1;min-width:48px;max-width:80px;padding:10px 2px 8px;border:none;background:none;color:var(--text3);font-size:9px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;position:relative;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tab .ti{font-size:18px}
 .tab.active{color:#1a3a5c;border-bottom-color:#1a3a5c}
 .tab-badge{position:absolute;top:4px;right:calc(50% - 18px);background:#c0392b;color:#fff;font-size:9px;font-weight:700;min-width:15px;height:15px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px}
@@ -67,7 +69,7 @@ html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Ar
 .page.active{display:block}
 .section-label{font-size:12px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;margin-top:18px}
 .section-label:first-child{margin-top:0}
-.card{background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.card{background:var(--surface);border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
 .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
 .badge-in{background:#e8f5e9;color:#2e7d32}
 .badge-out{background:#fdecea;color:#c0392b}
@@ -132,7 +134,7 @@ textarea{resize:vertical;min-height:70px}
 .filter-row::-webkit-scrollbar{display:none}
 .fchip{flex-shrink:0;padding:6px 14px;border-radius:20px;background:#fff;border:1.5px solid #ddd;color:#555;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
 .fchip.active{background:#1a3a5c;border-color:#1a3a5c;color:#fff}
-.inv-card{background:#fff;border-radius:12px;padding:13px;margin-bottom:9px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.inv-card{background:var(--surface);border-radius:12px;padding:13px;margin-bottom:9px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
 .inv-card.fl-cnc{border-left:4px solid #e65100}
 .inv-card.fl-miss{border-left:4px solid #c0392b}
 .inv-card.fl-dmg{border-left:4px solid #f57f17}
@@ -224,6 +226,23 @@ textarea{resize:vertical;min-height:70px}
 .car-toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .car-toggle input:checked+.car-toggle-slider{background:#2e7d32}
 .car-toggle input:checked+.car-toggle-slider:before{transform:translateX(20px)}
+/* ── Dark mode overrides ── */
+body.dark #content{background:var(--bg)}
+body.dark .section-label{color:var(--text2)}
+body.dark .out-card,.dark .recent-card,.dark .alert-card{background:var(--surface);border-color:var(--border)}
+body.dark .out-name,.dark .r-name,.dark .inv-name{color:var(--text)}
+body.dark .out-meta,.dark .r-detail,.dark .inv-meta{color:var(--text2)}
+body.dark input,.dark select,.dark textarea{background:var(--surface2);color:var(--text);border-color:var(--border2)}
+body.dark .modal-box{background:var(--surface)}
+body.dark .modal-title{color:var(--text)}
+body.dark .adm-sec{background:var(--surface);border-color:var(--border)}
+body.dark .adm-title{color:var(--text);background:var(--surface2)}
+body.dark .car-shift-card{background:var(--surface);border-color:var(--border)}
+body.dark .car-cal-day{background:var(--surface);border-color:var(--border)}
+body.dark .car-cal-day.today{background:var(--surface2)}
+body.dark .chk-card{background:var(--surface)}
+body.dark .out-card{background:var(--surface)}
+body.dark .recent-card{background:var(--surface)}
 </style>
 </head>
 <body>
@@ -270,6 +289,20 @@ textarea{resize:vertical;min-height:70px}
 <div id="loading"><div class="spinner"></div></div>
 <!-- TOAST -->
 <div id="toast"></div>
+<!-- OFFLINE BANNER -->
+<div id="offline-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9990;background:#e65100;color:#fff;text-align:center;padding:8px 16px;font-size:13px;font-weight:700">📡 No connection — showing cached data</div>
+
+<!-- ITEM HISTORY DRAWER -->
+<div id="item-history-drawer" style="display:none;position:fixed;inset:0;z-index:9995;background:rgba(0,0,0,.5);align-items:flex-end;justify-content:center">
+  <div style="background:var(--surface);border-radius:18px 18px 0 0;padding:20px 20px 36px;width:100%;max-width:500px;max-height:75vh;overflow-y:auto;animation:cardIn .3s ease both">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="font-size:16px;font-weight:700;color:var(--navy)" id="item-hist-title">Item History</div>
+      <button onclick="closeItemHistory()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text3)">✕</button>
+    </div>
+    <div id="item-hist-list"><div style="text-align:center;padding:20px;color:var(--text3)">Loading...</div></div>
+  </div>
+</div>
+
 <!-- AVATAR EDITOR -->
 <div id="avatar-editor" style="display:none;position:fixed;inset:0;z-index:9995;background:rgba(0,0,0,.45);align-items:flex-end;justify-content:center">
   <div style="background:#fff;border-radius:18px 18px 0 0;padding:20px 20px 32px;width:100%;max-width:400px;animation:cardIn .3s ease both">
@@ -358,7 +391,9 @@ textarea{resize:vertical;min-height:70px}
     </div>
     <div class="h-right">
       <span class="stat-pill" id="stat-out-pill" style="display:none"></span>
-      <button id="sync-btn" onclick="loadData()">↻ Sync</button>
+      <span id="sync-time" style="font-size:10px;color:#7badd4;display:none"></span>
+      <button id="sync-btn" onclick="loadData()" title="Sync">↻</button>
+      <button onclick="toggleDarkMode()" id="dark-btn" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 10px;font-size:15px;cursor:pointer" title="Toggle dark mode">🌙</button>
       <button onclick="logout()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;font-size:12px;font-weight:600;cursor:pointer">Sign Out</button>
     </div>
   </div>
@@ -847,9 +882,107 @@ function checkPin() {
 }
 document.getElementById('pin-input').addEventListener('keydown', function(e){ if(e.key==='Enter') checkPin(); });
 
+// ── Dark mode ─────────────────────────────────────────────────────────────────
+function toggleDarkMode() {
+  var isDark = document.body.classList.toggle('dark');
+  localStorage.setItem('cobc_dark', isDark ? '1' : '0');
+  document.getElementById('dark-btn').textContent = isDark ? '☀️' : '🌙';
+}
+(function() {
+  if (localStorage.getItem('cobc_dark') === '1') {
+    document.body.classList.add('dark');
+    var btn = document.getElementById('dark-btn');
+    if (btn) btn.textContent = '☀️';
+  }
+})();
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Haptic feedback ───────────────────────────────────────────────────────────
+function haptic(type) {
+  if (!navigator.vibrate) return;
+  if (type === 'light') navigator.vibrate(15);
+  else if (type === 'success') navigator.vibrate([20, 50, 20]);
+  else if (type === 'error') navigator.vibrate([40, 30, 40, 30, 40]);
+  else navigator.vibrate(25);
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Last synced timestamp ─────────────────────────────────────────────────────
+var _lastSyncedAt = null;
+function updateSyncTime() {
+  _lastSyncedAt = Date.now();
+  var el = document.getElementById('sync-time');
+  if (el) { el.style.display = 'inline'; el.textContent = 'Synced just now'; }
+  // Update relative time every minute
+  clearInterval(_syncTimeInterval);
+  _syncTimeInterval = setInterval(function() {
+    if (!_lastSyncedAt) return;
+    var mins = Math.floor((Date.now() - _lastSyncedAt) / 60000);
+    var el2 = document.getElementById('sync-time');
+    if (el2) el2.textContent = mins < 1 ? 'Synced just now' : 'Synced ' + mins + 'm ago';
+  }, 60000);
+}
+var _syncTimeInterval = null;
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Offline banner ────────────────────────────────────────────────────────────
+window.addEventListener('offline', function() {
+  var b = document.getElementById('offline-banner');
+  if (b) b.style.display = 'block';
+});
+window.addEventListener('online', function() {
+  var b = document.getElementById('offline-banner');
+  if (b) b.style.display = 'none';
+  showToast('✅ Back online — syncing...');
+  loadData();
+});
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Item history drawer (admin + dispatch only) ───────────────────────────────
+function openItemHistory(itemName, row) {
+  var canView = isAdminUser() || isDispatchUser();
+  if (!canView) return;
+  var drawer = document.getElementById('item-history-drawer');
+  var title  = document.getElementById('item-hist-title');
+  var list   = document.getElementById('item-hist-list');
+  if (!drawer) return;
+  if (title) title.textContent = '📦 ' + itemName;
+  if (list) list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3)">Loading...</div>';
+  drawer.style.display = 'flex';
+  // Fetch from InventoryEvents sheet
+  fetchJ(BASE_URL + '?action=getRecentInventoryEvents&itemName=' + encodeURIComponent(itemName))
+    .then(function(d) {
+      var events = (d.events || []).filter(function(e) {
+        return e.items && e.items.toLowerCase().indexOf(itemName.toLowerCase()) >= 0;
+      }).reverse();
+      if (!events.length) {
+        list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text3);font-size:14px">No history found for this item yet.</div>';
+        return;
+      }
+      list.innerHTML = events.map(function(ev) {
+        var isOut = ev.action === 'OUT';
+        var dot = '<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+(isOut?'#c0392b':'#2e7d32')+';margin-right:8px;flex-shrink:0"></span>';
+        var who = 'BC-' + ev.member + (ev.loggedBy ? ' <span style="color:#e65100;font-size:11px;">by BC-'+ev.loggedBy+'</span>' : '');
+        var ts = ev.ts ? new Date(ev.ts).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true}) : '';
+        return '<div style="display:flex;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">'
+          + dot
+          + '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">'+(isOut?'Checked OUT':'Returned IN')+'</div>'
+          + '<div style="font-size:12px;color:var(--text2);margin-top:2px">'+who+'</div></div>'
+          + '<div style="font-size:11px;color:var(--text3);text-align:right">'+ts+'</div></div>';
+      }).join('');
+    }).catch(function() {
+      list.innerHTML = '<div style="text-align:center;padding:20px;color:#c0392b;">Could not load history</div>';
+    });
+}
+function closeItemHistory() {
+  var d = document.getElementById('item-history-drawer');
+  if (d) d.style.display = 'none';
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 // ── Avatar editor ─────────────────────────────────────────────────────────────
 var _avatarColors = ['#2e7d32','#1565c0','#6a1b9a','#ad1457','#00695c','#e65100','#4527a0','#c62828','#00838f'];
-var _avatarEmojis = ['🤝','🚑','🚨','⛑️','🦺','📻','🔦','🛡️','⭐','🆘','🔑','💪','🙏','🏥'];
+var _avatarEmojis = ['🤝','🧰','🚨','⛑️','🦺','📻','🔦','🛡️','⭐','🆘','🔑','💪','🙏','🏥'];
 var _avatarEditColor = null;
 var _avatarEditNumber = false;
 var _avatarEditEmoji = null;
@@ -1189,6 +1322,7 @@ function loadData() {
       }
     }
     updateStats(); renderDashboard(); renderInventory(); renderInvLocChips(); renderCatChips(); populateRptItems(); renderAdmin(); renderAdmCatChips(); renderMembers(); renderHlocList();
+    updateSyncTime();
     loadCarSchedule(); // keep schedule fresh so inventory guard can check bookings
     if (loggedInMember) { initNotifications(); loadAlertRecipients(); }
     if (userLevel >= 3) { loadAlertRecipients(); }
@@ -1432,11 +1566,12 @@ function renderInventory() {
     var eb = getEB(it.equipStatus);
     var cb = it.isCNC?'<span class="badge badge-cnc">CNC</span>':'';
     var fl = it.equipStatus==='Missing'?'fl-miss':it.equipStatus==='Damaged'?'fl-dmg':it.isCNC?'fl-cnc':'';
+    var histBtn = (isAdminUser()||isDispatchUser()) ? '<button onclick="openItemHistory(\''+it.name.replace(/'/g,"\\'")+'\')" style="background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;padding:2px 4px;float:right" title="View history">🕐 History</button>' : '';
     return '<div class="inv-card '+fl+'">'
       +'<div class="inv-top"><div class="inv-name">'+esc(it.name)+'</div><div class="inv-badges">'+sb+eb+cb+'</div></div>'
       +'<div class="inv-meta">📍 '+esc(it.homeLocation)+(it.member?' · '+fmtMemberBadge(it.member):'')+(it.call?' · Call #'+esc(it.call):'')+(it.lastUpdated?' · '+fmtTime(it.lastUpdated):'')+'</div>'
       +(it.isCNC?'<div class="inv-cnc">📍 '+esc(it.cncNote||it.ccnc)+'</div>':'')
-      +'<div class="inv-actions"><button class="btn-in" onclick="openCheckout('+it.row+')">✓ Check IN</button><button class="btn-out" onclick="openCheckout('+it.row+', &quot;OUT&quot;)">↓ Check OUT</button></div>'
+      +'<div class="inv-actions"><button class="btn-in" onclick="openCheckout('+it.row+')">✓ Check IN</button><button class="btn-out" onclick="openCheckout('+it.row+', &quot;OUT&quot;)">↓ Check OUT</button>'+histBtn+'</div>'
       +((['Missing','Damaged','Need More'].indexOf(it.equipStatus)>=0)?'<div style="margin-top:6px"><button class="btn-reset" onclick="resetStatus('+it.row+')">↺ Mark as OK</button></div>':'')
       +'</div>';
   }).join('');
@@ -1693,6 +1828,7 @@ var blocked = [];
     });
   })).then(function(){
     updateStats(); renderInventory(); renderDashboard();
+    haptic('success');
     showToast('✓ '+itemsCopy.length+' item'+(itemsCopy.length>1?'s':'')+' checked '+action);
     // ── Fire inventory notification + log event for other dispatch/admin users ──
     var itemNames = itemsCopy.map(function(i){ return i.name; }).join(', ');
@@ -2483,8 +2619,28 @@ function renderCarDay(dateStr) {
     wrap.innerHTML = '';
   } else {
     var hasAccess = isAdm || (loggedInMember && loggedInMember.carAccess);
+    // ── Next available slot hint ──────────────────────────────────────────────
+    var nextSlotHtml = '';
+    if (hasAccess && !isPast) {
+      var dayShifts = carSchedule.filter(function(b){ return b.date===dateStr && b.status!=='cancelled' && b.status!=='done'; });
+      if (dayShifts.length) {
+        var bookedMins = dayShifts.map(function(b){
+          return {s: timeTo12Min(b.startTime), e: timeTo12Min(b.endTime)};
+        }).sort(function(a,b){ return a.s-b.s; });
+        var slots = [], cur = 0;
+        bookedMins.forEach(function(b){ if (b.s > cur+30) slots.push({s:cur,e:b.s}); cur = Math.max(cur,b.e); });
+        if (cur < 1440) slots.push({s:cur,e:1440});
+        var free = slots.filter(function(s){ return s.e-s.s >= 30; });
+        if (free.length) {
+          var f = free[0];
+          nextSlotHtml = '<div style="font-size:12px;color:#2e7d32;background:#e8f5e9;border-radius:8px;padding:7px 10px;margin-top:8px;text-align:center">🟢 Next free: <b>'+fmt12FromMins(f.s)+'</b> – <b>'+fmt12FromMins(Math.min(f.e,1440))+'</b></div>';
+        } else {
+          nextSlotHtml = '<div style="font-size:12px;color:#c0392b;background:#fdecea;border-radius:8px;padding:7px 10px;margin-top:8px;text-align:center">🔴 Fully booked — no slots available</div>';
+        }
+      }
+    }
     if (hasAccess) {
-      wrap.innerHTML = '<button onclick="openCarBooking()" class="btn btn-primary" style="width:100%">+ Book a Shift</button>';
+      wrap.innerHTML = '<button onclick="openCarBooking()" class="btn btn-primary" style="width:100%">+ Book a Shift</button>' + nextSlotHtml;
     } else if (loggedInMember) {
       wrap.innerHTML = '<div style="background:#fdecea;border:1.5px solid #ffcdd2;border-radius:8px;padding:11px 13px;font-size:13px;color:#c0392b;font-weight:600;text-align:center">🚫 You need car access to book — contact chiefs to get approval</div>';
     } else {
@@ -3035,6 +3191,21 @@ function showCarBookingSuccess(startTime, endTime, date, memberName, note) {
 }
 
 function pad2(n){ return n < 10 ? '0'+n : String(n); }
+function timeTo12Min(t) { // "3:30 PM" → minutes since midnight
+  if (!t) return 0;
+  var m = String(t).match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (!m) return 0;
+  var h = parseInt(m[1]), mn = parseInt(m[2]), ap = m[3].toUpperCase();
+  if (ap==='PM' && h!==12) h+=12;
+  if (ap==='AM' && h===12) h=0;
+  return h*60+mn;
+}
+function fmt12FromMins(mins) {
+  mins = Math.max(0, Math.min(1439, mins));
+  var h = Math.floor(mins/60), m = mins%60, ap = h>=12?'PM':'AM';
+  h = h%12||12;
+  return h+':'+(m<10?'0'+m:m)+' '+ap;
+}
 function fmt12(t) {
   if (!t) return t;
   var p = t.split(':'), h = parseInt(p[0]), m = p[1]||'00';
