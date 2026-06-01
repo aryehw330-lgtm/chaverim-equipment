@@ -50,7 +50,7 @@ html,body{height:100%;max-height:100%;font-family:-apple-system,BlinkMacSystemFo
 .sec-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .sec-ok{padding:11px;background:#1a3a5c;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer}
 .sec-cancel{padding:11px;background:#f0f0f0;color:#444;border:none;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer}
-#header{background:#1a3a5c;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;flex-shrink:0;z-index:100;touch-action:none}
+#header{background:#1a3a5c;padding:6px 16px;padding-top:calc(6px + env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;flex-shrink:0;z-index:100;touch-action:none}
 #member-avatar{width:34px;height:34px;border-radius:50%;background:#2e5f8a;border:2px solid rgba(255,255,255,.3);display:none;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;margin-right:8px;cursor:pointer}
 #header-member-wrap{display:flex;align-items:center}
 .h-title{font-size:16px;font-weight:700;color:#fff}
@@ -1023,32 +1023,6 @@ function fireConfetti() {
 })();
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ── Pull-to-refresh ───────────────────────────────────────────────────────────
-(function() {
-  var startY = 0, pulling = false, threshold = 220, ptrShown = false;
-  var indicator = document.createElement('div');
-  indicator.style.cssText = 'position:fixed;top:0;left:50%;transform:translateX(-50%) translateY(-60px);background:#1a3a5c;color:#fff;padding:8px 20px;border-radius:0 0 20px 20px;font-size:13px;font-weight:700;z-index:9990;transition:transform .2s ease;pointer-events:none;white-space:nowrap';
-  indicator.textContent = '↓ Pull to refresh';
-  document.body.appendChild(indicator);
-  document.addEventListener('touchstart', function(e){ startY = e.touches[0].clientY; pulling = window.scrollY === 0; ptrShown = false; }, {passive:true});
-
-  document.addEventListener('touchmove', function(e){
-    if (!pulling) return;
-    var dist = e.touches[0].clientY - startY;
-    if (dist > 60) {
-      if (!ptrShown) { indicator.style.transform = 'translateX(-50%) translateY(0px)'; ptrShown = true; }
-      indicator.textContent = dist > threshold ? '↑ Release to refresh' : '↓ Pull to refresh';
-    } else if (ptrShown) {
-      indicator.style.transform = 'translateX(-50%) translateY(-60px)'; ptrShown = false;
-    }
-  }, {passive:true});
-  document.addEventListener('touchend', function(e){
-    var dist = e.changedTouches[0].clientY - startY;
-    indicator.style.transform = 'translateX(-50%) translateY(-60px)';
-    if (pulling && dist > threshold) { haptic('heavy'); playSound('refresh'); setTimeout(function(){ if(typeof loadData==='function') loadData(); }, 200); }
-    pulling = false;
-  }, {passive:true});
-})();
 
 // ── Ripple effect on buttons ──────────────────────────────────────────────────
 document.addEventListener('touchstart', function(e) {
@@ -1066,29 +1040,52 @@ document.addEventListener('touchstart', function(e) {
   setTimeout(function(){ el.remove(); }, 500);
 }, {passive:true});
 
-// ── Press and hold on out-cards for quick check-in ───────────────────────────
-var _holdTimer = null;
-document.addEventListener('touchstart', function(e) {
-  var card = e.target.closest('.out-card');
-  if (!card) return;
-  _holdTimer = setTimeout(function() {
-    var itemName = card.querySelector('.out-name');
-    if (!itemName) return;
-    var it = items.find(function(i){ return i.name === itemName.textContent && i.status === 'OUT'; });
-    if (!it) return;
-    haptic('success');
-    var confirm = window.confirm('Check IN "' + it.name + '"?');
-    if (!confirm) return;
-    var member = loggedInMember ? loggedInMember.id : '';
-    postJ({action:'checkInOut', row:it.row, status:'IN', member:member, call:'', ccSel:'', cncNote:'', loggedBy:null})
-    .then(function(d) {
-      if (d.success) { it.status='IN'; updateStats(); renderInventory(); renderDashboard(); haptic('success'); showToast('✓ '+it.name+' checked IN'); }
-      else showToast('Error: '+(d.error||'Unknown'));
-    }).catch(function(){ showToast('Network error'); });
-  }, 600);
-}, {passive:true});
-document.addEventListener('touchend', function() { clearTimeout(_holdTimer); }, {passive:true});
-document.addEventListener('touchmove', function() { clearTimeout(_holdTimer); }, {passive:true});
+// ── Press and hold on out-cards → opens check-in/out modal ──────────────────
+(function() {
+  var HOLD_MS = 600;
+  var _holdTimer = null, _ring = null, _ringAnim = null;
+
+  function showRing(card) {
+    removeRing();
+    var r = card.getBoundingClientRect();
+    _ring = document.createElement('div');
+    _ring.style.cssText = 'position:fixed;top:'+(r.top+r.height/2-22)+'px;left:'+(r.left+r.width/2-22)+'px;width:44px;height:44px;z-index:9999;pointer-events:none';
+    _ring.innerHTML = '<svg viewBox="0 0 44 44" style="width:44px;height:44px;transform:rotate(-90deg)"><circle cx="22" cy="22" r="18" fill="none" stroke="rgba(26,58,92,.15)" stroke-width="4"/><circle id="_ringPath" cx="22" cy="22" r="18" fill="none" stroke="#1a3a5c" stroke-width="4" stroke-linecap="round" stroke-dasharray="113" stroke-dashoffset="113"/></svg>';
+    document.body.appendChild(_ring);
+    var path = _ring.querySelector('#_ringPath');
+    var start = null;
+    function animate(ts) {
+      if (!start) start = ts;
+      var pct = Math.min((ts - start) / HOLD_MS, 1);
+      path.setAttribute('stroke-dashoffset', 113 - 113 * pct);
+      if (pct < 1) _ringAnim = requestAnimationFrame(animate);
+    }
+    _ringAnim = requestAnimationFrame(animate);
+  }
+
+  function removeRing() {
+    if (_ringAnim) { cancelAnimationFrame(_ringAnim); _ringAnim = null; }
+    if (_ring) { _ring.remove(); _ring = null; }
+  }
+
+  document.addEventListener('touchstart', function(e) {
+    var card = e.target.closest('.out-card');
+    if (!card) return;
+    showRing(card);
+    _holdTimer = setTimeout(function() {
+      removeRing();
+      var nameEl = card.querySelector('.out-name');
+      if (!nameEl) return;
+      var it = items.find(function(i){ return i.name === nameEl.textContent && i.status === 'OUT'; });
+      if (!it) return;
+      haptic('success');
+      openItemModal(it.row);
+    }, HOLD_MS);
+  }, {passive:true});
+
+  document.addEventListener('touchend', function() { clearTimeout(_holdTimer); removeRing(); }, {passive:true});
+  document.addEventListener('touchmove', function() { clearTimeout(_holdTimer); removeRing(); }, {passive:true});
+})();
 
 const BASE_URL = 'https://script.google.com/macros/s/AKfycbwjnEHbt8v1aVKUO7361uc8XTodz5yBWGKoRgQ3H26UFOJeAQarVQAGaEuYj277Ed14rw/exec';
 var userLevel = 0;
