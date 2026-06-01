@@ -455,7 +455,7 @@ body.dark .recent-card{background:var(--surface)}
             <button onclick="setThemeMode('light')" id="theme-light" style="padding:8px 4px;border-radius:10px;border:2px solid #ddd;background:#fff;color:#555;font-size:12px;font-weight:700;cursor:pointer">☀️ Light</button>
             <button onclick="setThemeMode('dark')"  id="theme-dark"  style="padding:8px 4px;border-radius:10px;border:2px solid #ddd;background:#fff;color:#555;font-size:12px;font-weight:700;cursor:pointer">🌙 Dark</button>
           </div>
-          <div style="font-size:11px;color:var(--text3);margin-top:6px">Auto follows your phone's sunset setting</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:6px">Auto switches at actual sunrise/sunset for Bergen County</div>
         </div>
       </div>
     </div>
@@ -1117,10 +1117,39 @@ document.getElementById('pin-input').addEventListener('keydown', function(e){ if
 
 // ── Theme mode (auto / light / dark) ─────────────────────────────────────────
 var _themeMode = localStorage.getItem('cobc_theme') || 'auto';
-var _systemDarkMQ = window.matchMedia('(prefers-color-scheme: dark)');
+
+// Calculate sunrise/sunset for Bergen County, NJ (40.96°N, 74.07°W)
+function getSunTimes(date) {
+  var lat = 40.96, lng = -74.07;
+  var rad = Math.PI / 180;
+  var J2000 = 2451545.0;
+  var n = Math.floor(date.getTime() / 86400000) - Math.floor(new Date(2000,0,1).getTime()/86400000) + 0.5;
+  var Js = n - lng / 360;
+  var M = (357.5291 + 0.98560028 * Js) % 360;
+  var C = 1.9148*Math.sin(M*rad) + 0.0200*Math.sin(2*M*rad) + 0.0003*Math.sin(3*M*rad);
+  var lam = (M + C + 180 + 102.9372) % 360;
+  var Jtransit = 2451545.0 + Js + 0.0053*Math.sin(M*rad) - 0.0069*Math.sin(2*lam*rad);
+  var sinD = Math.sin(lam*rad)*Math.sin(23.4397*rad);
+  var cosH = (Math.sin(-0.8333*rad) - Math.sin(lat*rad)*sinD) / (Math.cos(lat*rad)*Math.cos(Math.asin(sinD)));
+  if (cosH < -1 || cosH > 1) return null;
+  var H = Math.acos(cosH) / rad;
+  var Jrise = Jtransit - H/360;
+  var Jset  = Jtransit + H/360;
+  function jdToDate(jd) {
+    return new Date((jd - 2440587.5) * 86400000);
+  }
+  return { rise: jdToDate(Jrise), set: jdToDate(Jset) };
+}
+
+function isNightTime() {
+  var now = new Date();
+  var sun = getSunTimes(now);
+  if (!sun) return false;
+  return now < sun.rise || now > sun.set;
+}
 
 function applyTheme() {
-  var isDark = _themeMode === 'dark' || (_themeMode === 'auto' && _systemDarkMQ.matches);
+  var isDark = _themeMode === 'dark' || (_themeMode === 'auto' && isNightTime());
   document.body.classList.toggle('dark', isDark);
 }
 function setThemeMode(mode) {
@@ -1129,10 +1158,8 @@ function setThemeMode(mode) {
   applyTheme();
   renderDashboardSettings();
 }
-// Listen for system theme changes (sunset/sunrise)
-_systemDarkMQ.addEventListener('change', function() {
-  if (_themeMode === 'auto') applyTheme();
-});
+// Check every 5 minutes for sunrise/sunset crossover
+setInterval(function() { if (_themeMode === 'auto') applyTheme(); }, 5 * 60 * 1000);
 // Apply on load
 applyTheme();
 
