@@ -95,8 +95,9 @@ textarea{resize:vertical;min-height:70px}
 #loading.show{display:flex}
 .spinner{width:36px;height:36px;border:4px solid #e0e0e0;border-top-color:#1a3a5c;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-#toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a3a5c;color:#fff;padding:10px 20px;border-radius:10px;font-size:14px;font-weight:600;z-index:9998;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap}
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a3a5c;color:#fff;padding:10px 20px;border-radius:10px;font-size:14px;font-weight:600;z-index:9998;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;white-space:nowrap;cursor:grab;user-select:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+#toast.dismissing{opacity:0;transform:translateX(-50%) translateY(-40px)}
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center;padding:16px}
 .modal-bg.open{display:flex}
 .modal-box{background:#fff;border-radius:20px;padding:1.75rem 1.5rem 1.75rem;width:100%;max-width:480px;max-height:90dvh;overflow-y:auto;position:relative;box-shadow:0 8px 40px rgba(0,0,0,.2)}
@@ -180,8 +181,10 @@ textarea{resize:vertical;min-height:70px}
 .mem-row:last-child{border-bottom:none}
 .mem-num{width:36px;height:36px;background:#eef3f8;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#1a3a5c;flex-shrink:0}
 .empty{text-align:center;padding:3rem 1rem;color:#aaa}
-.empty-icon{font-size:40px;margin-bottom:10px}
-.empty-text{font-size:15px;font-weight:500;color:#888}
+.empty-icon{font-size:56px;margin-bottom:12px;display:block;animation:emptyBounce 2.5s ease-in-out infinite}
+@keyframes emptyBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.empty-text{font-size:15px;font-weight:600;color:#555;margin-bottom:6px}
+.empty-sub{font-size:13px;color:#aaa;margin-top:4px}
 /* HOME LOCATION EDITOR */
 .hloc-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0f0}
 .hloc-row:last-child{border-bottom:none}
@@ -1113,7 +1116,7 @@ function renderDashboard() {
     .sort(function(a,b){return parseTs(b.lastUpdated)-parseTs(a.lastUpdated);}).slice(0,20);
   var rel = document.getElementById('dash-recent');
   if (!recent.length) {
-    rel.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">No activity yet</div></div>';
+    rel.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">All quiet</div><div class="empty-sub">No items have been checked in or out yet</div></div>';
   } else {
     rel.innerHTML = recent.map(function(it) {
       var isOut = it.status==='OUT';
@@ -1257,7 +1260,7 @@ function renderInventory() {
     return a.name.localeCompare(b.name, undefined, {numeric:true, sensitivity:'base'});
   });
   var el = document.getElementById('inv-list');
-  if (!filtered.length) { el.innerHTML='<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">No items found</div></div>'; return; }
+  if (!filtered.length) { el.innerHTML='<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">No items found</div><div class="empty-sub">Try a different search or filter</div></div>'; return; }
   el.innerHTML = filtered.map(function(it) {
     var sb = it.status==='OUT'?'<span class="badge badge-out">OUT</span>':'<span class="badge badge-in">IN</span>';
     var eb = getEB(it.equipStatus);
@@ -1779,7 +1782,7 @@ function renderMembers(){
   }).sort(function(a,b){return parseInt((a.unit||a.id||'0').toString().replace(/^BC-/i,''))-parseInt((b.unit||b.id||'0').toString().replace(/^BC-/i,''));});
   document.getElementById('mem-count').textContent=filtered.length+' member'+(filtered.length!==1?'s':'');
   var el=document.getElementById('mem-list');
-  if(!filtered.length){el.innerHTML='<div class="empty"><div class="empty-icon">👤</div><div class="empty-text">No members found</div></div>';return;}
+  if(!filtered.length){el.innerHTML='<div class="empty"><div class="empty-icon">👤</div><div class="empty-text">No members found</div><div class="empty-sub">Try searching by name or unit number</div></div>';return;}
   el.innerHTML=filtered.map(function(m){
     var unit=(m.unit||m.id||'?').toString().replace(/^BC-/i,'');
     var name=m.name||((m.firstName||'')+' '+(m.lastName||'')).trim()||'Unknown';
@@ -2027,7 +2030,33 @@ function logout() {
 }
 function showLoad(v){document.getElementById('loading').className=v?'show':'';}
 var toastTimer;
-function showToast(msg){var el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(function(){el.classList.remove('show');},2800);}
+function showToast(msg){
+  var el=document.getElementById('toast');
+  el.textContent=msg;
+  el.classList.remove('dismissing');
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){el.classList.remove('show');},2800);
+}
+// Swipe-up to dismiss toast
+(function(){
+  var el,startY,startX;
+  document.addEventListener('touchstart',function(e){
+    el=document.getElementById('toast');
+    if(!el||!el.classList.contains('show'))return;
+    startY=e.touches[0].clientY; startX=e.touches[0].clientX;
+  },{passive:true});
+  document.addEventListener('touchend',function(e){
+    if(!el||!el.classList.contains('show'))return;
+    var dy=e.changedTouches[0].clientY-startY;
+    var dx=Math.abs(e.changedTouches[0].clientX-startX);
+    if(dy<-30&&dx<60){
+      clearTimeout(toastTimer);
+      el.classList.add('dismissing');
+      setTimeout(function(){el.classList.remove('show','dismissing');},280);
+    }
+  },{passive:true});
+})();
 function esc(v){return (v||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 // ═══════════════════════════════════════════
