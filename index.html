@@ -249,6 +249,8 @@ body.dark .recent-card{background:var(--surface)}
 </style>
 </head>
 <body>
+<canvas id="confetti-canvas" style="position:fixed;inset:0;z-index:99990;pointer-events:none;display:none"></canvas>
+
 <!-- SPLASH SCREEN -->
 <div id="splash-screen" style="position:fixed;inset:0;background:#1a3a5c;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;transition:opacity .4s ease">
   <div style="position:relative;margin-bottom:4px">
@@ -390,7 +392,10 @@ body.dark .recent-card{background:var(--surface)}
       <div>
         <div class="h-title">COBC Equipment</div>
         <div class="h-sub" id="h-sub">Bergen County Chaverim</div>
-        <div id="sync-time" style="font-size:9px;color:#5a8aaa;display:none;margin-top:1px"></div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:1px">
+          <div id="sync-time" style="font-size:9px;color:#5a8aaa;display:none"></div>
+          <div id="live-clock" style="font-size:11px;font-weight:700;color:#a0bcd8;letter-spacing:.5px"></div>
+        </div>
       </div>
     </div>
     <div class="h-right">
@@ -418,6 +423,7 @@ body.dark .recent-card{background:var(--surface)}
         <div class="kpi kpi-cnc"><div class="kpi-val" id="kpi-cnc">0</div><div class="kpi-label">CNC</div></div>
       </div>
       <!-- COBC 4 car action banner on dashboard -->
+      <div id="dash-weather" style="display:none;margin-bottom:14px"></div>
       <div id="dash-car-action" style="display:none;margin-bottom:14px"></div>
       <div id="dash-alerts-wrap" style="display:none">
         <div class="section-label">⚠️ Active Alerts</div>
@@ -812,6 +818,135 @@ body.dark .recent-card{background:var(--surface)}
     setTimeout(function(){ splash.style.display = 'none'; }, 400);
   }, 1400);
 })();
+
+// ── Live clock ────────────────────────────────────────────────────────────────
+(function() {
+  function updateClock() {
+    var el = document.getElementById('live-clock');
+    if (!el) return;
+    var now = new Date();
+    var h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+    var ap = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    el.textContent = h + ':' + (m<10?'0'+m:m) + ':' + (s<10?'0'+s:s) + ' ' + ap;
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+})();
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Weather widget (Bergen County NJ) ────────────────────────────────────────
+var _weatherLoaded = false;
+function loadWeather() {
+  if (_weatherLoaded) return;
+  _weatherLoaded = true;
+  var el = document.getElementById('dash-weather');
+  if (!el) return;
+  // Open-Meteo API — free, no key needed. Bergen County NJ: 40.93, -74.17
+  var url = 'https://api.open-meteo.com/v1/forecast?latitude=40.93&longitude=-74.17&current=temperature_2m,weathercode,windspeed_10m,apparent_temperature&temperature_unit=fahrenheit&windspeed_unit=mph&timezone=America%2FNew_York';
+  fetch(url).then(function(r){ return r.json(); }).then(function(d) {
+    var c = d.current;
+    var code = c.weathercode;
+    var icon = weatherIcon(code);
+    var desc = weatherDesc(code);
+    var temp = Math.round(c.temperature_2m);
+    var feels = Math.round(c.apparent_temperature);
+    var wind = Math.round(c.windspeed_10m);
+    el.style.display = 'block';
+    el.innerHTML = '<div style="background:var(--surface);border-radius:12px;padding:12px 16px;box-shadow:0 1px 4px rgba(0,0,0,.08);display:flex;align-items:center;justify-content:space-between">'
+      +'<div style="display:flex;align-items:center;gap:10px">'
+      +'<span style="font-size:32px">'+icon+'</span>'
+      +'<div><div style="font-size:22px;font-weight:700;color:var(--text)">'+temp+'°F</div>'
+      +'<div style="font-size:12px;color:var(--text2)">'+desc+'</div></div></div>'
+      +'<div style="text-align:right">'
+      +'<div style="font-size:12px;color:var(--text2)">Feels '+feels+'°</div>'
+      +'<div style="font-size:12px;color:var(--text2)">💨 '+wind+' mph</div>'
+      +'<div style="font-size:10px;color:var(--text3);margin-top:3px">Bergen County</div>'
+      +'</div></div>';
+  }).catch(function() { _weatherLoaded = false; }); // retry next time
+}
+function weatherIcon(code) {
+  if (code === 0) return '☀️';
+  if (code <= 2) return '⛅';
+  if (code <= 3) return '☁️';
+  if (code <= 49) return '🌫️';
+  if (code <= 59) return '🌦️';
+  if (code <= 69) return '🌧️';
+  if (code <= 79) return '🌨️';
+  if (code <= 84) return '🌧️';
+  if (code <= 94) return '⛈️';
+  return '🌩️';
+}
+function weatherDesc(code) {
+  if (code === 0) return 'Clear skies';
+  if (code <= 2) return 'Partly cloudy';
+  if (code <= 3) return 'Overcast';
+  if (code <= 49) return 'Foggy';
+  if (code <= 59) return 'Drizzle';
+  if (code <= 69) return 'Rain';
+  if (code <= 79) return 'Snow';
+  if (code <= 84) return 'Rain showers';
+  if (code <= 94) return 'Thunderstorm';
+  return 'Severe storm';
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Confetti when all items returned ─────────────────────────────────────────
+var _prevOutCount = null;
+function checkConfetti(outCount) {
+  if (_prevOutCount !== null && _prevOutCount > 0 && outCount === 0) {
+    fireConfetti();
+  }
+  _prevOutCount = outCount;
+}
+function fireConfetti() {
+  var canvas = document.getElementById('confetti-canvas');
+  if (!canvas) return;
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  canvas.style.display = 'block';
+  var ctx = canvas.getContext('2d');
+  var colors = ['#1a3a5c','#f0c040','#2e7d32','#c0392b','#9b59b6','#e67e22','#fff'];
+  var pieces = Array.from({length: 120}, function() {
+    return {
+      x: Math.random() * canvas.width,
+      y: Math.random() * -canvas.height,
+      w: 8 + Math.random() * 8,
+      h: 5 + Math.random() * 5,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rot: Math.random() * Math.PI * 2,
+      vx: (Math.random() - 0.5) * 3,
+      vy: 3 + Math.random() * 4,
+      vr: (Math.random() - 0.5) * 0.2
+    };
+  });
+  var start = Date.now();
+  var duration = 2800;
+  function draw() {
+    var elapsed = Date.now() - start;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pieces.forEach(function(p) {
+      p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+      var alpha = Math.max(0, 1 - (elapsed - duration * 0.6) / (duration * 0.4));
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+      ctx.restore();
+    });
+    if (elapsed < duration) {
+      requestAnimationFrame(draw);
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.style.display = 'none';
+    }
+  }
+  requestAnimationFrame(draw);
+  haptic('success');
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 // ── Tab bar magnification (iOS 18-style swipe) ────────────────────────────────
 (function() {
@@ -1501,6 +1636,7 @@ function updateStats() {
   else { pill.style.display='none'; }
   var badge = document.getElementById('issues-badge');
   badge.textContent = issues; badge.style.display = issues>0?'flex':'none';
+  checkConfetti(out);
 }
 
 function renderDashboard() {
@@ -1541,6 +1677,7 @@ function renderDashboard() {
       +'</div><div style="text-align:right">'+cc+'<div class="out-time">'+fmtTime(it.lastUpdated)+'</div></div></div>';
   }).join('');
   renderDashboardSettings();
+  loadWeather();
   // ── Overdue inventory banner (items out 72+ hours) ───────────────────────────
   var overdueItems = items.filter(function(i) {
     if (isCarItem(i.name)) return false;
