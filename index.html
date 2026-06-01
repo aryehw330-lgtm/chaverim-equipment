@@ -341,6 +341,7 @@ textarea{resize:vertical;min-height:70px}
       </div>
       <div class="section-label">🕐 Recent Activity</div>
       <div id="dash-recent"></div>
+      <div id="dash-overdue-wrap" style="display:none;margin-top:14px"></div>
     </div>
     <!-- INVENTORY -->
     <div class="page" id="page-inventory">
@@ -583,7 +584,7 @@ textarea{resize:vertical;min-height:70px}
       <div class="adm-sec">
         <div class="adm-title" onclick="toggleAdm(this);if(this.classList.contains('open')){renderAlertRecipientsAdmin();}">🔔 Overdue Alert Recipients<span class="toggle">▼</span></div>
         <div class="adm-body">
-          <div style="font-size:13px;color:#666;margin-bottom:10px">Members who receive a notification when COBC 4 has been out for 3+ days.</div>
+          <div style="font-size:13px;color:#666;margin-bottom:10px">Members who receive a notification when any inventory item has been checked out for 72+ hours.</div>
           <div class="search-wrap" style="margin-bottom:10px">
             <span class="search-icon">🔍</span>
             <input id="alert-recip-search" type="text" placeholder="Search members..." oninput="renderAlertRecipientsAdmin()" style="padding-left:36px;font-size:14px"/>
@@ -1015,6 +1016,35 @@ function renderDashboard() {
       +(it.isCNC?'<div class="out-meta" style="color:#e65100">'+esc(it.cncNote||it.ccnc)+'</div>':'')
       +'</div><div style="text-align:right">'+cc+'<div class="out-time">'+fmtTime(it.lastUpdated)+'</div></div></div>';
   }).join('');
+  // ── Overdue inventory banner (items out 72+ hours) ───────────────────────────
+  var overdueItems = items.filter(function(i) {
+    if (isCarItem(i.name)) return false;
+    if (i.status !== 'OUT' || !i.lastUpdated) return false;
+    var lastTs = parseTs(i.lastUpdated);
+    if (!lastTs) return false;
+    return (Date.now() - lastTs) / (1000 * 60 * 60) >= 72;
+  });
+  var odWrap = document.getElementById('dash-overdue-wrap');
+  if (overdueItems.length) {
+    odWrap.style.display = 'block';
+    odWrap.innerHTML = '<div class="section-label" style="color:#c0392b">⏰ Overdue — Out 72+ Hours</div>'
+      + overdueItems.map(function(it) {
+          var hrs = Math.floor((Date.now() - parseTs(it.lastUpdated)) / (1000 * 60 * 60));
+          return '<div style="background:#fdecea;border-left:4px solid #c0392b;border-radius:8px;padding:10px 12px;margin-bottom:7px">'
+            +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
+            +'<div style="font-size:13px;font-weight:700;color:#c0392b">'+esc(it.name)+'</div>'
+            +'<span style="font-size:11px;font-weight:700;background:#c0392b;color:#fff;padding:2px 8px;border-radius:10px">'+hrs+'h out</span>'
+            +'</div>'
+            +'<div style="font-size:12px;color:#666;margin-top:3px">📍 '+esc(it.homeLocation)
+            +(it.member?' · '+fmtMemberBadge(it.member):'')
+            +(it.call?' · Call #'+esc(it.call):'')+'</div>'
+            +'</div>';
+        }).join('');
+  } else {
+    odWrap.style.display = 'none';
+    odWrap.innerHTML = '';
+  }
+  // ─────────────────────────────────────────────────────────────────────────────
   var recent = items.filter(function(i){return !!i.lastUpdated;})
     .sort(function(a,b){return parseTs(b.lastUpdated)-parseTs(a.lastUpdated);}).slice(0,20);
   var rel = document.getElementById('dash-recent');
@@ -2972,24 +3002,29 @@ function checkShiftNotifications() {
   }
 }
 
-// ── Overdue COBC 4 alert (3+ days out) ───────────────────────────────────────
+// ── Overdue inventory alert (items out 3+ days) ───────────────────────────────
 function checkOverdueCobc4() {
-  var carItem = items.find(function(i){ return isCarItem(i.name); });
-  if (!carItem || carItem.status !== 'OUT' || !carItem.lastUpdated) return;
-  var lastTs = parseTs(carItem.lastUpdated);
-  if (!lastTs) return;
-  var daysSince = (Date.now() - lastTs) / (1000 * 60 * 60 * 24);
-  if (daysSince < 3) return;
   var myIdNum = loggedInMember ? parseInt(String(loggedInMember.id), 10) : null;
-  var isAdm = userLevel >= 3 || myIdNum === 38;
+  var isAdm = userLevel >= 3;
   var isRecipient = myIdNum && _alertRecipients.indexOf(myIdNum) >= 0;
   if (!isAdm && !isRecipient) return;
-  var key = 'overdue_' + Math.floor(daysSince);
+  // Find all non-car inventory items checked OUT for 3+ days
+  var overdue = items.filter(function(i) {
+    if (isCarItem(i.name)) return false; // car has its own system
+    if (i.status !== 'OUT' || !i.lastUpdated) return false;
+    var lastTs = parseTs(i.lastUpdated);
+    if (!lastTs) return false;
+    var daysSince = (Date.now() - lastTs) / (1000 * 60 * 60 * 24);
+    return daysSince >= 3;
+  });
+  if (!overdue.length) return;
+  var key = 'overdue_inv_' + new Date().toDateString();
   if (_firedNotifs[key]) return;
   _firedNotifs[key] = true;
-  var days = Math.floor(daysSince);
-  fireNotif('⚠️ COBC 4 Overdue', 'COBC 4 has been out for ' + days + ' days!', 'overdue', 'car');
-  showToast('⚠️ COBC 4 out for ' + days + ' days!');
+  var names = overdue.slice(0, 3).map(function(i){ return i.name; }).join(', ');
+  if (overdue.length > 3) names += ' +' + (overdue.length - 3) + ' more';
+  fireNotif('⚠️ Inventory Overdue', overdue.length + ' item(s) out 72+ hrs: ' + names, 'overdue-inv', 'inventory');
+  showToast('⚠️ ' + overdue.length + ' item(s) out 72+ hours');
 }
 
 // ── Ending-soon banner HTML builder ──────────────────────────────────────────
