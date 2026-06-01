@@ -64,8 +64,8 @@ html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Ar
 .tab.active{color:#1a3a5c;border-bottom-color:#1a3a5c}
 .tab-badge{position:absolute;top:4px;right:calc(50% - 18px);background:#c0392b;color:#fff;font-size:9px;font-weight:700;min-width:15px;height:15px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px}
 #content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.page{display:none;padding:14px;animation:pageIn .22s ease both}
-@keyframes pageIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.page{display:none;padding:14px;animation:pageIn .18s ease both}
+@keyframes pageIn{from{opacity:0}to{opacity:1}}
 .page.active{display:block}
 .section-label{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;margin-top:18px}
 .section-label:first-child{margin-top:0}
@@ -1021,25 +1021,27 @@ function fireConfetti() {
 
 // ── Pull-to-refresh ───────────────────────────────────────────────────────────
 (function() {
-  var startY = 0, pulling = false, threshold = 220;
+  var startY = 0, pulling = false, threshold = 220, ptrShown = false;
   var indicator = document.createElement('div');
-  indicator.style.cssText = 'position:fixed;top:0;left:50%;transform:translateX(-50%) translateY(-60px);background:#1a3a5c;color:#fff;padding:8px 20px;border-radius:0 0 20px 20px;font-size:13px;font-weight:700;z-index:9990;transition:transform .2s ease;pointer-events:none';
+  indicator.style.cssText = 'position:fixed;top:0;left:50%;transform:translateX(-50%) translateY(-60px);background:#1a3a5c;color:#fff;padding:8px 20px;border-radius:0 0 20px 20px;font-size:13px;font-weight:700;z-index:9990;transition:transform .2s ease;pointer-events:none;white-space:nowrap';
   indicator.textContent = '↓ Pull to refresh';
   document.body.appendChild(indicator);
-  document.addEventListener('touchstart', function(e){ startY = e.touches[0].clientY; pulling = window.scrollY === 0; }, {passive:true});
+  document.addEventListener('touchstart', function(e){ startY = e.touches[0].clientY; pulling = window.scrollY === 0; ptrShown = false; }, {passive:true});
 
   document.addEventListener('touchmove', function(e){
     if (!pulling) return;
     var dist = e.touches[0].clientY - startY;
-    if (dist > 60 && dist < threshold + 40) {
-      indicator.style.transform = 'translateX(-50%) translateY(' + Math.min(dist - 40, 20) + 'px)';
+    if (dist > 60) {
+      if (!ptrShown) { indicator.style.transform = 'translateX(-50%) translateY(0px)'; ptrShown = true; }
       indicator.textContent = dist > threshold ? '↑ Release to refresh' : '↓ Pull to refresh';
+    } else if (ptrShown) {
+      indicator.style.transform = 'translateX(-50%) translateY(-60px)'; ptrShown = false;
     }
   }, {passive:true});
   document.addEventListener('touchend', function(e){
     var dist = e.changedTouches[0].clientY - startY;
     indicator.style.transform = 'translateX(-50%) translateY(-60px)';
-    if (pulling && dist > threshold) { setTimeout(function(){ if(typeof loadData==='function') loadData(); }, 200); }
+    if (pulling && dist > threshold) { haptic('heavy'); playSound('refresh'); setTimeout(function(){ if(typeof loadData==='function') loadData(); }, 200); }
     pulling = false;
   }, {passive:true});
 })();
@@ -1181,7 +1183,57 @@ function haptic(type) {
   if (type === 'light') navigator.vibrate(15);
   else if (type === 'success') navigator.vibrate([20, 50, 20]);
   else if (type === 'error') navigator.vibrate([40, 30, 40, 30, 40]);
+  else if (type === 'heavy') navigator.vibrate(60);
   else navigator.vibrate(25);
+}
+
+var _audioCtx = null;
+function getAudioCtx() {
+  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return _audioCtx;
+}
+function playSound(type) {
+  try {
+    var ctx = getAudioCtx();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    if (type === 'success') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(520, ctx.currentTime);
+      osc.frequency.setValueAtTime(780, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.25, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.35);
+    } else if (type === 'error') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(180, ctx.currentTime);
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.3);
+    } else if (type === 'click') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(400, ctx.currentTime);
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.08);
+    } else if (type === 'refresh') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(300, ctx.currentTime);
+      osc.frequency.linearRampToValueAtTime(600, ctx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.2);
+    } else if (type === 'submit') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(440, ctx.currentTime);
+      osc.frequency.setValueAtTime(660, ctx.currentTime + 0.08);
+      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.18);
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
+    }
+  } catch(e) {}
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1539,7 +1591,7 @@ function showPage(page, btn) {
   // Tap animation + haptic
   var tabEl = btn || document.querySelector('.tab[data-page="'+page+'"]');
   if (tabEl) {
-    haptic('light');
+    haptic('light'); playSound('click');
     tabEl.style.transition = 'transform .08s ease';
     tabEl.style.transform = 'scale(0.82)';
     setTimeout(function() {
@@ -2106,6 +2158,7 @@ var blocked = [];
     if (action === 'OUT' && item.status === 'OUT') blocked.push(item.name + ' (already OUT)');
   });
   if (blocked.length > 0) {
+    haptic('error'); playSound('error');
     alert('Cannot check ' + action + ': ' + blocked.join(', ') + '. Contact BC-38 if you need help.');
     return;
   }
@@ -2121,7 +2174,7 @@ var blocked = [];
     });
   })).then(function(){
     updateStats(); renderInventory(); renderDashboard();
-    haptic('success');
+    haptic('success'); playSound('success');
     showToast('✓ '+itemsCopy.length+' item'+(itemsCopy.length>1?'s':'')+' checked '+action);
     // ── Fire inventory notification + log event for other dispatch/admin users ──
     var itemNames = itemsCopy.map(function(i){ return i.name; }).join(', ');
@@ -2315,6 +2368,7 @@ function doSubmitChecklist() {
     .then(function(d) {
       if (d.success) {
         closeSubmitChecklist();
+        haptic('success'); playSound('submit');
         showToast('✅ Checklist submitted — BC-' + bc);
         renderChkItems();
       } else {
@@ -2362,6 +2416,7 @@ function submitReport(){
         if(idx2>=0){ items[idx2].ccnc=cncNote; items[idx2].isCNC=true; items[idx2].cncNote=note?rptType+': '+note:rptType; }
         updateStats();renderInventory();renderDashboard();
       }
+      haptic('success'); playSound('submit');
       showToast('Report submitted');
       document.getElementById('rpt-item').value='';document.getElementById('rpt-member').value='';document.getElementById('rpt-note').value='';
       document.querySelectorAll('.rt-btn').forEach(function(b){b.classList.remove('sel');});rptType='';
