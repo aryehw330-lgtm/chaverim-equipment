@@ -3464,6 +3464,7 @@ function initNotifications() {
   // Do NOT auto-prompt — member opts in from Members tab
   if (_notifTimer) clearInterval(_notifTimer);
   _notifTimer = setInterval(function(){
+    if (document.hidden) return; // don't poll when app is backgrounded
     checkShiftNotifications();
     checkInventoryNotifications();
   }, 30000); // every 30 sec
