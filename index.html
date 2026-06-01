@@ -396,7 +396,6 @@ body.dark .recent-card{background:var(--surface)}
     <div class="h-right">
       <span class="stat-pill" id="stat-out-pill" style="display:none"></span>
       <button id="sync-btn" onclick="loadData()" title="Sync" style="background:none;border:none;color:rgba(255,255,255,.7);font-size:16px;cursor:pointer;padding:4px 6px;line-height:1">↻</button>
-      <button onclick="toggleDarkMode()" id="dark-btn" style="background:none;border:none;color:rgba(255,255,255,.7);font-size:15px;cursor:pointer;padding:4px 6px;line-height:1" title="Dark mode">🌙</button>
       <button onclick="logout()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">Out</button>
     </div>
   </div>
@@ -431,6 +430,28 @@ body.dark .recent-card{background:var(--surface)}
       <div class="section-label">🕐 Recent Activity</div>
       <div id="dash-recent"></div>
       <div id="dash-overdue-wrap" style="display:none;margin-top:14px"></div>
+      <!-- Quick Settings -->
+      <div style="margin-top:20px;background:var(--surface);border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.08)">
+        <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">⚙️ Quick Settings</div>
+        <!-- Notifications -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--text)">🔔 Notifications</div>
+            <div id="notif-setting-sub" style="font-size:11px;color:var(--text3);margin-top:2px">Tap to enable</div>
+          </div>
+          <button id="notif-toggle-btn" onclick="handleNotifToggle()" style="padding:7px 16px;border-radius:20px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:#e8f5e9;color:#2e7d32">Enable</button>
+        </div>
+        <!-- Dark mode -->
+        <div style="padding:10px 0 4px">
+          <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px">🌙 Display Mode</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px" id="theme-btns">
+            <button onclick="setThemeMode('auto')"  id="theme-auto"  style="padding:8px 4px;border-radius:10px;border:2px solid #ddd;background:#fff;color:#555;font-size:12px;font-weight:700;cursor:pointer">Auto</button>
+            <button onclick="setThemeMode('light')" id="theme-light" style="padding:8px 4px;border-radius:10px;border:2px solid #ddd;background:#fff;color:#555;font-size:12px;font-weight:700;cursor:pointer">☀️ Light</button>
+            <button onclick="setThemeMode('dark')"  id="theme-dark"  style="padding:8px 4px;border-radius:10px;border:2px solid #ddd;background:#fff;color:#555;font-size:12px;font-weight:700;cursor:pointer">🌙 Dark</button>
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-top:6px">Auto follows your phone's sunset setting</div>
+        </div>
+      </div>
     </div>
     <!-- INVENTORY -->
     <div class="page" id="page-inventory">
@@ -886,19 +907,66 @@ function checkPin() {
 }
 document.getElementById('pin-input').addEventListener('keydown', function(e){ if(e.key==='Enter') checkPin(); });
 
-// ── Dark mode ─────────────────────────────────────────────────────────────────
-function toggleDarkMode() {
-  var isDark = document.body.classList.toggle('dark');
-  localStorage.setItem('cobc_dark', isDark ? '1' : '0');
-  document.getElementById('dark-btn').textContent = isDark ? '☀️' : '🌙';
+// ── Theme mode (auto / light / dark) ─────────────────────────────────────────
+var _themeMode = localStorage.getItem('cobc_theme') || 'auto';
+var _systemDarkMQ = window.matchMedia('(prefers-color-scheme: dark)');
+
+function applyTheme() {
+  var isDark = _themeMode === 'dark' || (_themeMode === 'auto' && _systemDarkMQ.matches);
+  document.body.classList.toggle('dark', isDark);
 }
-(function() {
-  if (localStorage.getItem('cobc_dark') === '1') {
-    document.body.classList.add('dark');
-    var btn = document.getElementById('dark-btn');
-    if (btn) btn.textContent = '☀️';
+function setThemeMode(mode) {
+  _themeMode = mode;
+  localStorage.setItem('cobc_theme', mode);
+  applyTheme();
+  renderDashboardSettings();
+}
+// Listen for system theme changes (sunset/sunrise)
+_systemDarkMQ.addEventListener('change', function() {
+  if (_themeMode === 'auto') applyTheme();
+});
+// Apply on load
+applyTheme();
+
+function renderDashboardSettings() {
+  // Update theme buttons
+  var modes = ['auto','light','dark'];
+  modes.forEach(function(m) {
+    var btn = document.getElementById('theme-'+m);
+    if (!btn) return;
+    var active = _themeMode === m;
+    btn.style.borderColor = active ? '#1a3a5c' : '#ddd';
+    btn.style.background  = active ? '#1a3a5c' : (document.body.classList.contains('dark') ? '#1a2840' : '#fff');
+    btn.style.color       = active ? '#fff'    : (document.body.classList.contains('dark') ? '#8aa8c8' : '#555');
+  });
+  // Update notification button
+  var sub = document.getElementById('notif-setting-sub');
+  var btn = document.getElementById('notif-toggle-btn');
+  if (!('Notification' in window)) {
+    if (sub) sub.textContent = 'Not supported on this browser';
+    if (btn) { btn.textContent = 'N/A'; btn.style.background='#f0f0f0'; btn.style.color='#aaa'; }
+    return;
   }
-})();
+  var perm = Notification.permission;
+  if (perm === 'granted') {
+    if (sub) sub.textContent = 'You\'ll be notified about activity';
+    if (btn) { btn.textContent = '✓ On'; btn.style.background='#e8f5e9'; btn.style.color='#2e7d32'; }
+  } else if (perm === 'denied') {
+    if (sub) sub.textContent = 'Blocked — enable in browser settings';
+    if (btn) { btn.textContent = 'Blocked'; btn.style.background='#fdecea'; btn.style.color='#c0392b'; }
+  } else {
+    if (sub) sub.textContent = 'Get alerts when items are checked in/out';
+    if (btn) { btn.textContent = 'Enable'; btn.style.background='#e8f5e9'; btn.style.color='#2e7d32'; }
+  }
+}
+function handleNotifToggle() {
+  if (Notification.permission === 'granted') {
+    showToast('Notifications already enabled');
+  } else {
+    requestNotifPermission();
+    setTimeout(renderDashboardSettings, 1000);
+  }
+}
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── Haptic feedback ───────────────────────────────────────────────────────────
@@ -1387,6 +1455,7 @@ function renderDashboard() {
       +(it.isCNC?'<div class="out-meta" style="color:#e65100">'+esc(it.cncNote||it.ccnc)+'</div>':'')
       +'</div><div style="text-align:right">'+cc+'<div class="out-time">'+fmtTime(it.lastUpdated)+'</div></div></div>';
   }).join('');
+  renderDashboardSettings();
   // ── Overdue inventory banner (items out 72+ hours) ───────────────────────────
   var overdueItems = items.filter(function(i) {
     if (isCarItem(i.name)) return false;
