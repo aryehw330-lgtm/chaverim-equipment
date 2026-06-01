@@ -278,9 +278,14 @@ textarea{resize:vertical;min-height:70px}
         <button id="av-btn-number" onclick="setAvatarDisplay(true)" style="padding:10px;border-radius:10px;border:2px solid #ddd;background:#fff;color:#555;font-size:13px;font-weight:700;cursor:pointer">BC Number</button>
       </div>
     </div>
-    <div style="margin-bottom:20px">
+    <div style="margin-bottom:16px">
       <div style="font-size:12px;font-weight:700;color:#666;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Color</div>
       <div id="avatar-color-swatches" style="display:flex;gap:10px;flex-wrap:wrap"></div>
+    </div>
+    <div style="margin-bottom:20px">
+      <div style="font-size:12px;font-weight:700;color:#666;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Or pick an emoji</div>
+      <div id="avatar-emoji-row" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+      <button id="av-clear-emoji" onclick="clearAvatarEmoji()" style="display:none;margin-top:8px;padding:5px 12px;background:#f5f5f5;color:#555;border:1px solid #ddd;border-radius:8px;font-size:12px;cursor:pointer">✕ Clear emoji</button>
     </div>
     <button onclick="closeAvatarEditor()" style="width:100%;padding:13px;background:#1a3a5c;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer">Save</button>
   </div>
@@ -815,8 +820,10 @@ document.getElementById('pin-input').addEventListener('keydown', function(e){ if
 
 // ── Avatar editor ─────────────────────────────────────────────────────────────
 var _avatarColors = ['#2e7d32','#1565c0','#6a1b9a','#ad1457','#00695c','#e65100','#4527a0','#c62828','#00838f'];
+var _avatarEmojis = ['🤝','🚑','🚨','⛑️','🦺','📻','🔦','🛡️','⭐','🆘','🔑','💪','🙏','🏥'];
 var _avatarEditColor = null;
 var _avatarEditNumber = false;
+var _avatarEditEmoji = null;
 
 function openAvatarEditor() {
   if (!loggedInMember) return;
@@ -1105,7 +1112,10 @@ function loadData() {
         var fullM = members.find(function(m){ return String(m.id||m.unit)===savedMemberId; });
         if (fullM) {
           loggedInMember.carAccess = !!fullM.carAccess;
-          loggedInMember.status = fullM.status || 'Member';
+          loggedInMember.status    = fullM.status || 'Member';
+          loggedInMember.firstName = fullM.firstName || loggedInMember.firstName || '';
+          loggedInMember.lastName  = fullM.lastName  || loggedInMember.lastName  || '';
+          loggedInMember.name      = fullM.name || ((loggedInMember.firstName+' '+loggedInMember.lastName).trim());
           // re-derive userLevel in case it changed
           var statArr2 = loggedInMember.status.split(',').map(function(x){ return x.trim(); });
           if (statArr2.indexOf('Admin') >= 0)               userLevel = 3;
