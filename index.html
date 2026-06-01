@@ -67,7 +67,7 @@ html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Ar
 .page{display:none;padding:14px;animation:pageIn .22s ease both}
 @keyframes pageIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .page.active{display:block}
-.section-label{font-size:12px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;margin-top:18px}
+.section-label{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;margin-top:18px}
 .section-label:first-child{margin-top:0}
 .card{background:var(--surface);border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
 .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
@@ -118,17 +118,17 @@ textarea{resize:vertical;min-height:70px}
 .kpi-label{font-size:10px;font-weight:600;color:#888;margin-top:3px;text-transform:uppercase}
 .alert-card{background:#fff3e0;border-left:4px solid #e65100;border-radius:8px;padding:10px 12px;margin-bottom:8px}
 .alert-card.red{background:#fdecea;border-left-color:#c0392b}
-.alert-name{font-size:13px;font-weight:700;color:#1a1a1a}
-.alert-detail{font-size:12px;color:#666;margin-top:2px}
+.alert-name{font-size:13px;font-weight:700;color:var(--text)}
+.alert-detail{font-size:12px;color:var(--text2);margin-top:2px}
 .out-card{background:#fff;border-radius:10px;padding:11px 13px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
-.out-name{font-size:14px;font-weight:700;color:#1a1a1a}
-.out-meta{font-size:12px;color:#666;margin-top:2px;line-height:1.5}
+.out-name{font-size:14px;font-weight:700;color:var(--text)}
+.out-meta{font-size:12px;color:var(--text2);margin-top:2px;line-height:1.5}
 .out-time{font-size:11px;color:#999;white-space:nowrap;flex-shrink:0}
 .recent-card{background:#fff;border-radius:10px;padding:11px 13px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);display:flex;align-items:flex-start;gap:10px}
 .rdot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px}
 .rdot-in{background:#2e7d32}.rdot-out{background:#c0392b}
-.r-name{font-size:14px;font-weight:600;color:#1a1a1a}
-.r-detail{font-size:12px;color:#555;margin-top:2px;line-height:1.5}
+.r-name{font-size:14px;font-weight:600;color:var(--text)}
+.r-detail{font-size:12px;color:var(--text2);margin-top:2px;line-height:1.5}
 .r-time{font-size:11px;color:#999;white-space:nowrap;flex-shrink:0}
 .filter-row{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
 .filter-row::-webkit-scrollbar{display:none}
@@ -139,9 +139,9 @@ textarea{resize:vertical;min-height:70px}
 .inv-card.fl-miss{border-left:4px solid #c0392b}
 .inv-card.fl-dmg{border-left:4px solid #f57f17}
 .inv-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
-.inv-name{font-size:15px;font-weight:700;color:#1a1a1a;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inv-name{font-size:15px;font-weight:700;color:var(--text);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .inv-badges{display:flex;gap:4px;flex-shrink:0}
-.inv-meta{font-size:12px;color:#666;margin-top:3px}
+.inv-meta{font-size:12px;color:var(--text2);margin-top:3px}
 .inv-cnc{font-size:12px;color:#e65100;margin-top:4px;background:#fff3e0;border-radius:6px;padding:4px 8px}
 .inv-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .btn-in{width:100%;padding:11px;background:#1a3a5c;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer}
@@ -156,8 +156,8 @@ textarea{resize:vertical;min-height:70px}
 .chk-card{background:#fff;border-radius:10px;padding:12px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.07);display:flex;align-items:center;gap:12px}
 .chk-box{width:24px;height:24px;border-radius:6px;border:2px solid #ccc;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff}
 .chk-box.checked{background:#2e7d32;border-color:#2e7d32}
-.chk-name{font-size:14px;font-weight:600;color:#1a1a1a}
-.chk-meta{font-size:12px;color:#666;margin-top:1px}
+.chk-name{font-size:14px;font-weight:600;color:var(--text)}
+.chk-meta{font-size:12px;color:var(--text2);margin-top:1px}
 .chk-summary{background:#e8f4fd;border-radius:10px;padding:12px;margin-bottom:12px}
 .chk-sum-row{display:flex;justify-content:space-between;font-size:13px;color:#333;margin-bottom:4px}
 .chk-sum-row:last-child{margin-bottom:0}
@@ -169,8 +169,8 @@ textarea{resize:vertical;min-height:70px}
 .rt-btn.sel{border-color:#1a3a5c;color:#1a3a5c;background:#eef3f8}
 .mem-card{background:#fff;border-radius:12px;padding:13px;margin-bottom:9px;box-shadow:0 1px 4px rgba(0,0,0,.08);display:flex;align-items:center;gap:12px}
 .mem-av{width:44px;height:44px;background:#1a3a5c;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
-.mem-name{font-size:15px;font-weight:700;color:#1a1a1a}
-.mem-sub{font-size:12px;color:#666;margin-top:2px}
+.mem-name{font-size:15px;font-weight:700;color:var(--text)}
+.mem-sub{font-size:12px;color:var(--text2);margin-top:2px}
 .mem-call{width:40px;height:40px;background:#e8f5e9;border:1.5px solid #a5d6a7;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;text-decoration:none;flex-shrink:0}
 .adm-sec{background:#fff;border-radius:12px;padding:0;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);overflow:hidden}
 .adm-title{font-size:14px;font-weight:700;color:#1a3a5c;padding:14px;margin:0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;border-bottom:1px solid transparent}
@@ -191,7 +191,7 @@ textarea{resize:vertical;min-height:70px}
 /* HOME LOCATION EDITOR */
 .hloc-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0f0}
 .hloc-row:last-child{border-bottom:none}
-.hloc-name{font-size:13px;font-weight:600;color:#1a1a1a;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hloc-name{font-size:13px;font-weight:600;color:var(--text);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hloc-select{flex-shrink:0;width:140px;padding:6px 8px;font-size:12px;border:1.5px solid #ddd;border-radius:8px;background:#fff;color:#1a1a1a;-webkit-appearance:none}
 .hloc-select:focus{border-color:#1a3a5c}
 .hloc-save{padding:6px 12px;font-size:12px;font-weight:700;background:#1a3a5c;color:#fff;border:none;border-radius:8px;cursor:pointer;flex-shrink:0}
@@ -400,13 +400,14 @@ body.dark .recent-card{background:var(--surface)}
     </div>
     <div class="h-right">
       <span class="stat-pill" id="stat-out-pill" style="display:none"></span>
-      <button id="sync-btn" onclick="loadData()" title="Sync" style="background:none;border:none;color:rgba(255,255,255,.7);font-size:16px;cursor:pointer;padding:4px 6px;line-height:1">↻</button>
-      <button onclick="logout()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">Out</button>
+      <button id="sync-btn" onclick="loadData()" title="Sync" style="background:none;border:none;color:rgba(255,255,255,.7);font-size:13px;cursor:pointer;padding:3px 5px;line-height:1">↻</button>
+      <button onclick="logout()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">Sign Out</button>
     </div>
   </div>
   <div id="tabbar">
     <button class="tab active" data-page="dashboard" onclick="showPage('dashboard',this)"><span class="ti">📊</span>Dash</button>
     <button class="tab" data-page="inventory" onclick="showPage('inventory',this)"><span class="ti">📦</span>Inventory</button>
+    <div style="width:1px;background:var(--border);margin:8px 0;flex-shrink:0"></div>
     <button class="tab" data-page="checklist" onclick="showPage('checklist',this)"><span class="ti">✅</span>Checklist<span class="tab-badge" id="issues-badge" style="display:none">0</span></button>
     <button class="tab" data-page="report" onclick="showPage('report',this)"><span class="ti">🚨</span>Report</button>
     <button class="tab" data-page="members" onclick="showPage('members',this)"><span class="ti">👥</span>Members</button>
@@ -3906,7 +3907,7 @@ function renderAlertRecipientsAdmin() {
     var enabled = _alertRecipients.indexOf(idNum) >= 0;
     var nm = ((m.firstName||'')+' '+(m.lastName||m.name||'')).trim() || ('BC-'+idNum);
     return '<div class="car-access-row">'
-      +'<div><div style="font-size:13px;font-weight:600;color:#1a1a1a">BC-'+idNum+' — '+esc(nm)+'</div></div>'
+      +'<div><div style="font-size:13px;font-weight:600;color:var(--text)">BC-'+idNum+' — '+esc(nm)+'</div></div>'
       +'<input type="checkbox"'+(enabled?' checked':'')+' onchange="toggleAlertRecipient(\''+idNum+'\',this.checked)"/>'
       +'</div>';
   }).join('');
