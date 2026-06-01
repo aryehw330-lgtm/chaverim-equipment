@@ -240,6 +240,9 @@ body.dark .adm-title{color:var(--text);background:var(--surface2)}
 body.dark .car-shift-card{background:var(--surface);border-color:var(--border)}
 body.dark .car-cal-day{background:var(--surface);border-color:var(--border)}
 body.dark .car-cal-day.today{background:var(--surface2)}
+body.dark .car-day-num{color:var(--text)}
+body.dark .car-day-num.today-num{color:#7badd4}
+body.dark .car-cal-day.other-month .car-day-num{color:var(--text3)}
 body.dark .chk-card{background:var(--surface)}
 body.dark .out-card{background:var(--surface)}
 body.dark .recent-card{background:var(--surface)}
@@ -387,14 +390,14 @@ body.dark .recent-card{background:var(--surface)}
       <div>
         <div class="h-title">COBC Equipment</div>
         <div class="h-sub" id="h-sub">Bergen County Chaverim</div>
+        <div id="sync-time" style="font-size:9px;color:#5a8aaa;display:none;margin-top:1px"></div>
       </div>
     </div>
     <div class="h-right">
       <span class="stat-pill" id="stat-out-pill" style="display:none"></span>
-      <span id="sync-time" style="font-size:10px;color:#7badd4;display:none"></span>
-      <button id="sync-btn" onclick="loadData()" title="Sync">↻</button>
-      <button onclick="toggleDarkMode()" id="dark-btn" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 10px;font-size:15px;cursor:pointer" title="Toggle dark mode">🌙</button>
-      <button onclick="logout()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;font-size:12px;font-weight:600;cursor:pointer">Sign Out</button>
+      <button id="sync-btn" onclick="loadData()" title="Sync" style="background:none;border:none;color:rgba(255,255,255,.7);font-size:16px;cursor:pointer;padding:4px 6px;line-height:1">↻</button>
+      <button onclick="toggleDarkMode()" id="dark-btn" style="background:none;border:none;color:rgba(255,255,255,.7);font-size:15px;cursor:pointer;padding:4px 6px;line-height:1" title="Dark mode">🌙</button>
+      <button onclick="logout()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">Out</button>
     </div>
   </div>
   <div id="tabbar">
