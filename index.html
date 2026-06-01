@@ -1074,12 +1074,10 @@ document.addEventListener('touchstart', function(e) {
     showRing(card);
     _holdTimer = setTimeout(function() {
       removeRing();
-      var nameEl = card.querySelector('.out-name');
-      if (!nameEl) return;
-      var it = items.find(function(i){ return i.name === nameEl.textContent && i.status === 'OUT'; });
-      if (!it) return;
+      var row = parseInt(card.getAttribute('data-row'));
+      if (!row) return;
       haptic('success');
-      openCheckout(it.row);
+      openCheckout(row);
     }, HOLD_MS);
   }, {passive:true});
 
@@ -1757,7 +1755,7 @@ function renderDashboard() {
   ow.style.display = out.length ? 'block' : 'none';
   document.getElementById('dash-out').innerHTML = out.map(function(it) {
     var cc = it.isCNC ? '<span class="badge badge-cnc">CNC</span>' : '<span class="badge badge-in">CC</span>';
-    return '<div class="out-card"><div style="flex:1;min-width:0"><div class="out-name">'+esc(it.name)+'</div>'
+    return '<div class="out-card" data-row="'+it.row+'"><div style="flex:1;min-width:0"><div class="out-name">'+esc(it.name)+'</div>'
       +'<div class="out-meta">'+esc(it.homeLocation)+(it.member?' · '+fmtMemberBadge(it.member):'')+(it.call?' · Call #'+esc(it.call):'')+'</div>'
       +(it.isCNC?'<div class="out-meta" style="color:#e65100">'+esc(it.cncNote||it.ccnc)+'</div>':'')
       +'</div><div style="text-align:right">'+cc+'<div class="out-time">'+fmtTime(it.lastUpdated)+'</div></div></div>';
