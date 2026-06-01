@@ -59,8 +59,8 @@ html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Ar
 #sync-btn{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer}
 #tabbar{display:flex;background:var(--tabbar);border-bottom:2px solid var(--border);flex-shrink:0;overflow-x:auto;scrollbar-width:none}
 #tabbar::-webkit-scrollbar{display:none}
-.tab{flex:1;min-width:48px;max-width:80px;padding:10px 2px 8px;border:none;background:none;color:var(--text3);font-size:9px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;position:relative;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tab .ti{font-size:18px}
+.tab{flex:1;min-width:48px;max-width:80px;padding:10px 2px 8px;border:none;background:none;color:var(--text3);font-size:9px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;position:relative;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;overflow:visible;text-overflow:ellipsis;transition:transform .15s cubic-bezier(.34,1.56,.64,1),color .1s;transform-origin:bottom center}
+.tab .ti{font-size:18px;transition:font-size .15s cubic-bezier(.34,1.56,.64,1)}
 .tab.active{color:#1a3a5c;border-bottom-color:#1a3a5c}
 .tab-badge{position:absolute;top:4px;right:calc(50% - 18px);background:#c0392b;color:#fff;font-size:9px;font-weight:700;min-width:15px;height:15px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px}
 #content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
@@ -812,6 +812,80 @@ body.dark .recent-card{background:var(--surface)}
     setTimeout(function(){ splash.style.display = 'none'; }, 400);
   }, 1400);
 })();
+
+// ── Tab bar magnification (iOS 18-style swipe) ────────────────────────────────
+(function() {
+  var tabbar = document.getElementById('tabbar');
+  if (!tabbar) return;
+  var dragging = false, lastHighlighted = null;
+
+  function getTabAt(x) {
+    var tabs = tabbar.querySelectorAll('.tab');
+    for (var i = 0; i < tabs.length; i++) {
+      var r = tabs[i].getBoundingClientRect();
+      if (x >= r.left && x <= r.right) return tabs[i];
+    }
+    return null;
+  }
+
+  function setMag(hoveredTab) {
+    var tabs = tabbar.querySelectorAll('.tab');
+    tabs.forEach(function(tab) {
+      var dist = 0;
+      if (hoveredTab) {
+        var hr = hoveredTab.getBoundingClientRect();
+        var tr = tab.getBoundingClientRect();
+        var hc = hr.left + hr.width/2;
+        var tc = tr.left + tr.width/2;
+        dist = Math.abs(hc - tc);
+      }
+      var maxDist = 100;
+      var scale = hoveredTab ? Math.max(1, 1.45 - (dist / maxDist) * 0.45) : 1;
+      var iconSize = hoveredTab ? Math.max(18, 18 + (scale - 1) * 26) : 18;
+      tab.style.transform = 'scale(' + scale + ')';
+      tab.style.color = (tab === hoveredTab) ? '#1a3a5c' : '';
+      var icon = tab.querySelector('.ti');
+      if (icon) icon.style.fontSize = iconSize + 'px';
+    });
+  }
+
+  tabbar.addEventListener('touchstart', function(e) {
+    var tab = getTabAt(e.touches[0].clientX);
+    if (!tab) return;
+    dragging = true;
+    lastHighlighted = tab;
+    setMag(tab);
+    haptic('light');
+  }, {passive: true});
+
+  tabbar.addEventListener('touchmove', function(e) {
+    if (!dragging) return;
+    var tab = getTabAt(e.touches[0].clientX);
+    if (tab && tab !== lastHighlighted) {
+      lastHighlighted = tab;
+      setMag(tab);
+      haptic('light');
+    }
+  }, {passive: true});
+
+  tabbar.addEventListener('touchend', function(e) {
+    if (!dragging) return;
+    dragging = false;
+    if (lastHighlighted) {
+      var page = lastHighlighted.dataset.page;
+      if (page) showPage(page, lastHighlighted);
+    }
+    setMag(null); // reset all
+    lastHighlighted = null;
+  }, {passive: true});
+
+  tabbar.addEventListener('touchcancel', function() {
+    dragging = false;
+    setMag(null);
+    lastHighlighted = null;
+  }, {passive: true});
+})();
+// ─────────────────────────────────────────────────────────────────────────────
 
 // ── Pull-to-refresh ───────────────────────────────────────────────────────────
 (function() {
