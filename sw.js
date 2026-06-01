@@ -18,8 +18,8 @@ self.addEventListener('message', function(event) {
         delete _scheduled[d.id];
         self.registration.showNotification(d.title, {
           body: d.body,
-          icon: '/icon-192.png',
-          badge: '/icon-192.png',
+          icon: './icon-192.png',
+          badge: './icon-192.png',
           tag: d.tag || d.id,
           requireInteraction: true,
           data: { page: d.page }
