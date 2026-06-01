@@ -22,6 +22,8 @@ html,body{height:100%;max-height:100%;font-family:-apple-system,BlinkMacSystemFo
 #pin-gate.hidden{display:none}
 .pin-card{background:#fff;border-radius:16px;padding:2rem 1.5rem;width:min(320px,90vw);text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.2);animation:cardIn .5s cubic-bezier(.34,1.56,.64,1) both}
 @keyframes cardIn{from{opacity:0;transform:translateY(30px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes springIn{from{opacity:0;transform:scale(.85) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes ripple{from{transform:scale(0);opacity:.35}to{transform:scale(2.5);opacity:0}}
 .pin-logo{font-size:40px;margin-bottom:12px;animation:logoIn .6s cubic-bezier(.34,1.56,.64,1) .1s both}
 @keyframes logoIn{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
 @keyframes splashPulse{0%,100%{transform:scale(1);opacity:.08}50%{transform:scale(1.15);opacity:.18}}
@@ -103,7 +105,9 @@ textarea{resize:vertical;min-height:70px}
 #toast.dismissing{opacity:0;transform:translateX(-50%) translateY(-40px)}
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center;padding:16px}
 .modal-bg.open{display:flex}
-.modal-box{background:#fff;border-radius:20px;padding:1.75rem 1.5rem 1.75rem;width:100%;max-width:480px;max-height:90dvh;overflow-y:auto;position:relative;box-shadow:0 8px 40px rgba(0,0,0,.2)}
+.modal-box{background:#fff;border-radius:20px;padding:1.75rem 1.5rem 1.75rem;width:100%;max-width:480px;max-height:90dvh;overflow-y:auto;position:relative;box-shadow:0 8px 40px rgba(0,0,0,.2);animation:springIn .35s cubic-bezier(.34,1.56,.64,1) both}
+.ripple-btn{position:relative;overflow:hidden}
+.ripple-btn .ripple-el{position:absolute;border-radius:50%;background:rgba(255,255,255,.4);pointer-events:none;animation:ripple .5s ease-out forwards}
 .modal-bar{display:none}
 .modal-close{position:absolute;top:1rem;right:1rem;background:#f0f0f0;border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;color:#666;display:flex;align-items:center;justify-content:center}
 .modal-title{font-size:19px;font-weight:700;color:#1a3a5c;margin-bottom:4px;padding-right:40px}
@@ -299,7 +303,7 @@ body.dark .recent-card{background:var(--surface)}
 
 <!-- ITEM HISTORY DRAWER -->
 <div id="item-history-drawer" style="display:none;position:fixed;inset:0;z-index:9995;background:rgba(0,0,0,.5);align-items:flex-end;justify-content:center">
-  <div style="background:var(--surface);border-radius:18px 18px 0 0;padding:20px 20px 36px;width:100%;max-width:500px;max-height:75vh;overflow-y:auto;animation:cardIn .3s ease both">
+  <div style="background:var(--surface);border-radius:18px 18px 0 0;padding:20px 20px 36px;width:100%;max-width:500px;max-height:75vh;overflow-y:auto;animation:springIn .35s cubic-bezier(.34,1.56,.64,1) both">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
       <div style="font-size:16px;font-weight:700;color:var(--navy)" id="item-hist-title">Item History</div>
       <button onclick="closeItemHistory()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text3)">✕</button>
@@ -1045,6 +1049,46 @@ function fireConfetti() {
     pulling = false;
   }, {passive:true});
 })();
+
+// ── Ripple effect on buttons ──────────────────────────────────────────────────
+document.addEventListener('touchstart', function(e) {
+  var btn = e.target.closest('button, .btn, .fchip, .tab, .ltab');
+  if (!btn) return;
+  btn.classList.add('ripple-btn');
+  var r = btn.getBoundingClientRect();
+  var size = Math.max(r.width, r.height);
+  var x = e.touches[0].clientX - r.left - size/2;
+  var y = e.touches[0].clientY - r.top - size/2;
+  var el = document.createElement('span');
+  el.className = 'ripple-el';
+  el.style.cssText = 'width:'+size+'px;height:'+size+'px;left:'+x+'px;top:'+y+'px';
+  btn.appendChild(el);
+  setTimeout(function(){ el.remove(); }, 500);
+}, {passive:true});
+
+// ── Press and hold on out-cards for quick check-in ───────────────────────────
+var _holdTimer = null;
+document.addEventListener('touchstart', function(e) {
+  var card = e.target.closest('.out-card');
+  if (!card) return;
+  _holdTimer = setTimeout(function() {
+    var itemName = card.querySelector('.out-name');
+    if (!itemName) return;
+    var it = items.find(function(i){ return i.name === itemName.textContent && i.status === 'OUT'; });
+    if (!it) return;
+    haptic('success');
+    var confirm = window.confirm('Check IN "' + it.name + '"?');
+    if (!confirm) return;
+    var member = loggedInMember ? loggedInMember.id : '';
+    postJ({action:'checkInOut', row:it.row, status:'IN', member:member, call:'', ccSel:'', cncNote:'', loggedBy:null})
+    .then(function(d) {
+      if (d.success) { it.status='IN'; updateStats(); renderInventory(); renderDashboard(); haptic('success'); showToast('✓ '+it.name+' checked IN'); }
+      else showToast('Error: '+(d.error||'Unknown'));
+    }).catch(function(){ showToast('Network error'); });
+  }, 600);
+}, {passive:true});
+document.addEventListener('touchend', function() { clearTimeout(_holdTimer); }, {passive:true});
+document.addEventListener('touchmove', function() { clearTimeout(_holdTimer); }, {passive:true});
 
 const BASE_URL = 'https://script.google.com/macros/s/AKfycbwjnEHbt8v1aVKUO7361uc8XTodz5yBWGKoRgQ3H26UFOJeAQarVQAGaEuYj277Ed14rw/exec';
 var userLevel = 0;
