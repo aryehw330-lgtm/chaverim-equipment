@@ -773,6 +773,14 @@ body.dark .recent-card{background:var(--surface)}
       </div>
       <!-- Equipment Status -->
       <div class="adm-sec">
+        <div class="adm-title" onclick="toggleAdm(this);if(this.classList.contains('open'))renderQRLinks();">🖨️ QR Code Stickers<span class="toggle">▼</span></div>
+        <div class="adm-body">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Tap a link to open the printable QR sticker for that item.</div>
+          <div class="search-wrap" style="margin-bottom:10px"><span class="search-icon">🔍</span><input id="qr-search" type="text" placeholder="Search items..." oninput="renderQRLinks()" style="padding-left:36px;font-size:14px"/></div>
+          <div id="qr-link-list"></div>
+        </div>
+      </div>
+      <div class="adm-sec">
         <div class="adm-title open" onclick="toggleAdm(this)">📦 Equipment Status (<span id="adm-item-count">0</span>)<span class="toggle">▼</span></div>
         <div class="adm-body open">
           <div class="search-wrap" style="margin-bottom:10px"><span class="search-icon">🔍</span><input id="adm-item-search" type="text" placeholder="Search items..." oninput="renderAdminItems()" style="padding-left:36px;font-size:14px"/></div>
@@ -2663,6 +2671,23 @@ function setAdmFilter(f, btn) {
   if (btn) btn.classList.add('active');
   renderAdminItems();
 }
+function renderQRLinks() {
+  var el = document.getElementById('qr-link-list');
+  if (!el) return;
+  var q = ((document.getElementById('qr-search') || {}).value || '').toLowerCase().trim();
+  var filtered = items.filter(function(it) {
+    return it.equipStatus !== 'Not Active' && (!q || it.name.toLowerCase().indexOf(q) >= 0);
+  }).sort(function(a,b){ return a.name.localeCompare(b.name, undefined, {numeric:true, sensitivity:'base'}); });
+  if (!filtered.length) { el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:8px 0">No items found.</div>'; return; }
+  el.innerHTML = filtered.map(function(it) {
+    var qrUrl = BASE_URL + '?item=' + encodeURIComponent(it.name) + '&view=qr';
+    return '<a href="'+qrUrl+'" target="_blank" style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);text-decoration:none;gap:10px">'
+      +'<div style="font-size:13px;font-weight:600;color:var(--text);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(it.name)+'</div>'
+      +'<div style="font-size:11px;color:#1a3a5c;font-weight:700;flex-shrink:0;background:#eef2f8;padding:4px 10px;border-radius:6px">🖨️ Print</div>'
+      +'</a>';
+  }).join('');
+}
+
 function renderAdminItems() {
   var q = (document.getElementById('adm-item-search').value || '').toLowerCase().trim();
   var filtered = items.filter(function(it) {
