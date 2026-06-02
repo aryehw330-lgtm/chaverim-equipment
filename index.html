@@ -396,13 +396,11 @@ body.dark .recent-card{background:var(--surface)}
       <div>
         <div class="h-title">COBC Equipment</div>
         <div class="h-sub" id="h-sub">Bergen County Chaverim</div>
+        <button id="sync-btn" onclick="loadData()" title="Sync" style="background:none;border:none;color:rgba(255,255,255,.45);font-size:11px;cursor:pointer;padding:0;margin-top:3px;line-height:1;letter-spacing:.3px">↻ Sync</button>
       </div>
     </div>
     <div class="h-right" style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-      <div style="display:flex;align-items:center;gap:2px">
-        <button id="sync-btn" onclick="loadData()" title="Sync" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:12px;cursor:pointer;padding:2px 4px;line-height:1">↻</button>
-        <button onclick="logout()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">Sign Out</button>
-      </div>
+      <button onclick="logout()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">Sign Out</button>
       <span class="stat-pill" id="stat-out-pill" style="display:none;font-size:11px;padding:3px 10px;"></span>
       <div id="live-clock" style="font-size:13px;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:.5px"></div>
     </div>
