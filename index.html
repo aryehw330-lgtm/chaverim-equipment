@@ -222,7 +222,7 @@ textarea{resize:vertical;min-height:70px}
 .car-shift-card.mine{border-left-color:#1a3a5c;background:#f0f4f8}
 .car-shift-card.active-shift{border-left-color:#c0392b;background:#fef9f9}
 .car-shift-card.done-shift{opacity:0.45;filter:grayscale(40%);border-left-color:#bbb;background:#f5f5f5}
-.car-access-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0}
+.car-access-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
 .car-access-row:last-child{border-bottom:none}
 .car-toggle{position:relative;width:44px;height:24px;flex-shrink:0;display:inline-block}
 .car-toggle input{opacity:0;width:0;height:0;position:absolute}
@@ -3300,14 +3300,14 @@ function renderCarAccessAdmin() {
   var approved = members.filter(function(m){ return m.carAccess; }).length;
   var cntEl = document.getElementById('car-access-count');
   if (cntEl) cntEl.textContent = approved;
-  if (!filtered.length) { el.innerHTML='<div style="color:#aaa;font-size:13px;padding:8px 0">No members found</div>'; return; }
+  if (!filtered.length) { el.innerHTML='<div style="color:var(--text3);font-size:13px;padding:8px 0">No members found</div>'; return; }
   el.innerHTML = filtered.map(function(m) {
     var unit = (m.unit||m.id||'?').toString().replace(/^BC-/i,'');
     var name = m.name||((m.firstName||'')+' '+(m.lastName||'')).trim()||'Unknown';
     var idSafe = esc(String(m.id||m.unit));
     return '<div class="car-access-row">'
-      + '<div><div style="font-size:13px;font-weight:600;color:#1a1a1a">'+esc(name)+'</div>'
-      + '<div style="font-size:11px;color:#888">BC-'+esc(unit)+'</div></div>'
+      + '<div><div style="font-size:13px;font-weight:600;color:var(--text)">'+esc(name)+'</div>'
+      + '<div style="font-size:11px;color:var(--text2)">BC-'+esc(unit)+'</div></div>'
       + '<label class="car-toggle">'
       + '<input type="checkbox" '+(m.carAccess?'checked':'')+' onchange="toggleCarAccess(\''+idSafe+'\',this.checked)"/>'
       + '<span class="car-toggle-slider"></span>'
