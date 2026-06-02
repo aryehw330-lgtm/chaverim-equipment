@@ -2499,9 +2499,15 @@ function renderAdmin(){
   ml.innerHTML='<div style="margin-bottom:10px"><input id="adm-mem-search" type="text" placeholder="Search members..." value="'+esc(sq)+'" oninput="renderAdmin()" style="font-size:14px;padding:10px 12px"/></div>'
     +filtered.map(function(m){
       var unit=m.unit||m.id||'?',name=m.name||((m.firstName||'')+' '+(m.lastName||'')).trim();
-      return '<div class="mem-row"><div class="mem-num">'+esc(unit)+'</div>'
-        +'<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600">'+esc(name)+'</div><div style="font-size:12px;color:#666">'+esc(m.phone||'')+'</div></div>'
-        +'<button onclick="deleteMember(&quot;'+esc(String(m.id||m.unit))+'&quot;)" style="padding:5px 10px;font-size:12px;font-weight:600;border:1.5px solid #ffcdd2;background:#fdecea;color:#c0392b;border-radius:7px;cursor:pointer;flex-shrink:0">Delete</button>'
+      var idSafe=esc(String(m.id||m.unit));
+      return '<div class="mem-row" style="flex-wrap:wrap;gap:6px"><div class="mem-num">'+esc(unit)+'</div>'
+        +'<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600">'+esc(name)+'</div>'
+        +'<div style="font-size:12px;color:#666">'+esc(m.phone||'')+'</div>'
+        +'<div style="display:flex;align-items:center;gap:6px;margin-top:5px">'
+        +'<input id="email-'+idSafe+'" type="email" placeholder="Add Gmail..." value="'+esc(m.email||'')+'" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:6px;flex:1;min-width:0;color:#333"/>'
+        +'<button onclick="saveMemberEmail(&quot;'+idSafe+'&quot;)" style="padding:4px 10px;font-size:12px;font-weight:600;background:#1a3a5c;color:#fff;border:none;border-radius:6px;cursor:pointer;white-space:nowrap">Save</button>'
+        +'</div></div>'
+        +'<button onclick="deleteMember(&quot;'+idSafe+'&quot;)" style="padding:5px 10px;font-size:12px;font-weight:600;border:1.5px solid #ffcdd2;background:#fdecea;color:#c0392b;border-radius:7px;cursor:pointer;flex-shrink:0;align-self:flex-start">Delete</button>'
         +'</div>';
     }).join('');
 }
@@ -2518,6 +2524,23 @@ function deleteMember(memberId) {
   }).catch(function(){ showToast('Network error'); })
   .finally(function(){ showLoad(false); });
 }
+function saveMemberEmail(memberId) {
+  var input = document.getElementById('email-'+memberId);
+  if (!input) return;
+  var email = input.value.trim();
+  showLoad(true);
+  postJ({action:'setMemberEmail', memberId:memberId, email:email})
+  .then(function(data){
+    if(data.success){
+      var m = members.find(function(m){ return String(m.id||m.unit)===String(memberId); });
+      if(m) m.email = email;
+      haptic('success');
+      showToast(email ? '✓ Email saved for BC-'+memberId : 'Email cleared');
+    } else { showToast('Error: '+(data.error||'Unknown')); }
+  }).catch(function(){ showToast('Network error'); })
+  .finally(function(){ showLoad(false); });
+}
+
 function addItem(){
   var name=document.getElementById('add-name').value.trim();
   var loc=document.getElementById('add-loc').value;
@@ -2774,11 +2797,11 @@ function renderAdmChkHistory() {
         var bcNum = (e.bc||'').replace(/^BC-/i,'').trim();
         var mObj = members.find(function(m){ return String(m.id||m.unit)===bcNum; });
         var mName = mObj?(mObj.firstName||mObj.name||''): '';
-        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f8f8f8">'
-          +'<div style="font-size:12px"><b>BC-'+esc(e.bc||'')+'</b>'+(mName?' — '+esc(mName):'')+'</div>'
-          +'<div style="font-size:11px;color:#888">'+esc(e.timestamp||'')+'</div></div>';
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)">'
+          +'<div style="font-size:12px;color:var(--text)"><b>BC-'+esc(e.bc||'')+'</b>'+(mName?' — '+esc(mName):'')+'</div>'
+          +'<div style="font-size:11px;color:var(--text2)">'+esc(e.timestamp||'')+'</div></div>';
       }).join('');
-      return '<div style="margin-bottom:12px"><div style="font-size:13px;font-weight:700;color:#1a3a5c;margin-bottom:4px">📍 '+esc(loc)+'</div>'+rows+'</div>';
+      return '<div style="margin-bottom:12px"><div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:4px">📍 '+esc(loc)+'</div>'+rows+'</div>';
     }).join('');
     el.innerHTML = html;
   }
