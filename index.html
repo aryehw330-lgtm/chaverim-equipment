@@ -16,7 +16,7 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#f4f6f9;--surface:#fff;--surface2:#f0f4f8;--text:#1a1a1a;--text2:#555;--text3:#888;--border:#e0e6ed;--border2:#d0d8e4;--navy:#1a3a5c;--tabbar:#fff}
 body.dark{--bg:#0f1923;--surface:#1a2840;--surface2:#162234;--text:#e0eaf4;--text2:#8aa8c8;--text3:#5a7a9a;--border:#2a3f5a;--border2:#1e3248;--tabbar:#162234}
-html,body{height:100%;max-height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior:none;overflow:hidden;position:fixed;width:100%}
+html,body{height:100%;max-height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#1a3a5c;color:var(--text);-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior:none;overflow:hidden;position:fixed;width:100%;bottom:0}
 #app{display:flex;flex-direction:column;position:fixed;top:0;left:0;right:0;bottom:0;overflow:hidden}
 #pin-gate{position:fixed;inset:0;background:#1a3a5c;z-index:9999;display:flex;align-items:center;justify-content:center}
 #pin-gate.hidden{display:none}
@@ -65,8 +65,8 @@ html,body{height:100%;max-height:100%;font-family:-apple-system,BlinkMacSystemFo
 .tab .ti{font-size:22px}
 .tab.active{color:#1a3a5c;border-bottom-color:#1a3a5c}
 .tab-badge{position:absolute;top:4px;right:calc(50% - 18px);background:#c0392b;color:#fff;font-size:9px;font-weight:700;min-width:15px;height:15px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px}
-#content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:none;background:var(--bg)}
-.page{display:none;padding:14px;padding-bottom:20px;min-height:100%;background:var(--bg);animation:pageIn .18s ease both}
+#content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:none}
+.page{display:none;padding:14px;padding-bottom:20px;animation:pageIn .18s ease both}
 @keyframes pageIn{from{opacity:0}to{opacity:1}}
 .page.active{display:block}
 .section-label{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;margin-top:18px}
@@ -1138,7 +1138,7 @@ function checkPin() {
         localStorage.setItem('cobc_level', userLevel);
         localStorage.removeItem('cobc_member_id');
         document.getElementById('pin-gate').classList.add('hidden');
-        document.getElementById('app').style.display = 'flex';
+        document.getElementById('app').style.display = 'flex'; document.body.style.background = 'var(--tabbar)';
         applyAccessLevel();
         loadData();
         if (errEl) errEl.textContent = '';
