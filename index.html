@@ -746,10 +746,10 @@ body.dark .recent-card{background:var(--surface)}
         <div class="adm-title" onclick="toggleAdm(this)">🗂 Checklist History<span class="toggle">▼</span></div>
         <div class="adm-body">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
-            <div style="font-size:12px;color:#666;flex:1">Latest checklist submission per location.</div>
+            <div style="font-size:12px;color:var(--text2);flex:1">Latest checklist submission per location.</div>
             <div style="display:flex;align-items:center;gap:6px">
-              <label style="font-size:12px;color:#555;white-space:nowrap">📅 Filter by date:</label>
-              <input type="date" id="adm-chk-date-filter" oninput="renderAdmChkHistory()" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:8px;color:#1a3a5c"/>
+              <label style="font-size:12px;color:var(--text2);white-space:nowrap">📅 Filter by date:</label>
+              <input type="date" id="adm-chk-date-filter" oninput="renderAdmChkHistory()" style="font-size:12px;padding:4px 8px;border:1px solid var(--border2);border-radius:8px;color:var(--text);background:var(--surface)"/>
             </div>
           </div>
           <div id="adm-chk-history"></div>
@@ -2504,7 +2504,7 @@ function renderAdmin(){
         +'<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600">'+esc(name)+'</div>'
         +'<div style="font-size:12px;color:#666">'+esc(m.phone||'')+'</div>'
         +'<div style="display:flex;align-items:center;gap:6px;margin-top:5px">'
-        +'<input id="email-'+idSafe+'" type="email" placeholder="Add Gmail..." value="'+esc(m.email||'')+'" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:6px;flex:1;min-width:0;color:#333"/>'
+        +'<input id="email-'+idSafe+'" type="email" placeholder="Add Gmail..." value="'+esc(m.email||'')+'" style="font-size:12px;padding:4px 8px;border:1px solid var(--border2);border-radius:6px;flex:1;min-width:0;color:var(--text);background:var(--surface)"/>'
         +'<button onclick="saveMemberEmail(&quot;'+idSafe+'&quot;)" style="padding:4px 10px;font-size:12px;font-weight:600;background:#1a3a5c;color:#fff;border:none;border-radius:6px;cursor:pointer;white-space:nowrap">Save</button>'
         +'</div></div>'
         +'<button onclick="deleteMember(&quot;'+idSafe+'&quot;)" style="padding:5px 10px;font-size:12px;font-weight:600;border:1.5px solid #ffcdd2;background:#fdecea;color:#c0392b;border-radius:7px;cursor:pointer;flex-shrink:0;align-self:flex-start">Delete</button>'
@@ -2786,7 +2786,7 @@ function renderAdmChkHistory() {
       } catch(e) { return true; }
     });
     if (!filtered.length) {
-      el.innerHTML = '<div style="color:#aaa;font-size:13px;padding:8px 0">'+(dateFilter?'No entries found for '+dateFilter+'.':'No recent checklist history found.')+'</div>';
+      el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:8px 0">'+(dateFilter?'No entries found for '+dateFilter+'.':'No recent checklist history found.')+'</div>';
       return;
     }
     filtered.sort(function(a,b){ return new Date(b.timestamp)-new Date(a.timestamp); });
