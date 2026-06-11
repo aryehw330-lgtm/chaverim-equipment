@@ -108,6 +108,50 @@ textarea{resize:vertical;min-height:70px}
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center;padding:16px}
 .modal-bg.open{display:flex}
 .modal-box{background:#fff;border-radius:20px;padding:1.75rem 1.5rem 1.75rem;width:100%;max-width:480px;max-height:90dvh;overflow-y:auto;position:relative;box-shadow:0 8px 40px rgba(0,0,0,.2);animation:springIn .35s cubic-bezier(.34,1.56,.64,1) both}
+/* ── Dashboard scan tile (sits next to weather) ── */
+.dash-tile-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;align-items:stretch}
+.dash-tile-row > #dash-weather{grid-column:1;display:block!important;min-height:74px}
+.dash-tile-row > #dash-weather:empty{background:var(--surface);border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.scan-tile{grid-column:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;cursor:pointer;
+  border:none;font-family:inherit;color:#fff;border-radius:12px;padding:12px 10px;
+  background:linear-gradient(150deg,#23507e 0%,var(--navy) 100%);
+  box-shadow:0 3px 12px rgba(26,58,92,.35),inset 0 1px 0 rgba(255,255,255,.18);transition:transform .12s,box-shadow .2s}
+.scan-tile:active{transform:scale(.97);box-shadow:0 1px 6px rgba(26,58,92,.4)}
+.scan-tile-icon{display:flex;align-items:center;justify-content:center;color:#ffd35a}
+.scan-tile-icon .scan-line{animation:scanLineMove 1.8s ease-in-out infinite}
+@keyframes scanLineMove{0%,100%{transform:translateY(-2px);opacity:.5}50%{transform:translateY(2px);opacity:1}}
+.scan-tile-title{font-size:15px;font-weight:800;letter-spacing:.2px;display:block}
+.scan-tile-sub{font-size:10.5px;color:rgba(255,255,255,.7);font-weight:600;display:block;margin-top:1px}
+/* ── In-app camera scanner overlay ── */
+#scan-overlay{display:none;position:fixed;inset:0;z-index:9998;background:#0a0d12;flex-direction:column}
+#scan-overlay.open{display:flex}
+.scan-video-wrap{position:relative;flex:1;overflow:hidden;background:#000}
+#scan-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.scan-shade{position:absolute;inset:0;background:rgba(0,0,0,.5);pointer-events:none}
+.scan-reticle{position:absolute;top:50%;left:50%;width:66vw;max-width:280px;aspect-ratio:1;transform:translate(-50%,-50%);
+  border-radius:22px;box-shadow:0 0 0 9999px rgba(0,0,0,.5);pointer-events:none}
+.scan-corner{position:absolute;width:34px;height:34px;border:4px solid #ffd35a}
+.scan-corner.tl{top:-2px;left:-2px;border-right:none;border-bottom:none;border-radius:12px 0 0 0}
+.scan-corner.tr{top:-2px;right:-2px;border-left:none;border-bottom:none;border-radius:0 12px 0 0}
+.scan-corner.bl{bottom:-2px;left:-2px;border-right:none;border-top:none;border-radius:0 0 0 12px}
+.scan-corner.br{bottom:-2px;right:-2px;border-left:none;border-top:none;border-radius:0 0 12px 0}
+.scan-beam{position:absolute;left:8px;right:8px;height:3px;border-radius:3px;background:linear-gradient(90deg,transparent,#ffd35a,transparent);box-shadow:0 0 12px 2px rgba(255,211,90,.7);animation:scanBeam 2.2s ease-in-out infinite}
+@keyframes scanBeam{0%{top:10px}50%{top:calc(100% - 14px)}100%{top:10px}}
+.scan-topbar{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 14px;color:#fff;background:linear-gradient(180deg,rgba(0,0,0,.55),transparent)}
+.scan-topbar .scan-h{font-size:16px;font-weight:800;display:flex;align-items:center;gap:8px}
+.scan-close{background:rgba(255,255,255,.16);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.scan-hint{position:absolute;left:0;right:0;bottom:0;z-index:2;text-align:center;color:#fff;padding:18px 24px calc(env(safe-area-inset-bottom,0px) + 22px);font-size:14px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.6);background:linear-gradient(0deg,rgba(0,0,0,.55),transparent)}
+.scan-hint .scan-manual-btn{margin-top:12px;display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);color:#fff;padding:9px 18px;border-radius:22px;font-size:13px;font-weight:700;cursor:pointer}
+.scan-fallback{position:absolute;inset:0;z-index:3;display:none;flex-direction:column;background:var(--bg);color:var(--text)}
+.scan-fallback.show{display:flex}
+.scan-fb-head{padding:calc(env(safe-area-inset-top,0px) + 16px) 16px 12px;display:flex;align-items:center;justify-content:space-between;background:var(--surface);border-bottom:1px solid var(--border)}
+.scan-fb-title{font-size:16px;font-weight:800;color:var(--navy)}
+.scan-fb-body{flex:1;overflow-y:auto;padding:14px 16px 24px}
+.scan-fb-note{font-size:12.5px;color:var(--text2);background:var(--surface2);border-radius:10px;padding:10px 12px;margin-bottom:12px;line-height:1.5}
+.scan-fb-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:11px;margin-bottom:8px;cursor:pointer}
+.scan-fb-item:active{background:var(--surface2)}
+.scan-fb-item .nm{font-size:14px;font-weight:700;color:var(--text)}
+.scan-fb-item .mt{font-size:11.5px;color:var(--text3);margin-top:2px}
 .ripple-btn{position:relative;overflow:hidden}
 .ripple-btn .ripple-el{position:absolute;border-radius:50%;background:rgba(255,255,255,.4);pointer-events:none;animation:ripple .5s ease-out forwards}
 .modal-bar{display:none}
@@ -426,7 +470,15 @@ body.dark .recent-card{background:var(--surface)}
         <div class="kpi kpi-cnc"><div class="kpi-val" id="kpi-cnc">0</div><div class="kpi-label">CNC</div></div>
       </div>
       <!-- COBC 4 car action banner on dashboard -->
-      <div id="dash-weather" style="display:none;margin-bottom:14px"></div>
+      <div class="dash-tile-row">
+        <div id="dash-weather"></div>
+        <button id="dash-scan-btn" class="scan-tile ripple-btn" onclick="openScanner()">
+          <span class="scan-tile-icon" aria-hidden="true">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10" class="scan-line"/><rect x="7" y="7" width="4" height="4" rx="1"/><rect x="13" y="13" width="4" height="4" rx="1"/></svg>
+          </span>
+          <span class="scan-tile-text"><span class="scan-tile-title">Scan QR</span><span class="scan-tile-sub">Tap to scan a tag</span></span>
+        </button>
+      </div>
       <div id="dash-car-action" style="display:none;margin-bottom:14px"></div>
       <div id="dash-alerts-wrap" style="display:none">
         <div class="section-label">⚠️ Active Alerts</div>
@@ -862,16 +914,13 @@ function loadWeather() {
     var feels = Math.round(c.apparent_temperature);
     var wind = Math.round(c.windspeed_10m);
     el.style.display = 'block';
-    el.innerHTML = '<div style="background:var(--surface);border-radius:12px;padding:12px 16px;box-shadow:0 1px 4px rgba(0,0,0,.08);display:flex;align-items:center;justify-content:space-between">'
-      +'<div style="display:flex;align-items:center;gap:10px">'
-      +'<span style="font-size:32px">'+icon+'</span>'
-      +'<div><div style="font-size:22px;font-weight:700;color:var(--text)">'+temp+'°F</div>'
-      +'<div style="font-size:12px;color:var(--text2)">'+desc+'</div></div></div>'
-      +'<div style="text-align:right">'
-      +'<div style="font-size:12px;color:var(--text2)">Feels '+feels+'°</div>'
-      +'<div style="font-size:12px;color:var(--text2)">💨 '+wind+' mph</div>'
-      +'<div style="font-size:10px;color:var(--text3);margin-top:3px">Bergen County</div>'
-      +'</div></div>';
+    el.innerHTML = '<div style="background:var(--surface);border-radius:12px;padding:10px 12px;box-shadow:0 1px 4px rgba(0,0,0,.08);height:100%;display:flex;flex-direction:column;justify-content:center">'
+      +'<div style="display:flex;align-items:center;gap:9px">'
+      +'<span style="font-size:30px;line-height:1">'+icon+'</span>'
+      +'<div style="min-width:0"><div style="font-size:21px;font-weight:800;color:var(--text);line-height:1.1">'+temp+'°F</div>'
+      +'<div style="font-size:11.5px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+desc+'</div></div></div>'
+      +'<div style="font-size:11px;color:var(--text3);margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Feels '+feels+'° · 💨 '+wind+' mph · Bergen Co.</div>'
+      +'</div>';
   }).catch(function() { _weatherLoaded = false; }); // retry next time
 }
 function weatherIcon(code) {
@@ -4358,6 +4407,156 @@ function qrSubmit(action) {
     })
     .catch(function(){ done++; });
   });
+}
+</script>
+
+<!-- ════════ IN-APP QR SCANNER ════════ -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<div id="scan-overlay">
+  <div class="scan-topbar">
+    <div class="scan-h">📷 Scan Equipment Tag</div>
+    <button class="scan-close" onclick="closeScanner()" aria-label="Close">✕</button>
+  </div>
+  <div class="scan-video-wrap">
+    <video id="scan-video" muted playsinline webkit-playsinline></video>
+    <div class="scan-reticle">
+      <span class="scan-corner tl"></span><span class="scan-corner tr"></span>
+      <span class="scan-corner bl"></span><span class="scan-corner br"></span>
+      <span class="scan-beam"></span>
+    </div>
+    <div class="scan-hint">Point your camera at an item's QR tag
+      <br><span class="scan-manual-btn" onclick="showScanFallback('Pick an item to check in or out.')">Enter manually</span>
+    </div>
+  </div>
+  <canvas id="scan-canvas" style="display:none"></canvas>
+  <div class="scan-fallback" id="scan-fallback">
+    <div class="scan-fb-head">
+      <div class="scan-fb-title">Select Equipment</div>
+      <button class="scan-close" style="background:var(--surface2);color:var(--text)" onclick="closeScanner()" aria-label="Close">✕</button>
+    </div>
+    <div class="scan-fb-body">
+      <div class="scan-fb-note" id="scan-fb-note"></div>
+      <div id="scan-fb-list"></div>
+    </div>
+  </div>
+</div>
+<script>
+var _scanStream = null, _scanRAF = null, _scanActive = false;
+
+function openScanner() {
+  document.getElementById('scan-overlay').classList.add('open');
+  document.getElementById('scan-fallback').classList.remove('show');
+  startScanCamera();
+}
+
+function startScanCamera() {
+  var video = document.getElementById('scan-video');
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showScanFallback('Camera isn\'t available here. Pick an item below to check it in or out.');
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false })
+    .then(function(stream) {
+      _scanStream = stream;
+      video.srcObject = stream;
+      video.setAttribute('playsinline', 'true');
+      return video.play();
+    })
+    .then(function() { _scanActive = true; _scanRAF = requestAnimationFrame(scanTick); })
+    .catch(function(err) {
+      var denied = err && (err.name === 'NotAllowedError' || err.name === 'SecurityError');
+      showScanFallback(denied
+        ? 'Camera permission was denied. You can still pick an item below.'
+        : 'Couldn\'t open the camera. Pick an item below instead.');
+    });
+}
+
+function scanTick() {
+  if (!_scanActive) return;
+  var video = document.getElementById('scan-video');
+  if (video && video.readyState === video.HAVE_ENOUGH_DATA && window.jsQR) {
+    var w = video.videoWidth, h = video.videoHeight;
+    if (w && h) {
+      var c = document.getElementById('scan-canvas');
+      c.width = w; c.height = h;
+      var ctx = c.getContext('2d');
+      ctx.drawImage(video, 0, 0, w, h);
+      var img = ctx.getImageData(0, 0, w, h);
+      var code = window.jsQR(img.data, w, h, { inversionAttempts: 'dontInvert' });
+      if (code && code.data) { onScanResult(code.data); return; }
+    }
+  }
+  _scanRAF = requestAnimationFrame(scanTick);
+}
+
+function parseScannedName(data) {
+  if (!data) return '';
+  try { var u = new URL(data); var n = u.searchParams.get('name'); if (n) return n; } catch (e) {}
+  var m = String(data).match(/[?&]name=([^&]+)/);
+  if (m) { try { return decodeURIComponent(m[1].replace(/\+/g, ' ')); } catch (e) { return m[1]; } }
+  return String(data).trim();
+}
+
+function findScannedItem(name) {
+  if (!name || !window.items) return null;
+  var norm = function(s) { return String(s || '').toLowerCase().replace(/\s+/g, ' ').trim(); };
+  var n = norm(name);
+  return items.find(function(i) { return norm(i.name) === n; })
+      || items.find(function(i) { var x = norm(i.name); return x && (x.indexOf(n) >= 0 || n.indexOf(x) >= 0); })
+      || null;
+}
+
+function onScanResult(data) {
+  _scanActive = false;
+  if (navigator.vibrate) { try { navigator.vibrate(40); } catch (e) {} }
+  var it = findScannedItem(parseScannedName(data));
+  if (!it) {
+    showToast('⚠️ No matching item found');
+    setTimeout(function() {
+      if (document.getElementById('scan-overlay').classList.contains('open') && _scanStream) {
+        _scanActive = true; _scanRAF = requestAnimationFrame(scanTick);
+      }
+    }, 1300);
+    return;
+  }
+  var dir = it.status === 'IN' ? 'OUT' : 'IN';
+  closeScanner();
+  openCheckout(it.row, dir);
+  showToast('📷 ' + it.name + ' — ready to check ' + dir);
+}
+
+function stopScanCamera() {
+  _scanActive = false;
+  if (_scanRAF) cancelAnimationFrame(_scanRAF);
+  _scanRAF = null;
+  if (_scanStream) { _scanStream.getTracks().forEach(function(t) { t.stop(); }); _scanStream = null; }
+  var v = document.getElementById('scan-video'); if (v) v.srcObject = null;
+}
+
+function closeScanner() {
+  stopScanCamera();
+  document.getElementById('scan-overlay').classList.remove('open');
+}
+
+function showScanFallback(msg) {
+  stopScanCamera();
+  document.getElementById('scan-fb-note').textContent = msg || 'Pick an item to check in or out.';
+  var list = (window.items || []).filter(function(i) { return i.equipStatus !== 'Not Active'; })
+    .slice().sort(function(a, b) { return String(a.name).localeCompare(String(b.name)); });
+  document.getElementById('scan-fb-list').innerHTML = list.map(function(it) {
+    var out = it.status === 'OUT';
+    return '<div class="scan-fb-item" onclick="pickScanItem(' + JSON.stringify(it.row) + ')">'
+      + '<div><div class="nm">' + esc(it.name) + '</div><div class="mt">' + esc(it.homeLocation || '') + '</div></div>'
+      + '<span style="font-size:10px;font-weight:700;padding:2px 9px;border-radius:9px;background:' + (out ? '#fdecea' : '#e8f5e9') + ';color:' + (out ? '#c0392b' : '#2e7d32') + '">' + (out ? 'OUT' : 'IN') + '</span></div>';
+  }).join('') || '<div style="text-align:center;color:var(--text3);padding:36px 0">No equipment loaded yet.</div>';
+  document.getElementById('scan-fallback').classList.add('show');
+}
+
+function pickScanItem(row) {
+  var it = (window.items || []).find(function(i) { return i.row === row; });
+  closeScanner();
+  if (!it) return;
+  openCheckout(it.row, it.status === 'IN' ? 'OUT' : 'IN');
 }
 </script>
 </body>
