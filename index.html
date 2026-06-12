@@ -2731,7 +2731,7 @@ function renderQRLinks() {
   }).sort(function(a,b){ return a.name.localeCompare(b.name, undefined, {numeric:true, sensitivity:'base'}); });
   if (!filtered.length) { el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:8px 0">No items found.</div>'; return; }
   el.innerHTML = filtered.map(function(it) {
-    var qrUrl = (window.location.origin + window.location.pathname) + '?name=' + encodeURIComponent(it.name);
+    var qrUrl = BASE_URL + '?item=' + encodeURIComponent(it.name) + '&view=qr';
     return '<a href="'+qrUrl+'" target="_blank" style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);text-decoration:none;gap:10px">'
       +'<div style="font-size:13px;font-weight:600;color:var(--text);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(it.name)+'</div>'
       +'<div style="font-size:11px;color:#1a3a5c;font-weight:700;flex-shrink:0;background:#eef2f8;padding:4px 10px;border-radius:6px">🖨️ Print</div>'
