@@ -1767,7 +1767,7 @@ function updateStats() {
   var out    = items.filter(function(i){return i.status==='OUT';}).length;
   var cnc    = items.filter(function(i){return i.isCNC;}).length;
   var issues = items.filter(function(i){return i.isCNC||i.equipStatus==='Missing'||i.equipStatus==='Damaged';}).length;
-  document.getElementById('kpi-total').textContent = items.length;
+  document.getElementById('kpi-total').textContent = items.filter(function(i){return i.equipStatus!=='Not Active';}).length;
   document.getElementById('kpi-out').textContent   = out;
   document.getElementById('kpi-iss').textContent   = issues;
   document.getElementById('kpi-cnc').textContent   = cnc;
