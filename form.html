@@ -912,7 +912,7 @@ function loadData() {
   document.getElementById('sync-btn').textContent = '...';
   Promise.all([
     fetchJ(BASE_URL+'?action=getInventory'),
-    fetchJ(BASE_URL+'?action=getMembers'),
+    fetchJ(BASE_URL+'?action=getMembers&key=chav-mk-2026-Xp9Q2r7w'),
     fetchJ(BASE_URL+'?action=getLocations')
   ]).then(function(res) {
     items   = res[0].items   || [];
