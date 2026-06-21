@@ -300,7 +300,6 @@ body.dark .recent-card{background:var(--surface)}
 </head>
 <body>
 <canvas id="confetti-canvas" style="position:fixed;inset:0;z-index:99990;pointer-events:none;display:none"></canvas>
-
 <!-- SPLASH SCREEN -->
 <div id="splash-screen" style="position:fixed;inset:0;background:#1a3a5c;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;transition:opacity .4s ease">
   <div style="position:relative;margin-bottom:4px">
@@ -312,7 +311,6 @@ body.dark .recent-card{background:var(--surface)}
   <div id="splash-msg" style="color:#7badd4;font-size:12px;min-height:18px;margin-top:4px;animation:cardIn .5s ease .6s both;transition:opacity .3s"></div>
   <div style="position:absolute;bottom:28px;color:#4a6a8a;font-size:11px;animation:cardIn .5s ease .8s both">v1.0</div>
 </div>
-
 <!-- PIN GATE -->
 <div id="pin-gate">
   <div class="pin-card">
@@ -346,7 +344,6 @@ body.dark .recent-card{background:var(--surface)}
 <div id="toast"></div>
 <!-- OFFLINE BANNER -->
 <div id="offline-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9990;background:#e65100;color:#fff;text-align:center;padding:8px 16px;font-size:13px;font-weight:700">📡 No connection — showing cached data</div>
-
 <!-- ITEM HISTORY DRAWER -->
 <div id="item-history-drawer" style="display:none;position:fixed;inset:0;z-index:9995;background:rgba(0,0,0,.5);align-items:flex-end;justify-content:center">
   <div style="background:var(--surface);border-radius:18px 18px 0 0;padding:20px 20px 36px;width:100%;max-width:500px;max-height:75vh;overflow-y:auto;animation:springIn .35s cubic-bezier(.34,1.56,.64,1) both">
@@ -357,7 +354,6 @@ body.dark .recent-card{background:var(--surface)}
     <div id="item-hist-list"><div style="text-align:center;padding:20px;color:var(--text3)">Loading...</div></div>
   </div>
 </div>
-
 <!-- AVATAR EDITOR -->
 <div id="avatar-editor" style="display:none;position:fixed;inset:0;z-index:9995;background:rgba(0,0,0,.45);align-items:flex-end;justify-content:center">
   <div style="background:#fff;border-radius:18px 18px 0 0;padding:20px 20px 32px;width:100%;max-width:400px;animation:cardIn .3s ease both">
@@ -384,7 +380,6 @@ body.dark .recent-card{background:var(--surface)}
     <button onclick="closeAvatarEditor()" style="width:100%;padding:13px;background:#1a3a5c;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer">Save</button>
   </div>
 </div>
-
 <!-- CHECKOUT MODAL -->
 <div class="modal-bg" id="checkout-modal">
   <div class="modal-box">
@@ -879,7 +874,6 @@ body.dark .recent-card{background:var(--surface)}
     setTimeout(function(){ splash.style.display = 'none'; }, 400);
   }, 1400);
 })();
-
 // ── Live clock ────────────────────────────────────────────────────────────────
 (function() {
   function updateClock() {
@@ -895,7 +889,6 @@ body.dark .recent-card{background:var(--surface)}
   setInterval(updateClock, 1000);
 })();
 // ─────────────────────────────────────────────────────────────────────────────
-
 // ── Weather widget (Bergen County NJ) ────────────────────────────────────────
 var _weatherLoaded = false;
 function loadWeather() {
@@ -948,7 +941,6 @@ function weatherDesc(code) {
   return 'Severe storm';
 }
 // ─────────────────────────────────────────────────────────────────────────────
-
 // ── Confetti when all items returned ─────────────────────────────────────────
 var _prevOutCount = null;
 function checkConfetti(outCount) {
@@ -1005,13 +997,11 @@ function fireConfetti() {
   haptic('success');
 }
 // ─────────────────────────────────────────────────────────────────────────────
-
 // ── Tab bar magnification (iOS 18-style swipe) ────────────────────────────────
 (function() {
   var tabbar = document.getElementById('tabbar');
   if (!tabbar) return;
   var dragging = false, lastHighlighted = null;
-
   function getTabAt(x) {
     var tabs = tabbar.querySelectorAll('.tab');
     for (var i = 0; i < tabs.length; i++) {
@@ -1020,7 +1010,6 @@ function fireConfetti() {
     }
     return null;
   }
-
   function setMag(hoveredTab) {
     var tabs = tabbar.querySelectorAll('.tab');
     var rects = [];
@@ -1040,7 +1029,6 @@ function fireConfetti() {
       tab.style.color = (tab === hoveredTab) ? 'var(--navy)' : '';
     });
   }
-
   tabbar.addEventListener('touchstart', function(e) {
     var tab = getTabAt(e.touches[0].clientX);
     if (!tab) return;
@@ -1049,7 +1037,6 @@ function fireConfetti() {
     setMag(tab);
     haptic('light');
   }, {passive: true});
-
   tabbar.addEventListener('touchmove', function(e) {
     if (!dragging) return;
     var tab = getTabAt(e.touches[0].clientX);
@@ -1059,7 +1046,6 @@ function fireConfetti() {
       haptic('light');
     }
   }, {passive: true});
-
   tabbar.addEventListener('touchend', function(e) {
     if (!dragging) return;
     dragging = false;
@@ -1070,7 +1056,6 @@ function fireConfetti() {
     setMag(null); // reset all
     lastHighlighted = null;
   }, {passive: true});
-
   tabbar.addEventListener('touchcancel', function() {
     dragging = false;
     setMag(null);
@@ -1078,8 +1063,6 @@ function fireConfetti() {
   }, {passive: true});
 })();
 // ─────────────────────────────────────────────────────────────────────────────
-
-
 // ── Ripple effect on buttons ──────────────────────────────────────────────────
 document.addEventListener('touchstart', function(e) {
   var btn = e.target.closest('button, .btn, .fchip, .tab, .ltab');
@@ -1095,12 +1078,10 @@ document.addEventListener('touchstart', function(e) {
   btn.appendChild(el);
   setTimeout(function(){ el.remove(); }, 500);
 }, {passive:true});
-
 // ── Press and hold on out-cards → opens check-in/out modal ──────────────────
 (function() {
   var HOLD_MS = 600;
   var _holdTimer = null, _ring = null, _ringAnim = null;
-
   function showRing(card) {
     removeRing();
     var r = card.getBoundingClientRect();
@@ -1118,12 +1099,10 @@ document.addEventListener('touchstart', function(e) {
     }
     _ringAnim = requestAnimationFrame(animate);
   }
-
   function removeRing() {
     if (_ringAnim) { cancelAnimationFrame(_ringAnim); _ringAnim = null; }
     if (_ring) { _ring.remove(); _ring = null; }
   }
-
   document.addEventListener('touchstart', function(e) {
     var card = e.target.closest('.out-card');
     if (!card) return;
@@ -1136,11 +1115,9 @@ document.addEventListener('touchstart', function(e) {
       openCheckout(row);
     }, HOLD_MS);
   }, {passive:true});
-
   document.addEventListener('touchend', function() { clearTimeout(_holdTimer); removeRing(); }, {passive:true});
   document.addEventListener('touchmove', function() { clearTimeout(_holdTimer); removeRing(); }, {passive:true});
 })();
-
 const BASE_URL = 'https://script.google.com/macros/s/AKfycbwjnEHbt8v1aVKUO7361uc8XTodz5yBWGKoRgQ3H26UFOJeAQarVQAGaEuYj277Ed14rw/exec';
 var userLevel = 0;
 var items=[], members=[], locations=['COBC'];
@@ -1151,7 +1128,6 @@ var modalItems=[];
 var secTarget=null, secPrevPage='dashboard';
 var loggedInMember = null; // set after member PIN login
 var memberPins = []; // loaded from members sheet
-
 // ── Status helpers ─────────────────────────────────────────────────────────────
 function memberHasStatus(s) {
   if (!loggedInMember || !loggedInMember.status) return false;
@@ -1165,7 +1141,6 @@ function canLogForOthers(isCarAction) {
   if (isCarAction) return isAdminUser();
   return isAdminUser() || isDispatchUser();
 }
-
 async function hashSHA256(str) {
   var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
@@ -1209,10 +1184,8 @@ function checkPin() {
     });
 }
 document.getElementById('pin-input').addEventListener('keydown', function(e){ if(e.key==='Enter') checkPin(); });
-
 // ── Theme mode (auto / light / dark) ─────────────────────────────────────────
 var _themeMode = localStorage.getItem('cobc_theme') || 'auto';
-
 // Calculate sunrise/sunset for Bergen County, NJ (40.96°N, 74.07°W)
 function getSunTimes(date) {
   var lat = 40.96, lng = -74.07;
@@ -1252,14 +1225,12 @@ function getSunTimes(date) {
   }
   return { rise: calc(true), set: calc(false) };
 }
-
 function isNightTime() {
   var now = new Date();
   var sun = getSunTimes(now);
   if (!sun) return false;
   return now < sun.rise || now > sun.set;
 }
-
 function applyTheme() {
   var isDark = _themeMode === 'dark' || (_themeMode === 'auto' && isNightTime());
   document.body.classList.toggle('dark', isDark);
@@ -1274,7 +1245,6 @@ function setThemeMode(mode) {
 setInterval(function() { if (_themeMode === 'auto') applyTheme(); }, 5 * 60 * 1000);
 // Apply on load
 applyTheme();
-
 function renderDashboardSettings() {
   // Update theme buttons
   var modes = ['auto','light','dark'];
@@ -1315,7 +1285,6 @@ function handleNotifToggle() {
   }
 }
 // ─────────────────────────────────────────────────────────────────────────────
-
 // ── Haptic feedback ───────────────────────────────────────────────────────────
 function haptic(type) {
   if (navigator.vibrate) {
@@ -1328,7 +1297,6 @@ function haptic(type) {
 }
 function playSound(type) {}
 // ─────────────────────────────────────────────────────────────────────────────
-
 // ── Last synced timestamp ─────────────────────────────────────────────────────
 var _lastSyncedAt = null;
 function updateSyncTime() {
@@ -1346,7 +1314,6 @@ function updateSyncTime() {
 }
 var _syncTimeInterval = null;
 // ─────────────────────────────────────────────────────────────────────────────
-
 // ── Offline banner ────────────────────────────────────────────────────────────
 window.addEventListener('offline', function() {
   var b = document.getElementById('offline-banner');
@@ -1359,7 +1326,6 @@ window.addEventListener('online', function() {
   loadData();
 });
 // ─────────────────────────────────────────────────────────────────────────────
-
 // ── Item history drawer (admin + dispatch only) ───────────────────────────────
 function openItemHistory(itemName, row) {
   var canView = isAdminUser() || isDispatchUser();
@@ -1401,14 +1367,12 @@ function closeItemHistory() {
   if (d) d.style.display = 'none';
 }
 // ─────────────────────────────────────────────────────────────────────────────
-
 // ── Avatar editor ─────────────────────────────────────────────────────────────
 var _avatarColors = ['#2e7d32','#1565c0','#6a1b9a','#ad1457','#00695c','#e65100','#4527a0','#c62828','#00838f'];
 var _avatarEmojis = ['🤝','🧰','🚨','⛑️','🦺','📻','🔦','🛡️','⭐','🆘','🔑','💪','🙏','🏥'];
 var _avatarEditColor = null;
 var _avatarEditNumber = false;
 var _avatarEditEmoji = null;
-
 function openAvatarEditor() {
   if (!loggedInMember) return;
   var savedKey  = 'cobc_avatar_' + loggedInMember.id;
@@ -1501,10 +1465,8 @@ function closeAvatarEditor() {
   applyAccessLevel(); // refresh header avatar
 }
 // ──────────────────────────────────────────────────────────────────────────────
-
 // ── Inventory in/out notifications ────────────────────────────────────────────
 var _lastInventoryEventTs = null; // tracks last seen event so we don't double-fire
-
 function fireInventoryNotif(action, itemNames, member, loggedBy) {
   // Only fire for dispatch/admin with notifications enabled
   var isDispAdm = isAdminUser() || isDispatchUser();
@@ -1516,7 +1478,6 @@ function fireInventoryNotif(action, itemNames, member, loggedBy) {
   var body  = who + ': ' + itemNames;
   fireNotif(title, body, 'inv-' + action + '-' + Date.now());
 }
-
 function checkInventoryNotifications() {
   // Only poll for dispatch/admin with notifications enabled
   var isDispAdm = isAdminUser() || isDispatchUser();
@@ -1544,7 +1505,6 @@ function checkInventoryNotifications() {
     }).catch(function(){});
 }
 // ──────────────────────────────────────────────────────────────────────────────
-
 // ── Google Sign-In ─────────────────────────────────────────────────────────────
 // Called automatically by the GIS library once it finishes loading
 window.onGoogleLibraryLoad = function() {
@@ -1558,7 +1518,6 @@ window.onGoogleLibraryLoad = function() {
     { theme: 'outline', size: 'large', width: 272, text: 'signin_with', shape: 'rectangular' }
   );
 };
-
 function handleGoogleCredential(response) {
   var errEl = document.getElementById('pin-error');
   errEl.textContent = 'Signing in...';
@@ -1588,7 +1547,6 @@ function handleGoogleCredential(response) {
     setTimeout(function(){ errEl.textContent=''; }, 3000);
   }
 }
-
 // Shared login completion (called by both PIN and Google login)
 function finishMemberLogin(d) {
   loggedInMember = {id: d.id, name: d.name, firstName: d.firstName, lastName: d.lastName, carAccess: !!d.carAccess, status: d.status || 'Member'};
@@ -1607,7 +1565,6 @@ function finishMemberLogin(d) {
   showPage(goPageAfterLogin, btn);
 }
 // ──────────────────────────────────────────────────────────────────────────────
-
 function applyAccessLevel() {
   var tabs = {'dashboard':1,'inventory':1,'report':1,'members':1,'car':1,'checklist':2,'admin':3};
   document.querySelectorAll('.tab').forEach(function(t){
@@ -1674,7 +1631,6 @@ function cancelSec() {
   document.querySelectorAll('.tab').forEach(function(t){ t.classList.toggle('active', t.dataset.page===secPrevPage); });
 }
 document.getElementById('sec-input').addEventListener('keydown', function(e){ if(e.key==='Enter') checkSec(); });
-
 function showPage(page, btn) {
   if (page==='admin'     && userLevel < 3) { showToast('Admin access required'); return; }
   if (page==='checklist' && userLevel < 2) { showToast('Equipment Team access required'); return; }
@@ -1692,7 +1648,6 @@ function showPage(page, btn) {
   }
   doShowPage(page);
 }
-
 function doShowPage(page) {
   document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
   document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
@@ -1706,7 +1661,6 @@ function doShowPage(page) {
   if (page==='car')       renderCarPage();
   if (page==='admin')     { renderAdmin(); renderHlocList(); renderAdmChkHistory(); renderCarAccessAdmin(); }
 }
-
 function fetchJ(url) { return fetch(url,{redirect:'follow',credentials:'omit'}).then(function(r){return r.json();}); }
 function postJ(body) {
   return fetch(BASE_URL,{method:'POST',redirect:'follow',credentials:'omit',
@@ -1718,7 +1672,7 @@ function loadData() {
   document.getElementById('sync-btn').textContent = '...';
   Promise.all([
     fetchJ(BASE_URL+'?action=getInventory'),
-    fetchJ(BASE_URL+'?action=getMembers'),
+    fetchJ(BASE_URL+'?action=getMembers&key=chav-mk-2026-Xp9Q2r7w'),
     fetchJ(BASE_URL+'?action=getLocations')
   ]).then(function(res) {
     items   = res[0].items   || [];
@@ -1762,7 +1716,6 @@ function loadData() {
   }).catch(function(){ showToast('Failed to load — check connection'); })
   .finally(function(){ showLoad(false); document.getElementById('sync-btn').textContent='↻ Sync'; });
 }
-
 function updateStats() {
   var out    = items.filter(function(i){return i.status==='OUT';}).length;
   var cnc    = items.filter(function(i){return i.isCNC;}).length;
@@ -1778,7 +1731,6 @@ function updateStats() {
   badge.textContent = issues; badge.style.display = issues>0?'flex':'none';
   checkConfetti(out);
 }
-
 function renderDashboard() {
   var out    = items.filter(function(i){return i.status==='OUT';});
   var alerts = items.filter(function(i){return i.isCNC||i.equipStatus==='Missing'||i.equipStatus==='Damaged';});
@@ -1914,7 +1866,6 @@ function fmtTime(s) {
     return s;
   } catch(e) { return s; }
 }
-
 var KNOWN_CATS = ['Fan','Heater','Light Tower','Shop Vac','A/C','EZ Spare','EZ-Spare','Generator','Wheel Chair Ramp','Sump Pump'];
 function getCat(name) {
   var n = (name||'').toLowerCase().replace(/-/g,' ');
@@ -2031,7 +1982,6 @@ function getEB(s) {
   var m={'Missing':'badge-miss','Damaged':'badge-dmg','Need More':'badge-more','Not Active':'badge-na'};
   return '<span class="badge '+(m[s]||'')+'">'+esc(s)+'</span>';
 }
-
 function renderModalItemList() {
   var el = document.getElementById('modal-item-list');
   if (!modalItems.length) {
@@ -2110,7 +2060,6 @@ function openCheckout(row, action) {
       var carIsOut = it.status === 'OUT';
       var effectivelyIN = (action === 'IN') || (!action && carIsOut);
       var effectivelyOUT = (action === 'OUT') || (!action && !carIsOut);
-
       if (effectivelyOUT) {
         // Must have an approved shift starting within 60 min, or already active
         var booking = getMyActiveCarBookingForInventory();
@@ -2300,7 +2249,6 @@ var blocked = [];
     // ──────────────────────────────────────────────────────────────────────────
   }).catch(function(){showToast('Network error');}).finally(function(){showLoad(false);});
 }
-
 function renderChecklist() {
   // Build latest-per-location summary from all items
   var lsEl = document.getElementById('chk-last-submitted');
@@ -2488,7 +2436,6 @@ function sendWA() {
   if(out.length){ msg+='\n\nCurrently OUT ('+out.length+'):\n'; out.forEach(function(it){msg+='• '+it.name+(it.member?' (BC-'+it.member+')':'')+'\n';}); }
   window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
 }
-
 function selRT(type,btn){rptType=type;document.querySelectorAll('.rt-btn').forEach(function(b){b.classList.remove('sel');});if(btn)btn.classList.add('sel');}
 function populateRptItems(){var sel=document.getElementById('rpt-item');sel.innerHTML='<option value="">-- Select item --</option>'+items.map(function(it){return '<option value="'+esc(it.name)+'">'+esc(it.name)+' ('+esc(it.homeLocation)+')</option>';}).join('');}
 function submitReport(){
@@ -2517,7 +2464,6 @@ function submitReport(){
     } else{showToast('Error: '+(data.error||'Unknown'));}
   }).catch(function(){showToast('Network error');}).finally(function(){showLoad(false);});
 }
-
 function renderMembers(){
   var q=(document.getElementById('mem-search').value||'').toLowerCase().trim();
   var filtered=members.filter(function(m){
@@ -2539,7 +2485,6 @@ function renderMembers(){
       +'</div>';
   }).join('');
 }
-
 function renderAdmin(){
   document.getElementById('loc-list').innerHTML=locations.map(function(loc,i){
     return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f0f0f0">'
@@ -2603,7 +2548,6 @@ function saveMemberEmail(memberId) {
   }).catch(function(){ showToast('Network error'); })
   .finally(function(){ showLoad(false); });
 }
-
 function addItem(){
   var name=document.getElementById('add-name').value.trim();
   var loc=document.getElementById('add-loc').value;
@@ -2629,7 +2573,6 @@ function addMember(){
     else{showToast('Error: '+(data.error||'Unknown'));}
   }).catch(function(){showToast('Network error');}).finally(function(){showLoad(false);});
 }
-
 // ═══════════════════════════════════════════
 // EQUIPMENT HOME LOCATION EDITOR
 // ═══════════════════════════════════════════
@@ -2658,7 +2601,6 @@ function renderHlocList() {
       +'</div>';
   }).join('');
 }
-
 function hloc_changed(row) {
   var sel = document.getElementById('hloc-sel-'+row);
   var btn = document.getElementById('hloc-btn-'+row);
@@ -2668,7 +2610,6 @@ function hloc_changed(row) {
   ok.style.display = 'none';
   btn.style.display = sel.value !== it.homeLocation ? 'inline-block' : 'none';
 }
-
 function saveHloc(row) {
   var sel = document.getElementById('hloc-sel-'+row);
   var btn = document.getElementById('hloc-btn-'+row);
@@ -2699,7 +2640,6 @@ function saveHloc(row) {
     btn.disabled = false;
   });
 }
-
 // ADMIN ITEMS
 var admItemFilter = 'all', admCat = 'all';
 function renderAdmCatChips() {
@@ -2742,7 +2682,6 @@ function renderQRLinks() {
       +'</a>';
   }).join('');
 }
-
 function renderAdminItems() {
   var q = (document.getElementById('adm-item-search').value || '').toLowerCase().trim();
   var filtered = items.filter(function(it) {
@@ -2842,7 +2781,6 @@ function showToast(msg){
   },{passive:true});
 })();
 function esc(v){return (v||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-
 // ═══════════════════════════════════════════
 // ADMIN CHECKLIST HISTORY
 // ═══════════════════════════════════════════
@@ -2905,7 +2843,6 @@ var CAR_CHIEF_WHATSAPP = '';
 var carSchedule = [];
 var carViewDate = new Date();
 var carSelectedDate = null;
-
 function loadCarSchedule(cb) {
   fetchJ(BASE_URL + '?action=getCarSchedule')
     .then(function(d) {
@@ -2917,7 +2854,6 @@ function loadCarSchedule(cb) {
       if (cb) cb();
     }).catch(function(){ if (cb) cb(); });
 }
-
 function renderCarPage() {
   var now = new Date();
   carViewDate = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -2926,7 +2862,6 @@ function renderCarPage() {
   renderCarActionBanner();
   loadCarSchedule();
 }
-
 function carPrevMonth() {
   carViewDate.setMonth(carViewDate.getMonth() - 1);
   renderCarCalendar();
@@ -2935,7 +2870,6 @@ function carNextMonth() {
   carViewDate.setMonth(carViewDate.getMonth() + 1);
   renderCarCalendar();
 }
-
 function renderCarCalendar() {
   var now = new Date();
   var year = carViewDate.getFullYear();
@@ -2987,7 +2921,6 @@ function renderCarCalendar() {
   }
   grid.innerHTML = html;
 }
-
 function openCarDay(dateStr) {
   carSelectedDate = dateStr;
   var panel = document.getElementById('car-day-panel');
@@ -2998,19 +2931,16 @@ function openCarDay(dateStr) {
   renderCarDay(dateStr);
   setTimeout(function(){ panel.scrollIntoView({behavior:'smooth', block:'nearest'}); }, 60);
 }
-
 function closeCarDay() {
   carSelectedDate = null;
   document.getElementById('car-day-panel').style.display = 'none';
   document.getElementById('car-book-form').style.display = 'none';
 }
-
 function renderCarDay(dateStr) {
   var shifts = carSchedule.filter(function(b){ return b.date === dateStr && b.status !== 'cancelled'; });
   var myId   = loggedInMember ? String(loggedInMember.id) : null;
   var isAdm  = userLevel >= 3;
   var el     = document.getElementById('car-day-shifts');
-
   if (!shifts.length) {
     el.innerHTML = '<div style="color:#aaa;font-size:13px;padding:6px 0 10px">No shifts booked for this day yet.</div>';
   } else {
@@ -3030,7 +2960,6 @@ function renderCarDay(dateStr) {
       var deleteBtn = isAdm
         ? '<button onclick="deleteCarShift(\''+b.id+'\')" style="margin-top:7px;padding:6px 12px;background:#fff0f0;color:#9b1c1c;border:1.5px solid #fca5a5;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">🗑 Delete</button>'
         : '';
-
       if (isMine || isAdm) {
         if (b.status === 'approved') {
           // 🔑 Start Shift only appears within 1 hour of shift start
@@ -3091,7 +3020,6 @@ function renderCarDay(dateStr) {
         + '</div>';
     }).join('');
   }
-
   // Book button / blocked message
   var wrap = document.getElementById('car-book-wrap');
   var now = new Date();
@@ -3130,7 +3058,6 @@ function renderCarDay(dateStr) {
     }
   }
 }
-
 function openCarBooking() {
   if (!carSelectedDate) return;
   var submitBtn = document.getElementById('car-submit-btn');
@@ -3188,13 +3115,11 @@ function updateCarBookForNote() {
     note.style.display = 'none';
   }
 }
-
 function closeCarBooking() {
   document.getElementById('car-book-form').style.display = 'none';
   var bfSel = document.getElementById('car-book-for'); if (bfSel) bfSel.value = '';
   var bfNote = document.getElementById('car-book-for-note'); if (bfNote) bfNote.style.display = 'none';
 }
-
 function submitCarBooking() {
   if (!carSelectedDate) return;
   var startDisp = getCarTimeDisplay('start');
@@ -3248,7 +3173,6 @@ function submitCarBooking() {
       } else { showToast('Error: '+(d.error||'Unknown')); btn.disabled=false; btn.textContent='Book Shift'; }
     }).catch(function(){ showToast('Network error'); btn.disabled=false; btn.textContent='Book Shift'; });
 }
-
 function startCarShift(bookingId) {
   var bkg = carSchedule.find(function(x){ return x.id===bookingId; });
   if (bkg && bkg.status === 'approved') {
@@ -3276,7 +3200,6 @@ function startCarShift(bookingId) {
       } else { showToast('Error: '+(d.error||'Unknown')); }
     }).catch(function(){ showToast('Network error'); }).finally(function(){ showLoad(false); });
 }
-
 function endCarShift(bookingId) {
   if (!confirm('Return COBC 4? You\'ll be taken to sign it back IN in Inventory.')) return;
   showLoad(true);
@@ -3295,7 +3218,6 @@ function endCarShift(bookingId) {
       } else { showToast('Error: '+(d.error||'Unknown')); }
     }).catch(function(){ showToast('Network error'); }).finally(function(){ showLoad(false); });
 }
-
 function cancelCarShift(bookingId) {
   if (!confirm('Cancel this booking?')) return;
   showLoad(true);
@@ -3308,7 +3230,6 @@ function cancelCarShift(bookingId) {
       } else { showToast('Error: '+(d.error||'Unknown')); }
     }).catch(function(){ showToast('Network error'); }).finally(function(){ showLoad(false); });
 }
-
 function deleteCarShift(bookingId, fromAdminHistory) {
   if (!confirm('Permanently delete this booking? This cannot be undone.')) return;
   showLoad(true);
@@ -3326,7 +3247,6 @@ function deleteCarShift(bookingId, fromAdminHistory) {
       } else { showToast('Error: '+(d.error||'Unknown')); }
     }).catch(function(){ showToast('Network error'); }).finally(function(){ showLoad(false); });
 }
-
 function approveCarShift(bookingId) {
   showLoad(true);
   postJ({action:'approveCarShift', id:bookingId})
@@ -3339,7 +3259,6 @@ function approveCarShift(bookingId) {
       } else { showToast('Error: '+(d.error||'Unknown')); }
     }).catch(function(){ showToast('Network error'); }).finally(function(){ showLoad(false); });
 }
-
 // ─── ADMIN: Car Access Toggles ─────────────────────────
 function renderCarAccessAdmin() {
   var el = document.getElementById('car-access-list');
@@ -3370,7 +3289,6 @@ function renderCarAccessAdmin() {
       + '</div>';
   }).join('');
 }
-
 function toggleCarAccess(memberId, hasAccess) {
   postJ({action:'setCarAccess', memberId:memberId, hasAccess:hasAccess})
     .then(function(d) {
@@ -3385,7 +3303,6 @@ function toggleCarAccess(memberId, hasAccess) {
       } else { showToast('Error: '+(d.error||'Unknown')); }
     }).catch(function(){ showToast('Network error'); });
 }
-
 function _syncCarAccessToFirestore(memberId, hasAccess) {
   var projectId = 'cobc-dispatch';
   var apiKey = 'AIzaSyBYAz3ohsJGX_zo-Yq3faZ2m0uv4tfuSl8';
@@ -3398,7 +3315,6 @@ function _syncCarAccessToFirestore(memberId, hasAccess) {
     body: JSON.stringify({fields: {carAccess: {booleanValue: hasAccess}}})
   }).catch(function(){}); // silent fail — Sheet is source of truth for equipment app
 }
-
 // ── Car time helpers ───────────────────────────────────────────────────────────
 function parse12to24(t) {
   var m = (t||'').match(/(\d+):(\d+)\s*(AM|PM)/i);
@@ -3466,7 +3382,6 @@ function renderCarActionBanner() {
   var myId    = loggedInMember ? String(loggedInMember.id) : null;
   var isAdm   = userLevel >= 3 || (myId === '38');
   var todayStr = (function(){ var n=new Date(); return n.getFullYear()+'-'+pad2(n.getMonth()+1)+'-'+pad2(n.getDate()); })();
-
   // ── Case 1: COBC 4 is OUT → show Return Car (or Ending Soon) to whoever signed it out (or admin) ──
   if (carItem && carItem.status === 'OUT') {
     var outBy   = carItem.member ? String(carItem.member) : null;
@@ -3475,7 +3390,6 @@ function renderCarActionBanner() {
     if (canReturn) {
       var activeBkg = carSchedule.find(function(b){ return b.status === 'active'; });
       var bookingId = activeBkg ? activeBkg.id : null;
-
       // Sub-case: shift ending in ≤10 min — show ending banner with continue options
       var isMyBkg = activeBkg && myId && parseInt((activeBkg.memberId||'').toString().replace(/^BC-?/i,''),10) === myIdNum0;
       if (isMyBkg && activeBkg.endTime) {
@@ -3489,7 +3403,6 @@ function renderCarActionBanner() {
           return;
         }
       }
-
       // Normal Return Car banner
       var html = '<div style="background:linear-gradient(135deg,#c0392b,#e74c3c);border-radius:14px;padding:16px 18px;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 4px 16px rgba(192,57,43,.3)">'
         +'<div><div style="font-size:15px;font-weight:800">🏁 COBC 4 is out</div>'
@@ -3504,7 +3417,6 @@ function renderCarActionBanner() {
       return;
     }
   }
-
   // ── Case 2: COBC 4 is IN → show Start Shift if member has approved or active booking today ──
   if (carItem && carItem.status !== 'OUT' && myId) {
     var myIdNum = parseInt(myId, 10);
@@ -3532,13 +3444,11 @@ function renderCarActionBanner() {
       return;
     }
   }
-
   // ── No action needed — hide both banners ──
   if (carEl)  { carEl.style.display  = 'none'; carEl.innerHTML  = ''; }
   if (dashEl) { dashEl.style.display = 'none'; dashEl.innerHTML = ''; }
   if (invEl)  { invEl.style.display  = 'none'; invEl.innerHTML  = ''; }
 }
-
 // Renders completed/active shift history in the car page
 function renderCarHistory() {
   var el = document.getElementById('car-history-list');
@@ -3671,7 +3581,6 @@ function showCarBookingSuccess(startTime, endTime, date, memberName, note) {
     +'<button onclick="renderCarDay(carSelectedDate)" style="margin-top:12px;background:none;border:none;color:#888;font-size:12px;cursor:pointer;text-decoration:underline">Dismiss</button>'
     +'</div>';
 }
-
 function pad2(n){ return n < 10 ? '0'+n : String(n); }
 function timeTo12Min(t) { // "3:30 PM" → minutes since midnight
   if (!t) return 0;
@@ -3693,7 +3602,6 @@ function fmt12(t) {
   var p = t.split(':'), h = parseInt(p[0]), m = p[1]||'00';
   return (h%12||12)+':'+m+' '+(h>=12?'PM':'AM');
 }
-
 function renderAdmChkFromItems(el) {
   var byLoc = {};
   items.forEach(function(i){
@@ -3729,7 +3637,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
-
   // QR MODE: always takes priority over saved session
   var urlParams = new URLSearchParams(window.location.search);
   var qrName = urlParams.get('name');
@@ -3761,24 +3668,20 @@ document.addEventListener('DOMContentLoaded', function() {
     showPage(landPage, btn);
   }
 });
-
 // ════════════════════════════════════════════════════════════════════════════
 //  NOTIFICATION SYSTEM + CONTINUE SHIFT
 // ════════════════════════════════════════════════════════════════════════════
-
 var _swReg       = null;
 var _notifTimer  = null;
 var _firedNotifs = {};     // de-dupe fired notifications
 var _alertRecipients = []; // member IDs for overdue alerts (loaded from Apps Script)
 var _notifInited = false;  // prevent double-init
-
 // ── Service worker messaging ─────────────────────────────────────────────────
 function swPost(msg) {
   if (navigator.serviceWorker && navigator.serviceWorker.controller) {
     navigator.serviceWorker.controller.postMessage(msg);
   }
 }
-
 // ── OS notification (fires immediately) ──────────────────────────────────────
 function fireNotif(title, body, tag, page) {
   if ('Notification' in window && Notification.permission === 'granted') {
@@ -3790,7 +3693,6 @@ function fireNotif(title, body, tag, page) {
   // Fallback: ask SW to show it (required on some browsers/iOS)
   swPost({ type: 'SHOW', data: { title: title, body: body, tag: tag, page: page } });
 }
-
 // ── Request permission + start timer ─────────────────────────────────────────
 function initNotifications() {
   if (_notifInited) return;
@@ -3806,7 +3708,6 @@ function initNotifications() {
   checkInventoryNotifications();
   checkOverdueCobc4();
 }
-
 function renderNotifCard() {
   var el = document.getElementById('notif-card');
   if (!el) return;
@@ -3827,7 +3728,6 @@ function renderNotifCard() {
     el.innerHTML = '<div style="background:#fff;border:1.5px solid #ddd;border-radius:12px;padding:14px 16px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:22px">🔔</span><div><div style="font-size:14px;font-weight:700;color:#1a3a5c">Enable Notifications</div><div style="font-size:12px;color:#666;margin-top:2px">'+notifDesc+'</div></div></div><button onclick="requestNotifPermission()" style="width:100%;padding:12px;background:#1a3a5c;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer">Enable Notifications</button></div>';
   }
 }
-
 function requestNotifPermission() {
   if (!('Notification' in window)) return;
   Notification.requestPermission().then(function() {
@@ -3837,7 +3737,6 @@ function requestNotifPermission() {
     }
   });
 }
-
 // ── Main per-30s check ────────────────────────────────────────────────────────
 function checkShiftNotifications() {
   if (!loggedInMember || !carSchedule || !carSchedule.length) return;
@@ -3846,21 +3745,18 @@ function checkShiftNotifications() {
   var myId = parseInt(String(loggedInMember.id), 10);
   var carItem = items.find(function(i){ return isCarItem(i.name); });
   var carIsOut = carItem && carItem.status === 'OUT';
-
   for (var i = 0; i < carSchedule.length; i++) {
     var b = carSchedule[i];
     if (b.date !== todayStr) continue;
     var bMid = parseInt((b.memberId||'').toString().replace(/^BC-?/i,''), 10);
     if (bMid !== myId) continue;
     if (b.status === 'cancelled' || b.status === 'done') continue;
-
     var start24 = parse12to24(b.startTime);
     var end24   = parse12to24(b.endTime);
     var startDt = new Date(todayStr + 'T' + start24 + ':00');
     var endDt   = new Date(todayStr + 'T' + end24   + ':00');
     var minsToStart = (startDt - now) / 60000;
     var minsToEnd   = (endDt   - now) / 60000;
-
     // ── In-app: 10 min before start (car still IN) ──
     if (b.status === 'approved' && minsToStart >= 0 && minsToStart <= 10 && !carIsOut) {
       var key = 'start10_' + b.id;
@@ -3886,7 +3782,6 @@ function checkShiftNotifications() {
         }});
       }
     }
-
     // ── In-app: 10 min before end (active shift) ──
     if (b.status === 'active' && minsToEnd >= 0 && minsToEnd <= 10) {
       var endKey = 'end10_' + b.id;
@@ -3914,7 +3809,6 @@ function checkShiftNotifications() {
     }
   }
 }
-
 // ── Overdue inventory alert (items out 3+ days) ───────────────────────────────
 function checkOverdueCobc4() {
   var myIdNum = loggedInMember ? parseInt(String(loggedInMember.id), 10) : null;
@@ -3939,7 +3833,6 @@ function checkOverdueCobc4() {
   fireNotif('⚠️ Inventory Overdue', overdue.length + ' item(s) out 72+ hrs: ' + names, 'overdue-inv', 'inventory');
   showToast('⚠️ ' + overdue.length + ' item(s) out 72+ hours');
 }
-
 // ── Ending-soon banner HTML builder ──────────────────────────────────────────
 function buildEndingBannerHtml(booking, minsToEnd) {
   var nextFree = isNextSlotFree(booking, 20);
@@ -3958,7 +3851,6 @@ function buildEndingBannerHtml(booking, minsToEnd) {
     + continueBtns + returnBtn
     +'</div></div></div>';
 }
-
 // ── Check if next 20-min slot after booking end is free ───────────────────────
 function isNextSlotFree(booking, extraMins) {
   var t24 = parse12to24(booking.endTime);
@@ -3977,7 +3869,6 @@ function isNextSlotFree(booking, extraMins) {
     return bS < ext24 && bE > end24;
   });
 }
-
 // ── Add minutes to a 12-hour time string ─────────────────────────────────────
 function addMinsToTime12(time12, mins) {
   var t24 = parse12to24(time12);
@@ -3989,7 +3880,6 @@ function addMinsToTime12(time12, mins) {
   var h12 = h > 12 ? h - 12 : (h === 0 ? 12 : h);
   return h12 + ':' + pad2(m) + ' ' + ap;
 }
-
 // ── Continue shift: auto-extend by extraMins ──────────────────────────────────
 function continueCarShift(bookingId, extraMins) {
   var bkg = carSchedule.find(function(x){ return x.id===bookingId; });
@@ -4030,7 +3920,6 @@ function continueCarShift(bookingId, extraMins) {
     }
   }).catch(function(){ showToast('Network error'); }).finally(function(){ showLoad(false); });
 }
-
 // ── Continue shift: open booking form pre-filled ──────────────────────────────
 function continueCarShiftCustom(currentEndTime) {
   presetCarBookingTime('start', currentEndTime);
@@ -4049,7 +3938,6 @@ function continueCarShiftCustom(currentEndTime) {
   }, 350);
   showToast('📅 Start time pre-filled — choose end time');
 }
-
 // ── Pre-fill booking form time selects ───────────────────────────────────────
 function presetCarBookingTime(prefix, time12) {
   var t24 = parse12to24(time12);
@@ -4067,7 +3955,6 @@ function presetCarBookingTime(prefix, time12) {
   if (minEl)  minEl.value  = pad2(mRounded);
   if (apEl)   apEl.value   = ap;
 }
-
 // ── Admin: Alert Recipients ───────────────────────────────────────────────────
 function loadAlertRecipients() {
   fetchJ(BASE_URL + '?action=getAlertRecipients').then(function(d) {
@@ -4076,7 +3963,6 @@ function loadAlertRecipients() {
     }
   }).catch(function(){});
 }
-
 function renderAlertRecipientsAdmin() {
   var el = document.getElementById('alert-recipients-list');
   if (!el) return;
@@ -4097,7 +3983,6 @@ function renderAlertRecipientsAdmin() {
       +'</div>';
   }).join('');
 }
-
 function toggleAlertRecipient(memberId, enabled) {
   var idNum = parseInt(memberId, 10);
   if (enabled) { if (_alertRecipients.indexOf(idNum) < 0) _alertRecipients.push(idNum); }
@@ -4107,7 +3992,6 @@ function toggleAlertRecipient(memberId, enabled) {
     .catch(function(){ showToast('Network error'); });
 }
 </script>
-
 <!-- SUBMIT CHECKLIST MODAL -->
 <div id="chk-submit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:600;align-items:center;justify-content:center">
   <div style="background:#fff;border-radius:20px;padding:2rem 1.5rem;max-width:320px;width:90%;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.2)">
@@ -4200,7 +4084,6 @@ var _qrAllItems = [];
 var _qrIsCobc4 = false;
 var _qrCarSchedule = [];
 var _qrCarItemData = null;
-
 function showQRMode(name) {
   _qrName = name;
   document.getElementById('qr-overlay').style.display = 'block';
@@ -4208,7 +4091,6 @@ function showQRMode(name) {
   document.getElementById('qr-pin-input').addEventListener('keydown', function(e){ if(e.key==='Enter') qrCheckPin(); });
   setTimeout(function(){ document.getElementById('qr-pin-input').focus(); }, 100);
 }
-
 function qrCheckPin() {
   var v = document.getElementById('qr-pin-input').value.trim();
   if (!v) return;
@@ -4224,7 +4106,6 @@ function qrCheckPin() {
     })
     .catch(function(){ document.getElementById('qr-pin-input').disabled = false; errEl.textContent = '\u2715 Connection error'; document.getElementById('qr-pin-input').value = ''; setTimeout(function(){ errEl.textContent=''; }, 3000); });
 }
-
 function qrShowForm() {
   document.getElementById('qr-pin-gate').style.display = 'none';
   document.getElementById('qr-form-wrap').style.display = 'block';
@@ -4275,11 +4156,9 @@ function qrShowForm() {
       .catch(function(){ _qrCarSchedule = []; });
   }
 }
-
 function qrToggleCNC() {
   document.getElementById('qr-cnc-wrap').style.display = document.getElementById('qr-ccnc').value === 'CNC' ? 'block' : 'none';
 }
-
 function qrRenderItemsList() {
   var el = document.getElementById('qr-items-list');
   if (!el) return;
@@ -4291,12 +4170,10 @@ function qrRenderItemsList() {
       + '</div>';
   }).join('');
 }
-
 function qrRemoveItem(idx) {
   _qrExtraItems.splice(idx - 1, 1);
   qrRenderItemsList();
 }
-
 function qrItemSearch() {
   var q = document.getElementById('qr-item-search').value.toLowerCase().trim();
   var res = document.getElementById('qr-item-results');
@@ -4314,14 +4191,12 @@ function qrItemSearch() {
       +'<span>'+esc(it.name)+' <span style="color:#aaa;font-weight:400;font-size:11px">'+esc(it.homeLocation)+'</span></span>'+badge+'</div>';
   }).join('');
 }
-
 function qrAddItem(el) {
   var name = el.getAttribute('data-name');
   if (_qrExtraItems.indexOf(name) < 0) { _qrExtraItems.push(name); qrRenderItemsList(); }
   document.getElementById('qr-item-search').value = '';
   document.getElementById('qr-item-results').style.display = 'none';
 }
-
 function qrSubmit(action) {
   var member  = document.getElementById('qr-member').value.trim();
   var call    = document.getElementById('qr-call').value.trim();
@@ -4413,7 +4288,6 @@ function qrSubmit(action) {
   });
 }
 </script>
-
 <!-- ════════ IN-APP QR SCANNER ════════ -->
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <div id="scan-overlay">
@@ -4446,13 +4320,11 @@ function qrSubmit(action) {
 </div>
 <script>
 var _scanStream = null, _scanRAF = null, _scanActive = false;
-
 function openScanner() {
   document.getElementById('scan-overlay').classList.add('open');
   document.getElementById('scan-fallback').classList.remove('show');
   startScanCamera();
 }
-
 function startScanCamera() {
   var video = document.getElementById('scan-video');
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -4474,7 +4346,6 @@ function startScanCamera() {
         : 'Couldn\'t open the camera. Pick an item below instead.');
     });
 }
-
 function scanTick() {
   if (!_scanActive) return;
   var video = document.getElementById('scan-video');
@@ -4492,7 +4363,6 @@ function scanTick() {
   }
   _scanRAF = requestAnimationFrame(scanTick);
 }
-
 function parseScannedName(data) {
   if (!data) return '';
   try { var u = new URL(data); var n = u.searchParams.get('name'); if (n) return n; } catch (e) {}
@@ -4500,7 +4370,6 @@ function parseScannedName(data) {
   if (m) { try { return decodeURIComponent(m[1].replace(/\+/g, ' ')); } catch (e) { return m[1]; } }
   return String(data).trim();
 }
-
 function findScannedItem(name) {
   if (!name || !window.items) return null;
   var norm = function(s) { return String(s || '').toLowerCase().replace(/\s+/g, ' ').trim(); };
@@ -4509,7 +4378,6 @@ function findScannedItem(name) {
       || items.find(function(i) { var x = norm(i.name); return x && (x.indexOf(n) >= 0 || n.indexOf(x) >= 0); })
       || null;
 }
-
 function onScanResult(data) {
   _scanActive = false;
   if (navigator.vibrate) { try { navigator.vibrate(40); } catch (e) {} }
@@ -4528,7 +4396,6 @@ function onScanResult(data) {
   openCheckout(it.row, dir);
   showToast('📷 ' + it.name + ' — ready to check ' + dir);
 }
-
 function stopScanCamera() {
   _scanActive = false;
   if (_scanRAF) cancelAnimationFrame(_scanRAF);
@@ -4536,12 +4403,10 @@ function stopScanCamera() {
   if (_scanStream) { _scanStream.getTracks().forEach(function(t) { t.stop(); }); _scanStream = null; }
   var v = document.getElementById('scan-video'); if (v) v.srcObject = null;
 }
-
 function closeScanner() {
   stopScanCamera();
   document.getElementById('scan-overlay').classList.remove('open');
 }
-
 function showScanFallback(msg) {
   stopScanCamera();
   document.getElementById('scan-fb-note').textContent = msg || 'Pick an item to check in or out.';
@@ -4555,7 +4420,6 @@ function showScanFallback(msg) {
   }).join('') || '<div style="text-align:center;color:var(--text3);padding:36px 0">No equipment loaded yet.</div>';
   document.getElementById('scan-fallback').classList.add('show');
 }
-
 function pickScanItem(row) {
   var it = (window.items || []).find(function(i) { return i.row === row; });
   closeScanner();
