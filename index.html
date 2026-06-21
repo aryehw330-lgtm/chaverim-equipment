@@ -16,6 +16,8 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#f4f6f9;--surface:#fff;--surface2:#f0f4f8;--text:#1a1a1a;--text2:#555;--text3:#888;--border:#e0e6ed;--border2:#d0d8e4;--navy:#1a3a5c;--tabbar:#fff}
@@ -1121,6 +1123,11 @@ document.addEventListener('touchstart', function(e) {
   document.addEventListener('touchmove', function() { clearTimeout(_holdTimer); removeRing(); }, {passive:true});
 })();
 const BASE_URL = 'https://script.google.com/macros/s/AKfycbwjnEHbt8v1aVKUO7361uc8XTodz5yBWGKoRgQ3H26UFOJeAQarVQAGaEuYj277Ed14rw/exec';
+// Firebase anonymous auth
+const _FB_CONFIG={apiKey:"AIzaSyBYAz3ohsJGX_zo-Yq3faZ2m0uv4tfuSl8",authDomain:"cobc-dispatch.firebaseapp.com",projectId:"cobc-dispatch",storageBucket:"cobc-dispatch.firebasestorage.app",messagingSenderId:"292943991082",appId:"1:292943991082:web:3d4b83f0ea2feb1a230e53"};
+window._fbIdToken=null;var _fbReady=false;
+function initFirebaseAuth(){if(!window.firebase||_fbReady)return;try{try{firebase.initializeApp(_FB_CONFIG);}catch(e){firebase.app();}_fbReady=true;if(firebase.auth){firebase.auth().onAuthStateChanged(function(u){if(!u)firebase.auth().signInAnonymously().catch(function(){});});firebase.auth().onIdTokenChanged(function(u){if(u)u.getIdToken().then(function(t){window._fbIdToken=t;}).catch(function(){});else window._fbIdToken=null;});}}catch(e){console.warn('Firebase init:',e);}}
+function _getAuthToken(){if(window._fbIdToken)return Promise.resolve(window._fbIdToken);return new Promise(function(resolve){var el=0,iv=setInterval(function(){if(window._fbIdToken){clearInterval(iv);resolve(window._fbIdToken);}else if((el+=100)>=5000){clearInterval(iv);resolve(null);}},100);});}
 
 // ── Firebase anonymous auth (for secure getMembers calls) ──────────────────
 const _FB_CONFIG = {
@@ -1759,6 +1766,7 @@ function loadData() {
     renderCarItemStatus();
   }).catch(function(){ showToast('Failed to load — check connection'); })
   .finally(function(){ showLoad(false); document.getElementById('sync-btn').textContent='↻ Sync'; });
+  }); // end _getAuthToken
   }); // end _getAuthToken
 }
 function updateStats() {
@@ -3670,6 +3678,7 @@ function renderAdmChkFromItems(el) {
 }
 // BOOT
 document.addEventListener('DOMContentLoaded', function() {
+  initFirebaseAuth();
   initFirebaseAuth();
   // ── Register Service Worker for notifications ────────────────────────────
   if ('serviceWorker' in navigator) {
