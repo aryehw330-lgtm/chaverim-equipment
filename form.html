@@ -13,6 +13,13 @@
 <title>COBC Equipment</title>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script>
+var _FB_CONFIG={apiKey:"AIzaSyBYAz3ohsJGX_zo-Yq3faZ2m0uv4tfuSl8",authDomain:"cobc-dispatch.firebaseapp.com",projectId:"cobc-dispatch",storageBucket:"cobc-dispatch.firebasestorage.app",messagingSenderId:"292943991082",appId:"1:292943991082:web:3d4b83f0ea2feb1a230e53"};
+window._fbIdToken=null;var _fbReady=false;
+function initFirebaseAuth(){if(!window.firebase||_fbReady)return;try{try{firebase.initializeApp(_FB_CONFIG);}catch(e){firebase.app();}_fbReady=true;if(firebase.auth){firebase.auth().onAuthStateChanged(function(u){if(!u)firebase.auth().signInAnonymously().catch(function(){});});firebase.auth().onIdTokenChanged(function(u){if(u)u.getIdToken().then(function(t){window._fbIdToken=t;}).catch(function(){});else window._fbIdToken=null;});}}catch(e){console.warn("Firebase:",e);}}
+function _getAuthToken(){if(window._fbIdToken)return Promise.resolve(window._fbIdToken);return new Promise(function(resolve){var el=0,iv=setInterval(function(){if(window._fbIdToken){clearInterval(iv);resolve(window._fbIdToken);}else if((el+=100)>=5000){clearInterval(iv);resolve(null);}},100);});}
+document.addEventListener("DOMContentLoaded",initFirebaseAuth);
+</script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -3448,14 +3455,6 @@ function qrSubmit(action) {
     .catch(function(){ done++; });
   });
 }
-</script>
-
-<script>
-var _FB_CONFIG={apiKey:"AIzaSyBYAz3ohsJGX_zo-Yq3faZ2m0uv4tfuSl8",authDomain:"cobc-dispatch.firebaseapp.com",projectId:"cobc-dispatch",storageBucket:"cobc-dispatch.firebasestorage.app",messagingSenderId:"292943991082",appId:"1:292943991082:web:3d4b83f0ea2feb1a230e53"};
-window._fbIdToken=null;var _fbReady=false;
-function initFirebaseAuth(){if(!window.firebase||_fbReady)return;try{try{firebase.initializeApp(_FB_CONFIG);}catch(e){firebase.app();}_fbReady=true;if(firebase.auth){firebase.auth().onAuthStateChanged(function(u){if(!u)firebase.auth().signInAnonymously().catch(function(){});});firebase.auth().onIdTokenChanged(function(u){if(u)u.getIdToken().then(function(t){window._fbIdToken=t;}).catch(function(){});else window._fbIdToken=null;});}}catch(e){console.warn("Firebase:",e);}}
-function _getAuthToken(){if(window._fbIdToken)return Promise.resolve(window._fbIdToken);return new Promise(function(resolve){var el=0,iv=setInterval(function(){if(window._fbIdToken){clearInterval(iv);resolve(window._fbIdToken);}else if((el+=100)>=5000){clearInterval(iv);resolve(null);}},100);});}
-document.addEventListener("DOMContentLoaded",initFirebaseAuth);
 </script>
 </body>
 </html>
