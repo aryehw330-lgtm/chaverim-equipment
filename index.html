@@ -19,7 +19,7 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#f4f6f9;--surface:#fff;--surface2:#f0f4f8;--text:#1a1a1a;--text2:#555;--text3:#888;--border:#e0e6ed;--border2:#d0d8e4;--navy:#1a3a5c;--tabbar:#fff}
-body.dark{--bg:#0f1923;--surface:#1a2840;--surface2:#162234;--text:#e0eaf4;--text2:#8aa8c8;--text3:#5a7a9a;--border:#2a3f5a;--border2:#1e3248;--tabbar:#162234}
+body.dark{--bg:#0f1923;--surface:#1a2840;--surface2:#162234;--text:#e0eaf4;--text2:#8aa8c8;--text3:#5a7a9a;--border:#2a3f5a;--border2:#1e3248;--navy:#7fb3e0;--tabbar:#162234}
 html,body{height:100%;max-height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior:none;overflow:hidden;position:fixed;width:100%}
 #app{display:flex;flex-direction:column;position:fixed;top:0;left:0;right:0;bottom:0;overflow:hidden}
 #pin-gate{position:fixed;inset:0;background:#1a3a5c;z-index:9999;display:flex;align-items:center;justify-content:center}
@@ -68,6 +68,7 @@ html,body{height:100%;max-height:100%;font-family:-apple-system,BlinkMacSystemFo
 .tab{flex:1;min-width:44px;max-width:90px;padding:8px 2px 7px;border:none;background:none;color:var(--text3);font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;position:relative;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;overflow:visible;transition:transform .12s ease,color .1s;transform-origin:bottom center;will-change:transform;z-index:201}
 .tab .ti{font-size:22px}
 .tab.active{color:#1a3a5c;border-bottom-color:#1a3a5c}
+body.dark .tab.active{color:#e8c14a;border-bottom-color:#e8c14a}
 .tab-badge{position:absolute;top:4px;right:calc(50% - 18px);background:#c0392b;color:#fff;font-size:9px;font-weight:700;min-width:15px;height:15px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px}
 #content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:none}
 .page{display:none;padding:14px;padding-bottom:20px;animation:pageIn .18s ease both}
@@ -193,7 +194,7 @@ textarea{resize:vertical;min-height:70px}
 .inv-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
 .inv-name{font-size:15px;font-weight:700;color:var(--text);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .inv-badges{display:flex;gap:4px;flex-shrink:0}
-.inv-meta{font-size:12px;color:var(--text2);margin-top:3px}
+.inv-meta{font-size:14px;color:var(--text2);margin-top:3px}
 .inv-cnc{font-size:12px;color:#e65100;margin-top:4px;background:#fff3e0;border-radius:6px;padding:4px 8px}
 .inv-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .btn-in{width:100%;padding:11px;background:#1a3a5c;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer}
@@ -287,6 +288,8 @@ body.dark .out-meta,.dark .r-detail,.dark .inv-meta{color:var(--text2)}
 body.dark input,.dark select,.dark textarea{background:var(--surface2);color:var(--text);border-color:var(--border2)}
 body.dark .modal-box{background:var(--surface)}
 body.dark .modal-title{color:var(--text)}
+body.dark .modal-sub{color:var(--text2)}
+body.dark .field-label{color:var(--text)}
 body.dark .adm-sec{background:var(--surface);border-color:var(--border)}
 body.dark .adm-title{color:var(--text);background:var(--surface2)}
 body.dark .car-shift-card{background:var(--surface);border-color:var(--border)}
@@ -388,7 +391,7 @@ body.dark .recent-card{background:var(--surface)}
     <button class="modal-close" onclick="closeModal()">✕</button>
     <div class="modal-bar"></div>
     <div class="modal-title">Check In / Out</div>
-    <div class="modal-sub" style="color:#1a3a5c;font-weight:600;margin-bottom:12px">All items share the same call info</div>
+    <div class="modal-sub" style="color:var(--navy);font-weight:600;margin-bottom:12px">All items share the same call info</div>
     <div class="input-group">
       <label class="field-label">Unit # (BC Member)</label>
       <input id="modal-member" type="text" inputmode="numeric" placeholder="e.g. 38"/>
@@ -419,7 +422,7 @@ body.dark .recent-card{background:var(--surface)}
     <div id="modal-member-display" style="display:none;background:#eef3f8;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px;font-weight:600;color:#1a3a5c"></div>
     <!-- Admin / Dispatch: log for another member -->
     <div id="modal-log-for-wrap" style="display:none;border-top:1.5px solid #e0e6ed;padding-top:12px;margin-bottom:12px">
-      <label class="field-label" style="color:#1a3a5c;font-weight:700;margin-bottom:6px">📋 Logging for unit #</label>
+      <label class="field-label" style="color:var(--navy);font-weight:700;margin-bottom:6px">📋 Logging for unit #</label>
       <select id="modal-log-for" onchange="updateModalLogForNote()" style="width:100%;padding:11px 12px;border:1.5px solid #1a3a5c;border-radius:9px;font-size:15px;font-weight:600;color:#1a3a5c;background:#f0f4f8;outline:none">
         <option value="">— My own unit —</option>
       </select>
@@ -1773,7 +1776,9 @@ function renderDashboard() {
   document.getElementById('dash-out').innerHTML = out.map(function(it) {
     var cc = it.isCNC ? '<span class="badge badge-cnc">CNC</span>' : '<span class="badge badge-in">CC</span>';
     return '<div class="out-card" data-row="'+it.row+'"><div style="flex:1;min-width:0"><div class="out-name">'+esc(it.name)+'</div>'
-      +'<div class="out-meta">'+esc(it.homeLocation)+(it.member?' · '+fmtMemberBadge(it.member):'')+(it.call?' · Call #'+esc(it.call):'')+'</div>'
+      +'<div class="out-meta"><b>Home Location -</b> '+esc(it.homeLocation)
+      +(it.member?' · <b>Member '+(it.status==='OUT'?'Check Out':'Check In')+':</b> '+fmtMemberBadge(it.member):'')
+      +(it.call?' · <b>Call #'+esc(it.call)+'</b>':'')+'</div>'
       +(it.isCNC?'<div class="out-meta" style="color:#e65100">'+esc(it.cncNote||it.ccnc)+'</div>':'')
       +'</div><div style="text-align:right">'+cc+'<div class="out-time">'+fmtTime(it.lastUpdated)+'</div></div></div>';
   }).join('');
