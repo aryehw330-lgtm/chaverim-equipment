@@ -1677,10 +1677,12 @@ function loadData() {
   showLoad(true);
   document.getElementById('sync-btn').textContent = '...';
   _getAuthToken().then(function(tok){
-    var membersUrl=BASE_URL+'?action=getMembers'+(tok?'&authToken='+encodeURIComponent(tok):'');
+    var membersReq=tok
+      ? fetch(BASE_URL+'?action=getMembers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({authToken:tok})}).then(function(r){return r.json();})
+      : fetchJ(BASE_URL+'?action=getMembers');
     Promise.all([
       fetchJ(BASE_URL+'?action=getInventory'),
-      fetchJ(membersUrl),
+      membersReq,
       fetchJ(BASE_URL+'?action=getLocations')
     ]).then(function(res) {
     items   = res[0].items   || [];
