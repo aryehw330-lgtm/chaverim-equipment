@@ -1260,6 +1260,45 @@ function addModalItem(row) {
 function isCarItem(name) {
   return name && name.toString().toLowerCase().replace(/\s+/g,'').indexOf('cobc4') >= 0;
 }
+// Read the live dispatch calls from Firestore (same REST mechanism the form already
+// uses for car-access sync) and pre-fill the call # for the given unit — but ONLY if
+// that unit is on exactly ONE open/active call. Blank for zero or 2+ (never guess wrong).
+function _autofillCallForMember(unitId){
+  try{
+    var u = String(unitId||'').replace(/^BC-?/i,'').trim();
+    if(!u) return;
+    var field = document.getElementById('modal-call');
+    if(!field || field.value) return; // don't clobber a value (incl. COBC4 'SHIFT')
+    var apiKey='AIzaSyBYAz3ohsJGX_zo-Yq3faZ2m0uv4tfuSl8';
+    var url='https://firestore.googleapis.com/v1/projects/cobc-dispatch/databases/(default)/documents/calls?key='+apiKey+'&pageSize=300';
+    var tokP = (typeof _getAuthToken==='function') ? _getAuthToken() : Promise.resolve(null);
+    tokP.then(function(tok){
+      var h={}; if(tok) h['Authorization']='Bearer '+tok;
+      return fetch(url,{headers:h});
+    }).then(function(r){ return r.json(); }).then(function(data){
+      var docs=(data&&data.documents)||[];
+      var matches=[];
+      docs.forEach(function(d){
+        var f=d.fields||{};
+        var status=(f.status&&f.status.stringValue)||'';
+        if(status!=='open'&&status!=='active') return;
+        var resp=(f.responders&&f.responders.arrayValue&&f.responders.arrayValue.values)||[];
+        var has=resp.some(function(rv){
+          var rf=(rv.mapValue&&rv.mapValue.fields)||{};
+          var ru=(rf.unit&&(rf.unit.stringValue||rf.unit.integerValue))||'';
+          return String(ru).replace(/^BC-?/i,'').trim()===u;
+        });
+        if(has){
+          var cn=(f.callNum&&(f.callNum.integerValue||f.callNum.stringValue));
+          if(cn!=null && cn!=='') matches.push(String(cn));
+        }
+      });
+      // Same rule as the in-app logic: exactly one live call → fill; else leave blank.
+      var fld=document.getElementById('modal-call');
+      if(fld && !fld.value && matches.length===1) fld.value=matches[0];
+    }).catch(function(){});
+  }catch(e){}
+}
 function openCheckout(row, action) {
   var it = items.find(function(i){return i.row===row;});
   if(!it) return;
@@ -1368,6 +1407,9 @@ function openCheckout(row, action) {
   } else {
     if (callGrp) callGrp.style.display  = 'block';
     if (ccncGrp) ccncGrp.style.display  = 'block';
+    // Auto-fill the call # from the call this member is currently on (open/active).
+    var _forUnit = (logForSel && logForSel.value) ? logForSel.value : (loggedInMember ? loggedInMember.id : '');
+    _autofillCallForMember(_forUnit);
   }
 }
 function closeModal() {
@@ -1390,6 +1432,9 @@ function updateModalLogForNote() {
   } else {
     note.style.display = 'none';
   }
+  // Re-fill the call # from whichever unit is actually taking the item out.
+  var _cf=document.getElementById('modal-call');
+  if(_cf && _cf.value!=='SHIFT'){ _cf.value=''; _autofillCallForMember(sel.value || (loggedInMember?loggedInMember.id:'')); }
 }
 function toggleCNCNote() {
   document.getElementById('cnc-note-group').style.display = document.getElementById('modal-ccnc').value==='CNC'?'block':'none';
