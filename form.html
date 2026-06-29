@@ -1263,11 +1263,12 @@ function isCarItem(name) {
 // Read the live dispatch calls from Firestore (same REST mechanism the form already
 // uses for car-access sync) and pre-fill the call # for the given unit — but ONLY if
 // that unit is on exactly ONE open/active call. Blank for zero or 2+ (never guess wrong).
-function _autofillCallForMember(unitId){
+function _autofillCallForMember(unitId, fieldId){
   try{
+    fieldId = fieldId || 'modal-call';
     var u = String(unitId||'').replace(/^BC-?/i,'').trim();
     if(!u) return;
-    var field = document.getElementById('modal-call');
+    var field = document.getElementById(fieldId);
     if(!field || field.value) return; // don't clobber a value (incl. COBC4 'SHIFT')
     var apiKey='AIzaSyBYAz3ohsJGX_zo-Yq3faZ2m0uv4tfuSl8';
     var url='https://firestore.googleapis.com/v1/projects/cobc-dispatch/databases/(default)/documents/calls?key='+apiKey+'&pageSize=300';
@@ -1294,7 +1295,7 @@ function _autofillCallForMember(unitId){
         }
       });
       // Same rule as the in-app logic: exactly one live call → fill; else leave blank.
-      var fld=document.getElementById('modal-call');
+      var fld=document.getElementById(fieldId);
       if(fld && !fld.value && matches.length===1) fld.value=matches[0];
     }).catch(function(){});
   }catch(e){}
@@ -3324,6 +3325,12 @@ function qrShowForm() {
     document.getElementById('qr-member-display').style.display = 'block';
     document.getElementById('qr-member-display').textContent = '\ud83d\udc64 BC-' + _qrMember.id + ' \u2014 ' + (_qrMember.name||'');
     document.getElementById('qr-member-wrap').style.display = 'none';
+    // Auto-fill the call # from the call this member is currently on (open/active),
+    // unless it's COBC 4 (shift vehicle). Same rule: only if on exactly ONE live call.
+    if(!isCarItem(_qrName)){
+      var _qf=document.getElementById('qr-call');
+      if(_qf && !_qf.value) _autofillCallForMember(_qrMember.id, 'qr-call');
+    }
   }
   // Hide call# and CC/CNC for COBC 4 \u2014 it's a shift vehicle
   var qrCallGrp = document.getElementById('qr-call-group');
