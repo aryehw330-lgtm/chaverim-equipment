@@ -2862,6 +2862,7 @@ function loadCarSchedule(cb) {
   fetchJ(BASE_URL + '?action=getCarSchedule')
     .then(function(d) {
       carSchedule = d.bookings || [];
+      reconcileCarShiftStatus();
       renderCarCalendar();
       renderCarHistory();
       renderCarActionBanner();
@@ -3207,8 +3208,33 @@ function submitCarBooking() {
       } else { showToast('Error: '+(d.error||'Unknown')); btn.disabled=false; btn.textContent='Request Shift'; }
     }).catch(function(){ showToast('Network error'); btn.disabled=false; btn.textContent='Request Shift'; });
 }
+// Keeps column G in sync with COBC 4's real status:
+// if a shift is marked 'active' but the car was never actually signed OUT
+// (car is IN and no actualSignOut recorded), revert it to 'approved' so the
+// Start Shift flow works cleanly and there's no stuck-active error.
+function reconcileCarShiftStatus() {
+  if (!carSchedule || !carSchedule.length) return;
+  var carItem = items.find(function(i){ return isCarItem(i.name); });
+  if (!carItem || carItem.status === 'OUT') return; // car genuinely out — nothing to fix
+  carSchedule.forEach(function(b){
+    if (b.status === 'active' && !b.actualSignOut) {
+      b.status = 'approved';
+      postJ({action:'revertCarShift', id:b.id}).catch(function(){});
+    }
+  });
+}
 function startCarShift(bookingId) {
   var bkg = carSchedule.find(function(x){ return x.id===bookingId; });
+  var carItemNow = items.find(function(i){ return isCarItem(i.name); });
+  var carIsOutNow = carItemNow && carItemNow.status === 'OUT';
+  // Already-active but car was never signed out → don't re-hit the backend
+  // (it would error). Just send them straight to sign COBC 4 out.
+  if (bkg && bkg.status === 'active' && !carIsOutNow) {
+    if (!confirm('Sign COBC 4 out for your shift now?')) return;
+    showToast('🔑 Sign COBC 4 OUT in Inventory now');
+    setTimeout(function(){ navigateToCarCheckout('OUT'); }, 500);
+    return;
+  }
   if (bkg && bkg.status === 'approved') {
     var todayStr2 = (function(){ var n=new Date(); return n.getFullYear()+'-'+pad2(n.getMonth()+1)+'-'+pad2(n.getDate()); })();
     var start24 = parse12to24(bkg.startTime);
