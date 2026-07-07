@@ -3041,7 +3041,7 @@ function renderCarDay(dateStr) {
         + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
         + '<div><div style="font-size:13px;font-weight:700;color:#1a1a1a">BC-'+esc(b.memberId)+' '+esc(b.memberName||'')+(isMine?' <span style="font-size:10px;color:#1a3a5c;background:#dbeafe;padding:1px 6px;border-radius:8px">You</span>':'')+'</div>'
         + bookedByLine
-        + '<div style="font-size:12px;color:#555;margin-top:3px">🕐 '+esc(b.startTime)+' – '+esc(b.endTime)+'</div>'
+        + '<div style="font-size:12px;color:#555;margin-top:3px">🕐 '+esc(b.startTime)+' – '+esc(b.endTime)+overnightEndLabel(b)+'</div>'
         + noteHtml
         + '</div><div style="text-align:right">'+stLabel+'</div></div>'
         + (actions?'<div style="display:flex;flex-wrap:wrap;gap:4px">'+actions+'</div>':'')
@@ -3164,12 +3164,16 @@ function submitCarBooking() {
     return m;
   }
   var startMin = toMin(start24, false), endMin = toMin(end24, true);
+  // Overnight shift (e.g. 11:00 PM → 1:00 AM): end is on the next day, so push it +24h
+  var crossesMidnight = false;
+  if (endMin <= startMin) { endMin += 1440; crossesMidnight = true; }
   if (endMin <= startMin) { showToast('End time must be after start time'); return; }
   // Client-side overlap check against already-loaded schedule
   var conflict = carSchedule.find(function(b) {
     if (b.date !== carSelectedDate) return false;
     if (b.status === 'cancelled' || b.status === 'done') return false;
     var bS = toMin(parse12to24(b.startTime), false), bE = toMin(parse12to24(b.endTime), true);
+    if (bE <= bS) bE += 1440; // existing booking also crosses midnight
     return startMin < bE && endMin > bS;
   });
   if (conflict) {
@@ -3405,6 +3409,31 @@ function parse12to24(t) {
   if (ap === 'AM' && h === 12) h = 0;
   return pad2(h) + ':' + mn;
 }
+// True when a booking's end time is on the following calendar day (e.g. 11PM–1AM)
+function isOvernightShift(b) {
+  if (!b || !b.startTime || !b.endTime) return false;
+  var s = parse12to24(b.startTime), e = parse12to24(b.endTime);
+  var sMin = parseInt(s.split(':')[0],10)*60 + parseInt(s.split(':')[1],10);
+  var eMin = parseInt(e.split(':')[0],10)*60 + parseInt(e.split(':')[1],10);
+  if (eMin === 0) eMin = 1440; // ends exactly at midnight
+  return eMin <= sMin;
+}
+// Returns the shift's end date (YYYY-MM-DD) — next day if it crosses midnight
+function shiftEndDate(b) {
+  if (!b || !b.date) return '';
+  if (!isOvernightShift(b)) return b.date;
+  var d = new Date(b.date + 'T12:00:00');
+  d.setDate(d.getDate() + 1);
+  return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate());
+}
+// Short label like "Jul 7" for the next-day end of an overnight shift, else ''
+function overnightEndLabel(b) {
+  if (!isOvernightShift(b)) return '';
+  try {
+    var d = new Date(shiftEndDate(b) + 'T12:00:00');
+    return ' <span style="color:#e65100;font-weight:700">(' + d.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ')</span>';
+  } catch(e) { return ' (next day)'; }
+}
 function getCarTime(prefix) {
   var h  = ((document.getElementById('car-'+prefix+'-hour')||{}).value||'');
   var mn = ((document.getElementById('car-'+prefix+'-min')||{}).value||'');
@@ -3563,7 +3592,7 @@ function renderCarHistory() {
           +' &nbsp;·&nbsp; '
           +(actualIn  ? '🏁 Returned: <b>'+esc(actualIn)+'</b>'  : '🏁 Returned: —')
         +'</div>'
-      : '<div style="font-size:11px;color:#aaa;margin-top:3px">🕐 Scheduled: '+esc(b.startTime)+' – '+esc(b.endTime)+'</div>';
+      : '<div style="font-size:11px;color:#aaa;margin-top:3px">🕐 Scheduled: '+esc(b.startTime)+' – '+esc(b.endTime)+overnightEndLabel(b)+'</div>';
     var histBookedByLine = b.bookedBy ? (function(){
       var lbName = getMemberName(b.bookedBy);
       return '<div style="font-size:11px;font-weight:700;color:#e65100;margin-top:1px">· booked by BC-'+esc(b.bookedBy)+(lbName?' '+esc(lbName):'')+'</div>';
@@ -3627,7 +3656,7 @@ function renderAdminCarHistory() {
     var actualOut = fmtActual(b.actualSignOut), actualIn = fmtActual(b.actualSignIn);
     var timeRow = (actualOut || actualIn)
       ? '🔑 <b>'+(actualOut||'—')+'</b> → 🏁 <b>'+(actualIn||'—')+'</b>'
-      : '🕐 Scheduled '+esc(b.startTime)+' – '+esc(b.endTime);
+      : '🕐 Scheduled '+esc(b.startTime)+' – '+esc(b.endTime)+overnightEndLabel(b);
     var statusBadge = {done:'background:#e0e0e0;color:#555', active:'background:#fdecea;color:#c0392b', cancelled:'background:#fff3e0;color:#e65100'}[b.status]||'background:#e0e0e0;color:#555';
     var statusLabel = {done:'✓ Done', active:'🚗 Out Now', cancelled:'✕ Cancelled'}[b.status]||b.status;
     return '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border);gap:8px">'
