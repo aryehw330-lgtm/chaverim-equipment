@@ -1549,6 +1549,12 @@ textarea.input{min-height:80px;resize:vertical;}
         </div>
 
         <!-- Reset all calls (admin-only, testing) -->
+        <div class="card" id="zelloStatusCard" style="margin-bottom:10px;display:none;">
+          <div class="card-title" style="margin-bottom:4px;">📻 Zello Radio</div>
+          <div id="zelloStatusLine" style="font-size:13px;font-weight:700;color:var(--text3);">📻 Zello: off</div>
+          <button class="btn-sm btn-ghost" style="margin-top:8px;" onclick="try{_zelloDisconnect();_zelloConnect();showToast('Reconnecting Zello…');}catch(e){}">Reconnect</button>
+        </div>
+        <!-- Reset all calls (admin-only, testing) -->
         <div class="card" id="settingsResetCard" style="margin-bottom:10px;display:none;border:1.5px solid #fca5a5;">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
             <div style="flex:1;min-width:0;">
@@ -4953,6 +4959,8 @@ function _applyRoleUI(role) {
   if (chkSubmitBtn) chkSubmitBtn.style.display = (role==='admin'||role==='equipment') ? 'block' : 'none';
   const settingsResetCard = document.getElementById('settingsResetCard');
   if (settingsResetCard) settingsResetCard.style.display = (role==='admin') ? '' : 'none';
+  const zelloStatusCard = document.getElementById('zelloStatusCard');
+  if (zelloStatusCard){ zelloStatusCard.style.display = (role==='admin'||role==='dispatch') ? '' : 'none'; try{ _zelloSetStatus(_zelloStatus); }catch(e){} }
   const adminStatsCloudRow = document.getElementById('adminStatsCloudRow');
   if (adminStatsCloudRow) adminStatsCloudRow.style.display = (role==='admin') ? '' : 'none';
   const adminFreezeRow = document.getElementById('adminFreezeRow');
@@ -11114,12 +11122,15 @@ function _zelloConnect(){
     if(_zelloCfg.endpoint){ url=_zelloCfg.endpoint; }
     else if(_zelloCfg.api || /(^|\.)zello\.io$/i.test(_zelloCfg.network||'')){ url='wss://zello.io/ws'; }
     else { url='wss://'+String(_zelloCfg.network).replace(/^https?:\/\//,'').replace(/\.zellowork\.com.*$/,'')+'.zellowork.com/ws'; }
+    _zelloSetStatus('connecting…');
     _zelloWS=new WebSocket(url);
     _zelloWS.onopen=()=>{
       try{
+        _zelloSetStatus('socket open — logging on…');
         const chans=Array.isArray(_zelloCfg.channels)&&_zelloCfg.channels.length
           ? _zelloCfg.channels
           : [_zelloCfg.channel||'All Users'];
+        _zelloChanCount=chans.length; _zelloOkCount=0;
         chans.forEach(ch=>{
           _zelloWS.send(JSON.stringify({
             command:'logon', seq:_zelloSeq++,
@@ -11133,12 +11144,24 @@ function _zelloConnect(){
     };
     _zelloWS.onmessage=(ev)=>{
       let m; try{ m=JSON.parse(ev.data); }catch(e){ return; }
+      // Logon response: {success:true,...} or {success:false,error:'...'}
+      if(typeof m.success!=='undefined' || m.error){
+        if(m.success){ _zelloOkCount++; _zelloSetStatus('connected ('+_zelloOkCount+'/'+_zelloChanCount+' channels)'); }
+        else { _zelloSetStatus('logon failed: '+(m.error||'unknown')); }
+      }
       if(m.command==='on_stream_start'){ _zelloSetSpeaking(m.from||m.username||''); }
       else if(m.command==='on_stream_stop'){ _zelloSetSpeaking(null); }
+      else if(m.command==='on_channel_status' && m.status){ /* channel online/offline info */ }
     };
-    _zelloWS.onclose=()=>{ _zelloSetSpeaking(null); if(_zelloCfg && _zelloCfg.enabled){ clearTimeout(_zelloReconnectT); _zelloReconnectT=setTimeout(_zelloConnect, 5000); } };
-    _zelloWS.onerror=()=>{ try{ _zelloWS.close(); }catch(e){} };
-  }catch(e){ console.warn('zello connect failed:', e); }
+    _zelloWS.onclose=()=>{ _zelloSetSpeaking(null); _zelloSetStatus('disconnected'); if(_zelloCfg && _zelloCfg.enabled){ clearTimeout(_zelloReconnectT); _zelloReconnectT=setTimeout(_zelloConnect, 5000); } };
+    _zelloWS.onerror=()=>{ _zelloSetStatus('socket error'); try{ _zelloWS.close(); }catch(e){} };
+  }catch(e){ _zelloSetStatus('connect error: '+(e.message||e)); console.warn('zello connect failed:', e); }
+}
+let _zelloStatus='off', _zelloChanCount=0, _zelloOkCount=0;
+function _zelloSetStatus(s){
+  _zelloStatus=s;
+  const el=document.getElementById('zelloStatusLine');
+  if(el){ el.textContent='📻 Zello: '+s; el.style.color = /connected/.test(s)?'var(--green)':/fail|error|disconnect/.test(s)?'var(--red)':'var(--text3)'; }
 }
 function _zelloDisconnect(){
   clearTimeout(_zelloReconnectT);
