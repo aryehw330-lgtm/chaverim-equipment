@@ -3478,13 +3478,19 @@ function qrToggleCNC() {
 
 function qrUpdateMoveOpt() {
   // "Moving item between calls" only applies if a selected item is already OUT.
-  var opt = document.getElementById('qr-move-opt');
-  if (!opt) return;
+  var sel = document.getElementById('qr-ccnc');
+  if (!sel) return;
   var names = qrSelectedNames();
   var anyOut = (_qrAllItems || []).some(function(it){ return names.indexOf(it.name) >= 0 && it.status === 'OUT'; });
-  opt.style.display = anyOut ? '' : 'none';
-  var sel = document.getElementById('qr-ccnc');
-  if (!anyOut && sel && sel.value === 'MOVE') { sel.value = ''; qrToggleCNC(); }
+  var opt = document.getElementById('qr-move-opt');
+  // display:none on an <option> is ignored by iOS — remove/re-insert the node instead.
+  if (!anyOut) {
+    if (opt) { if (sel.value === 'MOVE') { sel.value = ''; qrToggleCNC(); } opt.remove(); }
+  } else if (!opt) {
+    opt = document.createElement('option');
+    opt.id = 'qr-move-opt'; opt.value = 'MOVE'; opt.textContent = '🔄 Moving item between calls';
+    sel.appendChild(opt);
+  }
 }
 
 function qrRenderItemsList() {
