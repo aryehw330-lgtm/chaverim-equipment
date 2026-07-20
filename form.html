@@ -3392,7 +3392,19 @@ function qrShowForm() {
 }
 
 function qrToggleCNC() {
-  document.getElementById('qr-cnc-wrap').style.display = document.getElementById('qr-ccnc').value === 'CNC' ? 'block' : 'none';
+  var ccnc = document.getElementById('qr-ccnc').value;
+  document.getElementById('qr-cnc-wrap').style.display = ccnc === 'CNC' ? 'block' : 'none';
+  // CNC can never be checked IN — force OUT-only when CNC is selected; otherwise
+  // restore the button(s) that match the scanned item's current state.
+  var btnIn = document.getElementById('qr-btn-in');
+  var btnOut = document.getElementById('qr-btn-out');
+  var grid = btnIn && btnIn.parentElement;
+  if (!btnIn || !btnOut || _qrIsCobc4) return;
+  var it = (_qrAllItems || []).find(function(i){ return i.name === _qrName; });
+  var showOutOnly = ccnc === 'CNC' || (it && (it.isCNC || it.status !== 'OUT'));
+  btnIn.style.display  = showOutOnly ? 'none' : 'block';
+  btnOut.style.display = showOutOnly ? 'block' : 'none';
+  if (grid) grid.style.gridTemplateColumns = '1fr';
 }
 
 function qrRenderItemsList() {
