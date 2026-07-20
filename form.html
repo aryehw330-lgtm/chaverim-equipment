@@ -1456,6 +1456,13 @@ function submitCheckout(action) {
   if(!call   && !hasCobc4) { alert('Please enter the call number.'); return; }
   if(!ccSel  && !hasCobc4) { alert('Please select CC or CNC.'); return; }
   if(ccSel==='CNC'&&!cncNote&&!hasCobc4) { alert('Please describe where the item is.'); return; }
+  // CNC guard: an item flagged CNC (wrong location) may be signed OUT — it's still in a
+  // member's possession, just misplaced — but must NOT be signed IN, since that would
+  // wrongly mark it as returned to its correct home location.
+  if(action==='IN' && ccSel==='CNC' && !hasCobc4) {
+    alert('⚠️ CNC items can\'t be checked IN.\n\nThe item is in the wrong location. Sign it OUT, or select "CC — Correct location" once it\'s back at its correct home.');
+    return;
+  }
   // COBC 4 defaults — shift vehicle, no dispatched call
   if(hasCobc4) { if(!call) call='SHIFT'; if(!ccSel) ccSel='CC'; }
 var blocked = [];
@@ -3456,6 +3463,13 @@ function qrSubmit(action) {
     if (!call)   { alert('Please enter the call number.'); return; }
     if (!ccnc)   { alert('Please select a status.'); return; }
     if (ccnc === 'CNC' && !cncNote) { alert('Please describe where the item is.'); return; }
+    // CNC guard: a CNC item (wrong location) may be signed OUT — it's still in a member's
+    // possession, just misplaced — but must NOT be signed IN, since that would wrongly
+    // mark it as returned to its correct home location.
+    if (action === 'IN' && ccnc === 'CNC') {
+      alert('\u26a0\ufe0f CNC items can\'t be checked IN.\n\nThe item is in the wrong location. Sign it OUT, or select "CC \u2014 Correct location" once it\'s back at its correct home.');
+      return;
+    }
   }
   // Block wrong direction \u2014 check ALL items including extras
   var allToCheck = [_qrName].concat(_qrExtraItems);
