@@ -3255,7 +3255,7 @@ function toggleAlertRecipient(memberId, enabled) {
           <option value="">-- Select --</option>
           <option value="CC">CC — Correct location</option>
           <option value="CNC">CNC — Wrong location</option>
-          <option value="MOVE">🔄 Bringing equipment from one call to another</option>
+          <option value="MOVE" id="qr-move-opt">🔄 Moving item between calls</option>
         </select>
       </div>
       <div id="qr-cnc-wrap" style="display:none">
@@ -3345,7 +3345,14 @@ function qrShowForm() {
     // unless it's COBC 4 (shift vehicle). Same rule: only if on exactly ONE live call.
     if(!isCarItem(_qrName)){
       var _qf=document.getElementById('qr-call');
-      if(_qf && !_qf.value) _autofillCallForMember(_qrMember.id, 'qr-call');
+      var _lastCall=''; try{ _lastCall=sessionStorage.getItem('qr_last_call')||''; }catch(e){}
+      if(_qf && !_qf.value && _lastCall) _qf.value=_lastCall;
+      if(_qf && !_qf.value){
+        _autofillCallForMember(_qrMember.id, 'qr-call');
+        // Retry after auth token settles — the first read often fires before Firebase auth is ready.
+        setTimeout(function(){ var f=document.getElementById('qr-call'); if(f && !f.value) _autofillCallForMember(_qrMember.id, 'qr-call'); }, 1500);
+        setTimeout(function(){ var f=document.getElementById('qr-call'); if(f && !f.value) _autofillCallForMember(_qrMember.id, 'qr-call'); }, 3500);
+      }
     }
   }
   // Hide call# and CC/CNC for COBC 4 \u2014 it's a shift vehicle
@@ -3367,6 +3374,7 @@ function qrShowForm() {
     .then(function(r){ return r.json(); })
     .then(function(d) {
       _qrAllItems = d.items || [];
+      qrUpdateMoveOpt();
       if (_qrGeneral) return;
       var it = _qrAllItems.find(function(i){ return i.name === _qrName; });
       if (it) {
@@ -3409,7 +3417,7 @@ function qrDone() {
     _qrExtraItems = [];
     document.getElementById('qr-confirm').style.display = 'none';
     document.getElementById('qr-form-wrap').style.display = 'block';
-    var c=document.getElementById('qr-call'); if(c) c.value='';
+    // Keep the call # — assume they're still working the same call they just signed for.
     var cc=document.getElementById('qr-ccnc'); if(cc) cc.value='';
     var cn=document.getElementById('qr-cnc-note'); if(cn) cn.value='';
     var cw=document.getElementById('qr-cnc-wrap'); if(cw) cw.style.display='none';
@@ -3447,6 +3455,17 @@ function qrToggleCNC() {
   if (grid) grid.style.gridTemplateColumns = '1fr';
 }
 
+function qrUpdateMoveOpt() {
+  // "Moving item between calls" only applies if a selected item is already OUT.
+  var opt = document.getElementById('qr-move-opt');
+  if (!opt) return;
+  var names = qrSelectedNames();
+  var anyOut = (_qrAllItems || []).some(function(it){ return names.indexOf(it.name) >= 0 && it.status === 'OUT'; });
+  opt.style.display = anyOut ? '' : 'none';
+  var sel = document.getElementById('qr-ccnc');
+  if (!anyOut && sel && sel.value === 'MOVE') { sel.value = ''; qrToggleCNC(); }
+}
+
 function qrRenderItemsList() {
   var el = document.getElementById('qr-items-list');
   if (!el) return;
@@ -3458,6 +3477,7 @@ function qrRenderItemsList() {
       + (!it.main ? '<button onclick="qrRemoveItem('+idx+')" style="background:none;border:none;color:#c0392b;font-size:18px;cursor:pointer;padding:0 4px;line-height:1">\u2715</button>' : '')
       + '</div>';
   }).join('');
+  qrUpdateMoveOpt();
 }
 
 function qrRemoveItem(idx) {
@@ -3566,6 +3586,7 @@ function qrSubmit(action) {
     return;
   }
   var allNames = qrSelectedNames();
+  try{ if(call) sessionStorage.setItem('qr_last_call', call); }catch(e){}
   var done = 0; var total = allNames.length;
   allNames.forEach(function(name) {
     fetch(BASE_URL, {
