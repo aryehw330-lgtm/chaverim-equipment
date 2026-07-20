@@ -1276,7 +1276,8 @@ function _autofillCallForMember(unitId, fieldId){
     tokP.then(function(tok){
       var h={}; if(tok) h['Authorization']='Bearer '+tok;
       return fetch(url,{headers:h});
-    }).then(function(r){ return r.json(); }).then(function(data){
+    }).then(function(r){ if(!r.ok){ console.warn('[autofill] calls read failed', r.status); } return r.json(); }).then(function(data){
+      if(data && data.error){ console.warn('[autofill] Firestore error:', data.error.message||data.error); }
       var docs=(data&&data.documents)||[];
       var matches=[];
       docs.forEach(function(d){
@@ -3308,6 +3309,26 @@ function showQRMode(name) {
   setTimeout(function(){ document.getElementById('qr-pin-input').focus(); }, 100);
 }
 
+// Sign the QR member into Firebase with a custom token (same as the dispatch app) so
+// authorized Firestore reads (e.g. the live-call autofill) work. Harmless if it fails.
+var _QR_GET_AUTH_TOKEN_URL='https://us-east1-cobc-dispatch.cloudfunctions.net/getAuthToken';
+function qrFirebaseSignIn(pin){
+  try{
+    if(!pin || typeof firebase==='undefined' || !firebase.auth) return;
+    fetch(_QR_GET_AUTH_TOKEN_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:pin})})
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if(!data || !data.ok || !data.token) return;
+        return firebase.auth().signInWithCustomToken(data.token).then(function(){
+          return firebase.auth().currentUser.getIdToken(true);
+        }).then(function(t){
+          window._fbIdToken = t;
+          try{ if(_qrMember && !isCarItem(_qrName)){ var f=document.getElementById('qr-call'); if(f && !f.value) _autofillCallForMember(_qrMember.id, 'qr-call'); } }catch(e){}
+        });
+      }).catch(function(){});
+  }catch(e){}
+}
+
 function qrCheckPin() {
   var v = document.getElementById('qr-pin-input').value.trim();
   if (!v) return;
@@ -3318,7 +3339,7 @@ function qrCheckPin() {
     .then(function(r){ return r.json(); })
     .then(function(d) {
       document.getElementById('qr-pin-input').disabled = false;
-      if (d && d.id) { _qrMember = d; qrShowForm(); }
+      if (d && d.id) { _qrMember = d; qrFirebaseSignIn(v); qrShowForm(); }
       else { errEl.textContent = '\u2715 Incorrect PIN'; document.getElementById('qr-pin-input').value = ''; document.getElementById('qr-pin-input').focus(); setTimeout(function(){ errEl.textContent=''; }, 2000); }
     })
     .catch(function(){ document.getElementById('qr-pin-input').disabled = false; errEl.textContent = '\u2715 Connection error'; document.getElementById('qr-pin-input').value = ''; setTimeout(function(){ errEl.textContent=''; }, 3000); });
