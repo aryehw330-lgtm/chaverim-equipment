@@ -1343,12 +1343,9 @@ function openCheckout(row, action) {
       }
     }
   }
-  // Block wrong direction (CNC items may go OUT even when already OUT — misplaced / moving between calls).
-  if (action === 'OUT' && it.status === 'OUT' && !it.isCNC) {
-    showToast('⚠️ Item already OUT — contact BC-38 if you need help');
-    return;
-  }
-  if ((!action || action === 'IN') && it.status === 'IN') {
+  // Already OUT: don't hard-block here — open the modal so the member can mark it CNC
+  // and add the "where is it" note. A true no-op (OUT again with no CNC) is caught at submit.
+  if ((!action || action === 'IN') && it.status === 'IN' && !it.isCNC) {
     showToast('⚠️ Item already IN — contact BC-38 if you need help');
     return;
   }
@@ -1469,7 +1466,7 @@ var blocked = [];
   modalItems.forEach(function(item) {
     if (action === 'IN'  && item.status === 'IN')  blocked.push(item.name + ' (already IN)');
     // CNC items may go OUT even when already OUT (misplaced / moving between calls).
-    if (action === 'OUT' && item.status === 'OUT' && ccSel !== 'CNC') blocked.push(item.name + ' (already OUT)');
+    if (action === 'OUT' && item.status === 'OUT' && ccSel !== 'CNC' && !item.isCNC) blocked.push(item.name + ' (already OUT)');
   });
   if (blocked.length > 0) {
     alert('Cannot check ' + action + ': ' + blocked.join(', ') + '. Contact BC-38 if you need help.');
@@ -3275,8 +3272,8 @@ function toggleAlertRecipient(memberId, enabled) {
       </div>
       <div id="qr-item-results" style="display:none;max-height:130px;overflow-y:auto;border:1.5px solid #eee;border-radius:8px;margin-bottom:12px"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <button onclick="qrSubmit('IN')" style="padding:18px;background:#1a3a5c;color:#fff;border:none;border-radius:10px;font-size:18px;font-weight:700;cursor:pointer">✓ IN</button>
-        <button onclick="qrSubmit('OUT')" style="padding:18px;background:#c0392b;color:#fff;border:none;border-radius:10px;font-size:18px;font-weight:700;cursor:pointer">↓ OUT</button>
+        <button id="qr-btn-in" onclick="qrSubmit('IN')" style="padding:18px;background:#1a3a5c;color:#fff;border:none;border-radius:10px;font-size:18px;font-weight:700;cursor:pointer">✓ IN</button>
+        <button id="qr-btn-out" onclick="qrSubmit('OUT')" style="padding:18px;background:#c0392b;color:#fff;border:none;border-radius:10px;font-size:18px;font-weight:700;cursor:pointer">↓ OUT</button>
       </div>
     </div>
   </div>
@@ -3368,6 +3365,21 @@ function qrShowForm() {
         badge.textContent = isOut ? 'Currently OUT' : 'Currently IN';
         badge.style.background = isOut ? '#fdecea' : '#e8f5e9';
         badge.style.color = isOut ? '#c0392b' : '#2e7d32';
+        // Show only the valid action button (avoids tap-then-blocked confusion).
+        // CNC items → OUT only (can't be checked IN). IN items → OUT only. OUT items → IN only.
+        // COBC 4 (car) keeps both — its booking flow governs direction.
+        var btnIn = document.getElementById('qr-btn-in');
+        var btnOut = document.getElementById('qr-btn-out');
+        var grid = btnIn && btnIn.parentElement;
+        if (btnIn && btnOut && !_qrIsCobc4) {
+          var showOutOnly = it.isCNC || !isOut;   // CNC or currently IN → only OUT
+          btnIn.style.display  = showOutOnly ? 'none' : 'block';
+          btnOut.style.display = showOutOnly ? 'block' : 'none';
+          if (grid) grid.style.gridTemplateColumns = '1fr';
+        } else if (btnIn && btnOut) {
+          btnIn.style.display = 'block'; btnOut.style.display = 'block';
+          if (grid) grid.style.gridTemplateColumns = '1fr 1fr';
+        }
       }
     }).catch(function(){});
   // For COBC 4, also fetch car schedule for access control
@@ -3475,14 +3487,21 @@ function qrSubmit(action) {
   // Block wrong direction \u2014 check ALL items including extras
   var allToCheck = [_qrName].concat(_qrExtraItems);
   var blocked = [];
+  var cncInBlocked = [];
   allToCheck.forEach(function(name) {
     var it = _qrAllItems.find(function(i){ return i.name === name; });
     if (it) {
+      // CNC items can never be checked IN (would falsely mark them home).
+      if (action === 'IN' && (it.isCNC || ccnc === 'CNC')) { cncInBlocked.push(name); return; }
       if (action === 'IN'  && it.status === 'IN')  blocked.push(name + ' (already IN)');
       // CNC items may go OUT even when already OUT (misplaced / moving between calls).
-      if (action === 'OUT' && it.status === 'OUT' && ccnc !== 'CNC') blocked.push(name + ' (already OUT)');
+      if (action === 'OUT' && it.status === 'OUT' && ccnc !== 'CNC' && !it.isCNC) blocked.push(name + ' (already OUT)');
     }
   });
+  if (cncInBlocked.length > 0) {
+    alert('\u26a0\ufe0f CNC items can\'t be checked IN: ' + cncInBlocked.join(', ') + '.\n\nThe item is in the wrong location. Sign it OUT, or select "CC \u2014 Correct location" once it\'s back at its correct home.');
+    return;
+  }
   if (blocked.length > 0) {
     alert('Cannot check ' + action + ': ' + blocked.join(', ') + '. Contact BC-38 if you need help.');
     return;
