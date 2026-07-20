@@ -3255,6 +3255,7 @@ function toggleAlertRecipient(memberId, enabled) {
           <option value="">-- Select --</option>
           <option value="CC">CC — Correct location</option>
           <option value="CNC">CNC — Wrong location</option>
+          <option value="MOVE">🔄 Bringing equipment from one call to another</option>
         </select>
       </div>
       <div id="qr-cnc-wrap" style="display:none">
@@ -3282,14 +3283,17 @@ function toggleAlertRecipient(memberId, enabled) {
       <div id="qr-conf-icon" style="width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 16px;color:#fff"></div>
       <div id="qr-conf-title" style="font-size:22px;font-weight:800;margin-bottom:8px"></div>
       <div id="qr-conf-detail" style="font-size:14px;color:#666;margin-bottom:20px;line-height:1.6"></div>
-      <button onclick="var u=location.origin+location.pathname; location.replace(u);" style="width:100%;padding:14px;background:#1a3a5c;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">Done</button>
+      <button onclick="qrDone()" style="width:100%;padding:14px;background:#1a3a5c;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">Done</button>
     </div>
   </div>
 </div>
 <script>
 var _qrName = null;
+var _qrGeneral = false; // general (item-agnostic) mode: no primary item, all added via search
 var _qrMember = null;
 var _qrExtraItems = [];
+// All item names selected in the QR form (primary + extras). In general mode there's no primary.
+function qrSelectedNames(){ return (_qrGeneral ? [] : [_qrName]).concat(_qrExtraItems); }
 var _qrAllItems = [];
 var _qrIsCobc4 = false;
 var _qrCarSchedule = [];
@@ -3297,8 +3301,9 @@ var _qrCarItemData = null;
 
 function showQRMode(name) {
   _qrName = name;
+  _qrGeneral = (name === '__general__');
   document.getElementById('qr-overlay').style.display = 'block';
-  document.getElementById('qr-item-title').textContent = name;
+  document.getElementById('qr-item-title').textContent = _qrGeneral ? 'Equipment Check In / Out' : name;
   document.getElementById('qr-pin-input').addEventListener('keydown', function(e){ if(e.key==='Enter') qrCheckPin(); });
   setTimeout(function(){ document.getElementById('qr-pin-input').focus(); }, 100);
 }
@@ -3322,9 +3327,15 @@ function qrCheckPin() {
 function qrShowForm() {
   document.getElementById('qr-pin-gate').style.display = 'none';
   document.getElementById('qr-form-wrap').style.display = 'block';
-  document.getElementById('qr-form-name').textContent = _qrName;
-  // Detect COBC 4 (car item)
-  _qrIsCobc4 = isCarItem(_qrName);
+  document.getElementById('qr-form-name').textContent = _qrGeneral ? 'Check Equipment In / Out' : _qrName;
+  if (_qrGeneral) {
+    document.getElementById('qr-form-loc').textContent = 'Search and add the items you\'re checking in or out';
+    document.getElementById('qr-form-badge').style.display = 'none';
+    var _bi=document.getElementById('qr-btn-in'), _bo=document.getElementById('qr-btn-out');
+    if(_bi&&_bo){ _bi.style.display='block'; _bo.style.display='block'; if(_bi.parentElement) _bi.parentElement.style.gridTemplateColumns='1fr 1fr'; }
+    setTimeout(function(){ var s=document.getElementById('qr-item-search'); if(s) s.focus(); }, 150);
+  }
+  _qrIsCobc4 = !_qrGeneral && isCarItem(_qrName);
   if (_qrMember) {
     document.getElementById('qr-member').value = _qrMember.id;
     document.getElementById('qr-member-display').style.display = 'block';
@@ -3356,6 +3367,7 @@ function qrShowForm() {
     .then(function(r){ return r.json(); })
     .then(function(d) {
       _qrAllItems = d.items || [];
+      if (_qrGeneral) return;
       var it = _qrAllItems.find(function(i){ return i.name === _qrName; });
       if (it) {
         _qrCarItemData = _qrIsCobc4 ? it : null;
@@ -3391,6 +3403,26 @@ function qrShowForm() {
   }
 }
 
+function qrDone() {
+  // General mode: reset the form in place so the member can check more items without re-PIN.
+  if (_qrGeneral && _qrMember) {
+    _qrExtraItems = [];
+    document.getElementById('qr-confirm').style.display = 'none';
+    document.getElementById('qr-form-wrap').style.display = 'block';
+    var c=document.getElementById('qr-call'); if(c) c.value='';
+    var cc=document.getElementById('qr-ccnc'); if(cc) cc.value='';
+    var cn=document.getElementById('qr-cnc-note'); if(cn) cn.value='';
+    var cw=document.getElementById('qr-cnc-wrap'); if(cw) cw.style.display='none';
+    var s=document.getElementById('qr-item-search'); if(s) s.value='';
+    var r=document.getElementById('qr-item-results'); if(r) r.style.display='none';
+    qrRenderItemsList();
+    qrToggleCNC();
+    window.scrollTo(0,0);
+    return;
+  }
+  location.replace(location.origin + location.pathname + '?name=__general__');
+}
+
 function qrToggleCNC() {
   var ccnc = document.getElementById('qr-ccnc').value;
   document.getElementById('qr-cnc-wrap').style.display = ccnc === 'CNC' ? 'block' : 'none';
@@ -3400,8 +3432,16 @@ function qrToggleCNC() {
   var btnOut = document.getElementById('qr-btn-out');
   var grid = btnIn && btnIn.parentElement;
   if (!btnIn || !btnOut || _qrIsCobc4) return;
+  if (_qrGeneral) {
+    // General mode has mixed items — keep both buttons; CNC/MOVE forces OUT-only.
+    var outOnly = ccnc === 'CNC' || ccnc === 'MOVE';
+    btnIn.style.display  = outOnly ? 'none' : 'block';
+    btnOut.style.display = 'block';
+    if (grid) grid.style.gridTemplateColumns = outOnly ? '1fr' : '1fr 1fr';
+    return;
+  }
   var it = (_qrAllItems || []).find(function(i){ return i.name === _qrName; });
-  var showOutOnly = ccnc === 'CNC' || (it && (it.isCNC || it.status !== 'OUT'));
+  var showOutOnly = ccnc === 'CNC' || ccnc === 'MOVE' || (it && (it.isCNC || it.status !== 'OUT'));
   btnIn.style.display  = showOutOnly ? 'none' : 'block';
   btnOut.style.display = showOutOnly ? 'block' : 'none';
   if (grid) grid.style.gridTemplateColumns = '1fr';
@@ -3410,7 +3450,8 @@ function qrToggleCNC() {
 function qrRenderItemsList() {
   var el = document.getElementById('qr-items-list');
   if (!el) return;
-  var all = [{name: _qrName, main: true}].concat(_qrExtraItems.map(function(n){ return {name:n, main:false}; }));
+  var all = (_qrGeneral ? [] : [{name: _qrName, main: true}]).concat(_qrExtraItems.map(function(n){ return {name:n, main:false}; }));
+  if (all.length === 0) { el.innerHTML = '<div style="font-size:13px;color:#aaa;padding:8px 2px">No items yet — search below to add.</div>'; return; }
   el.innerHTML = all.map(function(it, idx) {
     return '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 8px;background:#f8fafc;border-radius:8px;margin-bottom:4px">'
       + '<span style="font-size:13px;font-weight:600;color:#1a1a1a">'+esc(it.name)+(it.main?' <span style="font-size:10px;color:#aaa;font-weight:400">(scanned)</span>':'')+'</span>'
@@ -3428,7 +3469,7 @@ function qrItemSearch() {
   var q = document.getElementById('qr-item-search').value.toLowerCase().trim();
   var res = document.getElementById('qr-item-results');
   if (!q) { res.style.display='none'; return; }
-  var taken = [_qrName].concat(_qrExtraItems);
+  var taken = qrSelectedNames();
   var matches = _qrAllItems.filter(function(it){
     return it.equipStatus !== 'Not Active' && it.name.toLowerCase().indexOf(q) >= 0 && taken.indexOf(it.name) < 0;
   }).slice(0, 8);
@@ -3454,6 +3495,11 @@ function qrSubmit(action) {
   var call    = document.getElementById('qr-call').value.trim();
   var ccnc    = document.getElementById('qr-ccnc').value;
   var cncNote = document.getElementById('qr-cnc-note').value.trim();
+  // MOVE = bringing equipment from one call to another: allow OUT even when already OUT,
+  // store as a normal CC checkout (item stays out, gets the new call #).
+  var isMove = (ccnc === 'MOVE');
+  if (isMove) ccnc = 'CC';
+  if (isMove && action !== 'OUT') { alert('"Bringing from one call to another" is a check-OUT — tap OUT.'); return; }
   if (!member) { alert('Please enter your BC member number.'); return; }
   // COBC 4: skip call/CC validation, use shift defaults
   if (_qrIsCobc4) {
@@ -3497,7 +3543,8 @@ function qrSubmit(action) {
     }
   }
   // Block wrong direction \u2014 check ALL items including extras
-  var allToCheck = [_qrName].concat(_qrExtraItems);
+  var allToCheck = qrSelectedNames();
+  if (allToCheck.length === 0) { alert('Please add at least one item.'); return; }
   var blocked = [];
   var cncInBlocked = [];
   allToCheck.forEach(function(name) {
@@ -3507,7 +3554,7 @@ function qrSubmit(action) {
       if (action === 'IN' && (it.isCNC || ccnc === 'CNC')) { cncInBlocked.push(name); return; }
       if (action === 'IN'  && it.status === 'IN')  blocked.push(name + ' (already IN)');
       // CNC items may go OUT even when already OUT (misplaced / moving between calls).
-      if (action === 'OUT' && it.status === 'OUT' && ccnc !== 'CNC' && !it.isCNC) blocked.push(name + ' (already OUT)');
+      if (action === 'OUT' && it.status === 'OUT' && ccnc !== 'CNC' && !it.isCNC && !isMove) blocked.push(name + ' (already OUT)');
     }
   });
   if (cncInBlocked.length > 0) {
@@ -3518,7 +3565,7 @@ function qrSubmit(action) {
     alert('Cannot check ' + action + ': ' + blocked.join(', ') + '. Contact BC-38 if you need help.');
     return;
   }
-  var allNames = [_qrName].concat(_qrExtraItems);
+  var allNames = qrSelectedNames();
   var done = 0; var total = allNames.length;
   allNames.forEach(function(name) {
     fetch(BASE_URL, {
