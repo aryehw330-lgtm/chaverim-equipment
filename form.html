@@ -1343,8 +1343,8 @@ function openCheckout(row, action) {
       }
     }
   }
-  // Block wrong direction
-  if (action === 'OUT' && it.status === 'OUT') {
+  // Block wrong direction (CNC items may go OUT even when already OUT — misplaced / moving between calls).
+  if (action === 'OUT' && it.status === 'OUT' && !it.isCNC) {
     showToast('⚠️ Item already OUT — contact BC-38 if you need help');
     return;
   }
@@ -1468,7 +1468,8 @@ function submitCheckout(action) {
 var blocked = [];
   modalItems.forEach(function(item) {
     if (action === 'IN'  && item.status === 'IN')  blocked.push(item.name + ' (already IN)');
-    if (action === 'OUT' && item.status === 'OUT') blocked.push(item.name + ' (already OUT)');
+    // CNC items may go OUT even when already OUT (misplaced / moving between calls).
+    if (action === 'OUT' && item.status === 'OUT' && ccSel !== 'CNC') blocked.push(item.name + ' (already OUT)');
   });
   if (blocked.length > 0) {
     alert('Cannot check ' + action + ': ' + blocked.join(', ') + '. Contact BC-38 if you need help.');
@@ -3478,7 +3479,8 @@ function qrSubmit(action) {
     var it = _qrAllItems.find(function(i){ return i.name === name; });
     if (it) {
       if (action === 'IN'  && it.status === 'IN')  blocked.push(name + ' (already IN)');
-      if (action === 'OUT' && it.status === 'OUT') blocked.push(name + ' (already OUT)');
+      // CNC items may go OUT even when already OUT (misplaced / moving between calls).
+      if (action === 'OUT' && it.status === 'OUT' && ccnc !== 'CNC') blocked.push(name + ' (already OUT)');
     }
   });
   if (blocked.length > 0) {
