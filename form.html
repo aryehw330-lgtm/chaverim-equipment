@@ -287,8 +287,8 @@ textarea{resize:vertical;min-height:70px}
       <label class="field-label">Status</label>
       <select id="modal-ccnc" onchange="toggleCNCNote()">
         <option value="">-- Select --</option>
-        <option value="CC">CC — Correct location</option>
-        <option value="CNC">CNC — Wrong location</option>
+        <option value="CC">CC / Home Location</option>
+        <option value="CNC">CNC / Wrong Location</option>
         <option value="TRUCK">🚛 In vehicle</option>
       </select>
     </div>
@@ -1017,7 +1017,7 @@ function renderDashboard() {
   var ow = document.getElementById('dash-out-wrap');
   ow.style.display = out.length ? 'block' : 'none';
   document.getElementById('dash-out').innerHTML = out.map(function(it) {
-    var cc = it.isCNC ? '<span class="badge badge-cnc">CNC</span>' : '<span class="badge badge-in">CC</span>';
+    var cc = it.isCNC ? '<span class="badge badge-cnc">'+(/^in vehicle/i.test(it.cncNote||'')?'IN VEHICLE':'CNC')+'</span>' : '<span class="badge badge-in">CC</span>';
     return '<div class="out-card"><div style="flex:1;min-width:0"><div class="out-name">'+esc(it.name)+'</div>'
       +'<div class="out-meta">'+esc(it.homeLocation)+(it.member?' · '+fmtMemberBadge(it.member):'')+(it.call?' · Call #'+esc(it.call):'')+'</div>'
       +(it.isCNC?'<div class="out-meta" style="color:#e65100">'+esc(it.cncNote||it.ccnc)+'</div>':'')
@@ -1175,7 +1175,7 @@ function renderInventory() {
   el.innerHTML = filtered.map(function(it) {
     var sb = it.status==='OUT'?'<span class="badge badge-out">OUT</span>':'<span class="badge badge-in">IN</span>';
     var eb = getEB(it.equipStatus);
-    var cb = it.isCNC?'<span class="badge badge-cnc">CNC</span>':'';
+    var cb = it.isCNC?'<span class="badge badge-cnc">'+(/^in vehicle/i.test(it.cncNote||'')?'IN VEHICLE':'CNC')+'</span>':'';
     var fl = it.equipStatus==='Missing'?'fl-miss':it.equipStatus==='Damaged'?'fl-dmg':it.isCNC?'fl-cnc':'';
     return '<div class="inv-card '+fl+'">'
       +'<div class="inv-top"><div class="inv-name">'+esc(it.name)+'</div><div class="inv-badges">'+sb+eb+cb+'</div></div>'
@@ -1424,6 +1424,10 @@ function openCheckout(row, action) {
   }
   // ── COBC 4: hide call# and CC/CNC — it's a shift vehicle, not a specific call ──
   var hasCobc4 = modalItems.some(function(i){ return isCarItem(i.name); });
+  // CC label depends on direction: item currently OUT being returned home → "Home Location";
+  // item currently IN being taken to a call → "Brought to correct call number".
+  var _ccOpt = document.querySelector('#modal-ccnc option[value="CC"]');
+  if(_ccOpt){ var allOut = modalItems.length && modalItems.every(function(i){ return String(i.status).toUpperCase()==='OUT'; }); _ccOpt.textContent = allOut ? 'CC / Home Location' : 'CC / Brought to correct call number'; }
   var callGrp  = document.getElementById('modal-call-group');
   var ccncGrp  = document.getElementById('modal-ccnc-group');
   var cncGrp   = document.getElementById('cnc-note-group');
@@ -3297,8 +3301,8 @@ function toggleAlertRecipient(memberId, enabled) {
         <select id="qr-ccnc" onchange="qrToggleCNC()"
           style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:14px 12px;font-size:16px;outline:none;background:#fff;-webkit-appearance:none;margin-bottom:13px">
           <option value="">-- Select --</option>
-          <option value="CC">CC — Correct location</option>
-          <option value="CNC">CNC — Wrong location</option>
+          <option value="CC">CC / Home Location</option>
+          <option value="CNC">CNC / Wrong Location</option>
           <option value="TRUCK">🚛 In vehicle</option>
           <option value="MOVE" id="qr-move-opt">🔄 Moving item between calls</option>
         </select>
@@ -3451,6 +3455,8 @@ function qrShowForm() {
         _qrCarItemData = _qrIsCobc4 ? it : null;
         document.getElementById('qr-form-loc').textContent = '\ud83d\udccd ' + it.homeLocation;
         var isOut = it.status === 'OUT';
+        var _qrCcOpt = document.querySelector('#qr-ccnc option[value="CC"]');
+        if(_qrCcOpt) _qrCcOpt.textContent = isOut ? 'CC / Home Location' : 'CC / Brought to correct call number';
         var badge = document.getElementById('qr-form-badge');
         badge.textContent = isOut ? 'Currently OUT' : 'Currently IN';
         badge.style.background = isOut ? '#fdecea' : '#e8f5e9';
