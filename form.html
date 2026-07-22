@@ -3530,10 +3530,14 @@ function qrToggleCNC() {
     return;
   }
   var it = (_qrAllItems || []).find(function(i){ return i.name === _qrName; });
-  var showOutOnly = ccnc === 'CNC' || ccnc === 'MOVE' || (it && (it.isCNC || it.status !== 'OUT'));
+  var forceOut = (ccnc === 'CNC' || ccnc === 'MOVE' || ccnc === 'TRUCK');
+  // CC on an item that's currently OUT & flagged CNC/in-vehicle → both are valid:
+  // IN (back to home) or OUT (on to the correct call #).
+  var ccBothCnc = !forceOut && it && it.isCNC && it.status === 'OUT';
+  var showOutOnly = forceOut || (!ccBothCnc && it && (it.isCNC || it.status !== 'OUT'));
   btnIn.style.display  = showOutOnly ? 'none' : 'block';
-  btnOut.style.display = showOutOnly ? 'block' : 'none';
-  if (grid) grid.style.gridTemplateColumns = '1fr';
+  btnOut.style.display = 'block';
+  if (grid) grid.style.gridTemplateColumns = showOutOnly ? '1fr' : '1fr 1fr';
 }
 
 function qrUpdateMoveOpt() {
@@ -3663,8 +3667,9 @@ function qrSubmit(action) {
   allToCheck.forEach(function(name) {
     var it = _qrAllItems.find(function(i){ return i.name === name; });
     if (it) {
-      // CNC items can never be checked IN (would falsely mark them home).
-      if (action === 'IN' && (it.isCNC || ccnc === 'CNC')) { cncInBlocked.push(name); return; }
+      // CNC items can never be checked IN as CNC (would falsely mark them home).
+      // But selecting CC = correcting the location, so IN is allowed then.
+      if (action === 'IN' && (ccnc === 'CNC' || (it.isCNC && ccnc !== 'CC'))) { cncInBlocked.push(name); return; }
       if (action === 'IN'  && it.status === 'IN')  blocked.push(name + ' (already IN)');
       // CNC items may go OUT even when already OUT (misplaced / moving between calls).
       if (action === 'OUT' && it.status === 'OUT' && ccnc !== 'CNC' && !it.isCNC && !isMove) blocked.push(name + ' (already OUT)');
