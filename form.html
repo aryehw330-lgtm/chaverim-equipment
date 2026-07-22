@@ -289,11 +289,16 @@ textarea{resize:vertical;min-height:70px}
         <option value="">-- Select --</option>
         <option value="CC">CC — Correct location</option>
         <option value="CNC">CNC — Wrong location</option>
+        <option value="TRUCK">🚛 In vehicle</option>
       </select>
     </div>
     <div class="input-group" id="cnc-note-group" style="display:none">
-      <label class="field-label">Where is the item? (CNC Note)</label>
+      <label class="field-label" id="cnc-note-label">Where is the item? (CNC Note)</label>
       <input id="modal-cnc-note" type="text" placeholder="e.g. Left at Teaneck Garage"/>
+    </div>
+    <div class="input-group" id="modal-truck-group" style="display:none">
+      <label class="field-label">Which vehicle?</label>
+      <select id="modal-truck-sel"><option value="">-- Select vehicle --</option></select>
     </div>
     <div class="field-label" style="margin-bottom:6px">Items Selected</div>
     <div id="modal-item-list" style="margin-bottom:10px;max-height:160px;overflow-y:auto"></div>
@@ -961,6 +966,7 @@ function loadData() {
     if (loggedInMember) { initNotifications(); loadAlertRecipients(); }
     if (userLevel >= 3) { loadAlertRecipients(); }
     renderCarItemStatus();
+    try{ loadFleetVehicles(); }catch(e){}
   }).catch(function(){ showToast('Failed to load — check connection'); })
   .finally(function(){ showLoad(false); document.getElementById('sync-btn').textContent='↻ Sync'; });
 }
@@ -1260,6 +1266,30 @@ function addModalItem(row) {
 function isCarItem(name) {
   return name && name.toString().toLowerCase().replace(/\s+/g,'').indexOf('cobc4') >= 0;
 }
+// Fleet vehicles for the "In vehicle" picker — read from the same Firestore doc the
+// dispatch app writes (config/vehicles). Populates both the modal and QR dropdowns.
+var _fleetVehicles = [];
+function loadFleetVehicles(){
+  try{
+    var apiKey='AIzaSyBYAz3ohsJGX_zo-Yq3faZ2m0uv4tfuSl8';
+    var url='https://firestore.googleapis.com/v1/projects/cobc-dispatch/databases/(default)/documents/config/vehicles?key='+apiKey;
+    var tokP=(typeof _getAuthToken==='function')?_getAuthToken():Promise.resolve(null);
+    tokP.then(function(tok){
+      var h={}; if(tok) h['Authorization']='Bearer '+tok;
+      return fetch(url,{headers:h});
+    }).then(function(r){ return r.json(); }).then(function(data){
+      var arr=(((data||{}).fields||{}).list||{}).arrayValue;
+      var vals=(arr&&arr.values)||[];
+      _fleetVehicles=vals.map(function(v){ var f=(v.mapValue&&v.mapValue.fields)||{}; return (f.name&&f.name.stringValue)||''; }).filter(Boolean);
+      _populateVehicleSelects();
+    }).catch(function(){});
+  }catch(e){}
+}
+function _populateVehicleSelects(){
+  var opts='<option value="">-- Select vehicle --</option>'+_fleetVehicles.map(function(n){return '<option value="'+esc(n)+'">'+esc(n)+'</option>';}).join('');
+  var m=document.getElementById('modal-truck-sel'); if(m) m.innerHTML=opts;
+  var q=document.getElementById('qr-truck-sel'); if(q) q.innerHTML=opts;
+}
 // Read the live dispatch calls from Firestore (same REST mechanism the form already
 // uses for car-access sync) and pre-fill the call # for the given unit — but ONLY if
 // that unit is on exactly ONE open/active call. Blank for zero or 2+ (never guess wrong).
@@ -1436,7 +1466,13 @@ function updateModalLogForNote() {
   if(_cf && _cf.value!=='SHIFT'){ _cf.value=''; _autofillCallForMember(sel.value || (loggedInMember?loggedInMember.id:'')); }
 }
 function toggleCNCNote() {
-  document.getElementById('cnc-note-group').style.display = document.getElementById('modal-ccnc').value==='CNC'?'block':'none';
+  var v=document.getElementById('modal-ccnc').value;
+  var useSel=(v==='TRUCK' && _fleetVehicles.length>0);
+  document.getElementById('cnc-note-group').style.display=((v==='CNC')||(v==='TRUCK'&&!useSel))?'block':'none';
+  var tg=document.getElementById('modal-truck-group'); if(tg) tg.style.display=useSel?'block':'none';
+  var lbl=document.getElementById('cnc-note-label'), inp=document.getElementById('modal-cnc-note');
+  if(v==='TRUCK'){ if(lbl)lbl.textContent='Which vehicle?'; if(inp)inp.placeholder='e.g. Ambulance 1, Truck 4'; }
+  else { if(lbl)lbl.textContent='Where is the item? (CNC Note)'; if(inp)inp.placeholder='e.g. Left at Teaneck Garage'; }
 }
 function submitCheckout(action) {
   if(!modalItems.length) { alert('Please select at least one item.'); return; }
@@ -1444,6 +1480,13 @@ function submitCheckout(action) {
   var call    = document.getElementById('modal-call').value.trim();
   var ccSel   = document.getElementById('modal-ccnc').value;
   var cncNote = document.getElementById('modal-cnc-note').value.trim();
+  // TRUCK = "in vehicle": behaves like CNC (in the org's possession, wrong home) and
+  // writes through the same columns, with the note recording which vehicle.
+  if(ccSel==='TRUCK'){
+    var veh=(_fleetVehicles.length>0) ? (document.getElementById('modal-truck-sel').value||'').trim() : cncNote;
+    if(action==='OUT' && !veh){ alert('Please select which vehicle the items are on.'); return; }
+    cncNote='In vehicle: '+veh; ccSel='CNC';
+  }
   var hasCobc4 = modalItems.some(function(item){ return isCarItem(item.name); });
   // Handle "log for another" (admin/dispatch)
   var logForSel = document.getElementById('modal-log-for');
@@ -3256,13 +3299,18 @@ function toggleAlertRecipient(memberId, enabled) {
           <option value="">-- Select --</option>
           <option value="CC">CC — Correct location</option>
           <option value="CNC">CNC — Wrong location</option>
+          <option value="TRUCK">🚛 In vehicle</option>
           <option value="MOVE" id="qr-move-opt">🔄 Moving item between calls</option>
         </select>
       </div>
       <div id="qr-cnc-wrap" style="display:none">
-        <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px">Where is the item?</label>
+        <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px" id="qr-cnc-label">Where is the item?</label>
         <input id="qr-cnc-note" type="text" placeholder="e.g. Left at Teaneck Garage"
           style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:14px 12px;font-size:16px;outline:none;margin-bottom:13px"/>
+      </div>
+      <div id="qr-truck-wrap" style="display:none">
+        <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px">Which vehicle?</label>
+        <select id="qr-truck-sel" style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:14px 12px;font-size:16px;outline:none;background:#fff;-webkit-appearance:none;margin-bottom:13px"><option value="">-- Select vehicle --</option></select>
       </div>
       <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:6px">Items</div>
       <div id="qr-items-list" style="margin-bottom:8px"></div>
@@ -3396,6 +3444,7 @@ function qrShowForm() {
     .then(function(d) {
       _qrAllItems = d.items || [];
       qrUpdateMoveOpt();
+      try{ if(!_fleetVehicles.length) loadFleetVehicles(); }catch(e){}
       if (_qrGeneral) return;
       var it = _qrAllItems.find(function(i){ return i.name === _qrName; });
       if (it) {
@@ -3454,7 +3503,12 @@ function qrDone() {
 
 function qrToggleCNC() {
   var ccnc = document.getElementById('qr-ccnc').value;
-  document.getElementById('qr-cnc-wrap').style.display = ccnc === 'CNC' ? 'block' : 'none';
+  var useSel=(ccnc==='TRUCK' && _fleetVehicles.length>0);
+  document.getElementById('qr-cnc-wrap').style.display = ((ccnc==='CNC')||(ccnc==='TRUCK'&&!useSel)) ? 'block' : 'none';
+  var tw=document.getElementById('qr-truck-wrap'); if(tw) tw.style.display=useSel?'block':'none';
+  var lbl=document.getElementById('qr-cnc-label'), inp=document.getElementById('qr-cnc-note');
+  if(ccnc==='TRUCK'){ if(lbl)lbl.textContent='Which vehicle?'; if(inp)inp.placeholder='e.g. Ambulance 1, Truck 4'; }
+  else { if(lbl)lbl.textContent='Where is the item?'; if(inp)inp.placeholder='e.g. Left at Teaneck Garage'; }
   // CNC can never be checked IN — force OUT-only when CNC is selected; otherwise
   // restore the button(s) that match the scanned item's current state.
   var btnIn = document.getElementById('qr-btn-in');
@@ -3463,7 +3517,7 @@ function qrToggleCNC() {
   if (!btnIn || !btnOut || _qrIsCobc4) return;
   if (_qrGeneral) {
     // General mode has mixed items — keep both buttons; CNC/MOVE forces OUT-only.
-    var outOnly = ccnc === 'CNC' || ccnc === 'MOVE';
+    var outOnly = ccnc === 'CNC' || ccnc === 'TRUCK' || ccnc === 'MOVE';
     btnIn.style.display  = outOnly ? 'none' : 'block';
     btnOut.style.display = 'block';
     if (grid) grid.style.gridTemplateColumns = outOnly ? '1fr' : '1fr 1fr';
@@ -3542,6 +3596,12 @@ function qrSubmit(action) {
   var call    = document.getElementById('qr-call').value.trim();
   var ccnc    = document.getElementById('qr-ccnc').value;
   var cncNote = document.getElementById('qr-cnc-note').value.trim();
+  // TRUCK = "in vehicle": behaves like CNC, writes through the same columns, note = vehicle.
+  if(ccnc==='TRUCK'){
+    var qveh=(_fleetVehicles.length>0) ? (document.getElementById('qr-truck-sel').value||'').trim() : cncNote;
+    if(action==='OUT' && !qveh){ alert('Please select which vehicle the items are on.'); return; }
+    cncNote='In vehicle: '+qveh; ccnc='CNC';
+  }
   // MOVE = bringing equipment from one call to another: allow OUT even when already OUT,
   // store as a normal CC checkout (item stays out, gets the new call #).
   var isMove = (ccnc === 'MOVE');
