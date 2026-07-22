@@ -406,6 +406,7 @@ body.dark .recent-card{background:var(--surface)}
         <option value="">-- Select --</option>
         <option value="CC" id="opt-cc">CC / Home Location</option>
         <option value="CNC">CNC / Wrong Location</option>
+        <option value="MOVE">🔄 Move to another call</option>
         <option value="TRUCK">🚛 In vehicle</option>
       </select>
     </div>
@@ -2206,9 +2207,9 @@ function toggleCNCNote() {
   document.getElementById('cnc-note-group').style.display = v==='CNC'?'block':'none';
   var tg = document.getElementById('truck-group');
   if (tg) tg.style.display = v==='TRUCK'?'block':'none';
-  // "In vehicle" (like CNC) can be checked OUT but not IN → force OUT-only buttons
+  // "In vehicle"/CNC → OUT-only. "Move to another call" → OUT-only (item goes OUT→OUT).
   var inBtn = document.getElementById('modal-btn-in');
-  if (inBtn) inBtn.style.display = (v==='TRUCK'||v==='CNC') ? 'none' : '';
+  if (inBtn) inBtn.style.display = (v==='TRUCK'||v==='CNC'||v==='MOVE') ? 'none' : '';
   if (v==='TRUCK') loadVehiclesIntoPicker();
 }
 // Update the CC option wording based on whether the item(s) are being returned or taken out
@@ -2260,6 +2261,12 @@ function submitCheckout(action) {
     cncNote = 'In vehicle: ' + veh;
     ccSel = 'CNC';
   }
+  // "Move to another call" — item stays OUT, just re-logged to a new call. Maps to CC.
+  var isMove = (ccSel === 'MOVE');
+  if (isMove) {
+    if (action === 'IN') { alert('“Move to another call” keeps the item OUT — use Check OUT.'); return; }
+    ccSel = 'CC';
+  }
   // Handle "log for another" (admin/dispatch)
   var logForSel = document.getElementById('modal-log-for');
   var logForVal = (logForSel && document.getElementById('modal-log-for-wrap').style.display !== 'none') ? logForSel.value.trim() : '';
@@ -2274,7 +2281,6 @@ function submitCheckout(action) {
 var blocked = [];
   modalItems.forEach(function(item) {
     if (action === 'IN'  && item.status === 'IN')  blocked.push(item.name + ' (already IN)');
-    if (action === 'OUT' && item.status === 'OUT') blocked.push(item.name + ' (already OUT)');
   });
   if (blocked.length > 0) {
     haptic('error'); playSound('error');
