@@ -2207,9 +2207,10 @@ function toggleCNCNote() {
   document.getElementById('cnc-note-group').style.display = v==='CNC'?'block':'none';
   var tg = document.getElementById('truck-group');
   if (tg) tg.style.display = v==='TRUCK'?'block':'none';
-  // "In vehicle"/CNC → OUT-only. "Move to another call" → OUT-only (item goes OUT→OUT).
+  // Show BOTH buttons for CC/CNC/In-vehicle: Check IN for items going back in,
+  // Check OUT for items going out to the correct call. Only "Move" stays OUT-only.
   var inBtn = document.getElementById('modal-btn-in');
-  if (inBtn) inBtn.style.display = (v==='TRUCK'||v==='CNC'||v==='MOVE') ? 'none' : '';
+  if (inBtn) inBtn.style.display = (v==='MOVE') ? 'none' : '';
   if (v==='TRUCK') loadVehiclesIntoPicker();
 }
 // Update the CC option wording based on whether the item(s) are being returned or taken out
@@ -2257,9 +2258,8 @@ function submitCheckout(action) {
     var tTxt = document.getElementById('modal-truck-text');
     var veh = (tSel && tSel.style.display!=='none' ? tSel.value : (tTxt?tTxt.value:'')).trim();
     if (!veh && !hasCobc4) { alert('Please select which vehicle the item is in.'); return; }
-    if (action === 'IN') { alert('An \u201cIn vehicle\u201d item can only be checked OUT.'); return; }
-    cncNote = 'In vehicle: ' + veh;
-    ccSel = 'CNC';
+    if (action === 'IN') { cncNote = ''; }
+    else { cncNote = 'In vehicle: ' + veh; ccSel = 'CNC'; }
   }
   // "Move to another call" — item stays OUT, just re-logged to a new call. Maps to CC.
   var isMove = (ccSel === 'MOVE');
