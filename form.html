@@ -3533,18 +3533,14 @@ function qrToggleCNC() {
   var it = (_qrAllItems || []).find(function(i){ return i.name === _qrName; });
   var forceOut = (ccnc === 'CNC' || ccnc === 'MOVE' || ccnc === 'TRUCK');
   var isOut = it && it.status === 'OUT';
-  // CC on an item currently OUT & flagged CNC/in-vehicle → both valid (home OR call #).
-  var ccBothCnc = !forceOut && it && it.isCNC && isOut;
-  // Plain OUT item returned as CC → only Check IN (going home). No reason to check it out again.
-  var showInOnly = !forceOut && !ccBothCnc && it && !it.isCNC && isOut;
-  if (ccBothCnc) {
-    btnIn.style.display = 'block'; btnOut.style.display = 'block';
-    if (grid) grid.style.gridTemplateColumns = '1fr 1fr';
-  } else if (showInOnly) {
+  // CC selected on ANY currently-out item (correct place, in a vehicle, or CNC wrong
+  // location) → only Check IN (bringing it back home). CNC/MOVE/TRUCK force Check OUT;
+  // an item currently IN → only Check OUT.
+  var showInOnly = !forceOut && isOut;
+  if (showInOnly) {
     btnIn.style.display = 'block'; btnOut.style.display = 'none';
     if (grid) grid.style.gridTemplateColumns = '1fr';
   } else {
-    // forceOut (CNC/MOVE/TRUCK), or item currently IN → only Check OUT.
     btnIn.style.display = 'none'; btnOut.style.display = 'block';
     if (grid) grid.style.gridTemplateColumns = '1fr';
   }
