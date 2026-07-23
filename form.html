@@ -3346,6 +3346,7 @@ function toggleAlertRecipient(memberId, enabled) {
           style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:12px 12px 12px 36px;font-size:14px;outline:none"/>
       </div>
       <div id="qr-item-results" style="display:none;max-height:130px;overflow-y:auto;border:1.5px solid #eee;border-radius:8px;margin-bottom:12px"></div>
+      <button type="button" onclick="qrOpenScanner()" style="width:100%;margin-bottom:12px;padding:12px;background:#eef3f8;color:#1a3a5c;border:1.5px dashed #1a3a5c;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer">📷 Scan QR to add item</button>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <button id="qr-btn-in" onclick="qrSubmit('IN')" style="padding:18px;background:#1a3a5c;color:#fff;border:none;border-radius:10px;font-size:18px;font-weight:700;cursor:pointer">✓ IN</button>
         <button id="qr-btn-out" onclick="qrSubmit('OUT')" style="padding:18px;background:#c0392b;color:#fff;border:none;border-radius:10px;font-size:18px;font-weight:700;cursor:pointer">↓ OUT</button>
@@ -3626,6 +3627,77 @@ function qrAddItem(el) {
   if (_qrExtraItems.indexOf(name) < 0) { _qrExtraItems.push(name); qrRenderItemsList(); }
   document.getElementById('qr-item-search').value = '';
   document.getElementById('qr-item-results').style.display = 'none';
+}
+
+// ── QR camera scanner: scan an item's sticker to add it to the form ──────────
+function _loadJsQR(){
+  return new Promise(function(res,rej){
+    if(window.jsQR) return res();
+    var s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
+    s.onload=res; s.onerror=function(){ rej(new Error('load')); };
+    document.head.appendChild(s);
+  });
+}
+var _qrScanStream=null, _qrScanRAF=null, _qrScanLastMsg=0;
+function qrOpenScanner(){
+  var ov=document.getElementById('qr-scan-overlay');
+  if(!ov){
+    ov=document.createElement('div'); ov.id='qr-scan-overlay';
+    ov.style.cssText='position:fixed;inset:0;background:#000;z-index:100000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;';
+    ov.innerHTML='<div style="color:#fff;font-size:16px;font-weight:700;margin-bottom:12px;text-align:center;">Point the camera at an item\u2019s QR sticker</div>'
+      +'<video id="qr-scan-video" playsinline muted style="width:100%;max-width:420px;aspect-ratio:1;object-fit:cover;border-radius:16px;background:#111;"></video>'
+      +'<div id="qr-scan-msg" style="color:#e8e8e8;font-size:14px;margin-top:12px;min-height:20px;text-align:center;font-weight:600;"></div>'
+      +'<button onclick="qrCloseScanner()" style="margin-top:18px;padding:13px 32px;background:rgba(255,255,255,.15);color:#fff;border:1.5px solid rgba(255,255,255,.4);border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;">Cancel</button>';
+    document.body.appendChild(ov);
+  }
+  ov.style.display='flex';
+  var msg=document.getElementById('qr-scan-msg'); msg.textContent='Starting camera\u2026';
+  _loadJsQR().then(function(){
+    return navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}});
+  }).then(function(stream){
+    _qrScanStream=stream;
+    var v=document.getElementById('qr-scan-video');
+    v.srcObject=stream; v.setAttribute('playsinline',''); v.play();
+    msg.textContent='Scanning\u2026';
+    var canvas=document.createElement('canvas'), ctx=canvas.getContext('2d');
+    function tick(){
+      if(!_qrScanStream) return;
+      if(v.readyState===v.HAVE_ENOUGH_DATA && v.videoWidth){
+        canvas.width=v.videoWidth; canvas.height=v.videoHeight;
+        ctx.drawImage(v,0,0,canvas.width,canvas.height);
+        var img=ctx.getImageData(0,0,canvas.width,canvas.height);
+        var code=window.jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});
+        if(code&&code.data){ if(qrTryAddScanned(code.data)){ qrCloseScanner(); return; } }
+      }
+      _qrScanRAF=requestAnimationFrame(tick);
+    }
+    _qrScanRAF=requestAnimationFrame(tick);
+  }).catch(function(){
+    var m=document.getElementById('qr-scan-msg'); if(m) m.textContent='\u26a0\ufe0f Camera unavailable \u2014 allow camera access, or type the item name instead';
+  });
+}
+function qrCloseScanner(){
+  if(_qrScanRAF){ cancelAnimationFrame(_qrScanRAF); _qrScanRAF=null; }
+  if(_qrScanStream){ _qrScanStream.getTracks().forEach(function(t){ t.stop(); }); _qrScanStream=null; }
+  var ov=document.getElementById('qr-scan-overlay'); if(ov) ov.style.display='none';
+}
+// Returns true if a valid item was added (stops scanning); false to keep scanning.
+function qrTryAddScanned(data){
+  var msg=document.getElementById('qr-scan-msg');
+  var name='';
+  try{
+    if(/[?&]page=car/i.test(data)) name='COBC 4';
+    else { var m=String(data).match(/[?&]name=([^&]+)/i); if(m) name=decodeURIComponent(m[1].replace(/\+/g,' ')); }
+  }catch(e){}
+  if(!name) name=String(data||'').trim(); // fallback: QR may hold the raw item name
+  var found=(_qrAllItems||[]).find(function(it){ return it.name.toLowerCase()===name.toLowerCase(); });
+  if(!found){ if(msg && Date.now()-_qrScanLastMsg>800){ _qrScanLastMsg=Date.now(); msg.textContent='\u26a0\ufe0f '+(name||'Code')+' not in inventory'; } return false; }
+  if(found.equipStatus==='Not Active'){ if(msg){ msg.textContent='\u26a0\ufe0f '+found.name+' is not active'; } return false; }
+  if(qrSelectedNames().indexOf(found.name)<0){ _qrExtraItems.push(found.name); qrRenderItemsList(); }
+  if(msg) msg.textContent='\u2713 Added '+found.name;
+  try{ if(navigator.vibrate) navigator.vibrate(60); }catch(e){}
+  return true;
 }
 
 function qrSubmit(action) {
