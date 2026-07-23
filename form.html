@@ -317,8 +317,8 @@ textarea{resize:vertical;min-height:70px}
       <div id="modal-log-for-note" style="display:none;margin-top:6px;padding:6px 10px;background:#fff8e1;border-radius:7px;font-size:12px;color:#e65100;font-weight:600"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-success" onclick="submitCheckout('IN')">✓ Check IN All</button>
-      <button class="btn btn-danger" onclick="submitCheckout('OUT')">↓ Check OUT All</button>
+      <button class="btn btn-success" id="modal-btn-in" onclick="submitCheckout('IN')">✓ Check IN All</button>
+      <button class="btn btn-danger" id="modal-btn-out" onclick="submitCheckout('OUT')">↓ Check OUT All</button>
     </div>
   </div>
 </div>
@@ -1444,6 +1444,7 @@ function openCheckout(row, action) {
     var _forUnit = (logForSel && logForSel.value) ? logForSel.value : (loggedInMember ? loggedInMember.id : '');
     _autofillCallForMember(_forUnit);
   }
+  updateModalButtons();
 }
 function closeModal() {
   document.getElementById('checkout-modal').classList.remove('open');
@@ -1477,6 +1478,26 @@ function toggleCNCNote() {
   var lbl=document.getElementById('cnc-note-label'), inp=document.getElementById('modal-cnc-note');
   if(v==='TRUCK'){ if(lbl)lbl.textContent='Which vehicle?'; if(inp)inp.placeholder='e.g. Ambulance 1, Truck 4'; }
   else { if(lbl)lbl.textContent='Where is the item? (CNC Note)'; if(inp)inp.placeholder='e.g. Left at Teaneck Garage'; }
+  updateModalButtons();
+}
+// Show only the valid action button: any currently-OUT item returned as CC → Check IN
+// only; CNC/MOVE/In-vehicle force Check OUT; item currently IN → Check OUT only; COBC 4
+// or a mixed selection → both.
+function updateModalButtons(){
+  var v=(document.getElementById('modal-ccnc')||{}).value||'';
+  var bIn=document.getElementById('modal-btn-in'), bOut=document.getElementById('modal-btn-out');
+  if(!bIn||!bOut) return;
+  var forceOut=(v==='CNC'||v==='TRUCK'||v==='MOVE');
+  var hasCobc4=modalItems.some(function(i){return isCarItem(i.name);});
+  var allOut=modalItems.length && modalItems.every(function(i){return String(i.status).toUpperCase()==='OUT';});
+  var allIn=modalItems.length && modalItems.every(function(i){return String(i.status).toUpperCase()!=='OUT';});
+  var show='both';
+  if(hasCobc4) show='both';
+  else if(forceOut) show='out';
+  else if(allOut) show='in';   // returning an out item (CC / correct / vehicle / CNC) → IN only
+  else if(allIn) show='out';
+  bIn.style.display  = show==='out' ? 'none' : 'block';
+  bOut.style.display = show==='in'  ? 'none' : 'block';
 }
 function submitCheckout(action) {
   if(!modalItems.length) { alert('Please select at least one item.'); return; }
