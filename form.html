@@ -3458,7 +3458,8 @@ function qrShowForm() {
         var _qrCcOpt = document.querySelector('#qr-ccnc option[value="CC"]');
         if(_qrCcOpt) _qrCcOpt.textContent = isOut ? 'CC / Home Location' : 'CC / Brought to correct call number';
         var badge = document.getElementById('qr-form-badge');
-        badge.textContent = isOut ? 'Currently OUT' : 'Currently IN';
+        var _outLoc = (it.isCNC && it.cncNote) ? it.cncNote.replace(/^in vehicle:\s*/i,'In vehicle ') : '';
+        badge.textContent = isOut ? ('Currently OUT' + (_outLoc ? ' — ' + _outLoc : '')) : 'Currently IN';
         badge.style.background = isOut ? '#fdecea' : '#e8f5e9';
         badge.style.color = isOut ? '#c0392b' : '#2e7d32';
         // Show only the valid action button (avoids tap-then-blocked confusion).
@@ -3531,13 +3532,22 @@ function qrToggleCNC() {
   }
   var it = (_qrAllItems || []).find(function(i){ return i.name === _qrName; });
   var forceOut = (ccnc === 'CNC' || ccnc === 'MOVE' || ccnc === 'TRUCK');
-  // CC on an item that's currently OUT & flagged CNC/in-vehicle → both are valid:
-  // IN (back to home) or OUT (on to the correct call #).
-  var ccBothCnc = !forceOut && it && it.isCNC && it.status === 'OUT';
-  var showOutOnly = forceOut || (!ccBothCnc && it && (it.isCNC || it.status !== 'OUT'));
-  btnIn.style.display  = showOutOnly ? 'none' : 'block';
-  btnOut.style.display = 'block';
-  if (grid) grid.style.gridTemplateColumns = showOutOnly ? '1fr' : '1fr 1fr';
+  var isOut = it && it.status === 'OUT';
+  // CC on an item currently OUT & flagged CNC/in-vehicle → both valid (home OR call #).
+  var ccBothCnc = !forceOut && it && it.isCNC && isOut;
+  // Plain OUT item returned as CC → only Check IN (going home). No reason to check it out again.
+  var showInOnly = !forceOut && !ccBothCnc && it && !it.isCNC && isOut;
+  if (ccBothCnc) {
+    btnIn.style.display = 'block'; btnOut.style.display = 'block';
+    if (grid) grid.style.gridTemplateColumns = '1fr 1fr';
+  } else if (showInOnly) {
+    btnIn.style.display = 'block'; btnOut.style.display = 'none';
+    if (grid) grid.style.gridTemplateColumns = '1fr';
+  } else {
+    // forceOut (CNC/MOVE/TRUCK), or item currently IN → only Check OUT.
+    btnIn.style.display = 'none'; btnOut.style.display = 'block';
+    if (grid) grid.style.gridTemplateColumns = '1fr';
+  }
 }
 
 function qrUpdateMoveOpt() {
