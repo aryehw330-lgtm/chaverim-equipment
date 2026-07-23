@@ -437,7 +437,7 @@ body.dark .recent-card{background:var(--surface)}
     </div>
     <div class="modal-footer">
       <button class="btn btn-success" id="modal-btn-in" onclick="submitCheckout('IN')">✓ Check IN All</button>
-      <button class="btn btn-danger" onclick="submitCheckout('OUT')">↓ Check OUT All</button>
+      <button class="btn btn-danger" id="modal-btn-out" onclick="submitCheckout('OUT')">↓ Check OUT All</button>
     </div>
   </div>
 </div>
@@ -2110,11 +2110,8 @@ function openCheckout(row, action) {
       }
     }
   }
-  // Block wrong direction
-  if (action === 'OUT' && it.status === 'OUT') {
-    showToast('⚠️ Item already OUT — contact BC-38 if you need help');
-    return;
-  }
+  // Block wrong direction — but allow re-checkout of an already-OUT item
+  // (CNC / in-vehicle items can be moved OUT to another call).
   if ((!action || action === 'IN') && it.status === 'IN') {
     showToast('⚠️ Item already IN — contact BC-38 if you need help');
     return;
@@ -2207,10 +2204,15 @@ function toggleCNCNote() {
   document.getElementById('cnc-note-group').style.display = v==='CNC'?'block':'none';
   var tg = document.getElementById('truck-group');
   if (tg) tg.style.display = v==='TRUCK'?'block':'none';
-  // Show BOTH buttons for CC/CNC/In-vehicle: Check IN for items going back in,
-  // Check OUT for items going out to the correct call. Only "Move" stays OUT-only.
   var inBtn = document.getElementById('modal-btn-in');
-  if (inBtn) inBtn.style.display = (v==='MOVE') ? 'none' : '';
+  var outBtn = document.getElementById('modal-btn-out');
+  var anyOut = modalItems.some(function(i){ return i.status==='OUT'; });
+  if (inBtn) inBtn.style.display = '';
+  if (outBtn) outBtn.style.display = '';
+  // CC / Home Location on an already-OUT item = returning it home → Check IN only.
+  if (v==='CC' && anyOut) { if (outBtn) outBtn.style.display='none'; }
+  // Move / CNC / In-vehicle keep the item OUT → Check OUT only.
+  else if (v==='MOVE' || v==='CNC' || v==='TRUCK') { if (inBtn) inBtn.style.display='none'; }
   if (v==='TRUCK') loadVehiclesIntoPicker();
 }
 // Update the CC option wording based on whether the item(s) are being returned or taken out
@@ -2275,7 +2277,7 @@ function submitCheckout(action) {
   if(!member) { alert('Please enter your BC member number.'); return; }
   if(!call   && !hasCobc4) { alert('Please enter the call number.'); return; }
   if(!ccSel  && !hasCobc4) { alert('Please select CC or CNC.'); return; }
-  if(ccSel==='CNC'&&!cncNote&&!hasCobc4) { alert('Please describe where the item is.'); return; }
+  if(ccSel==='CNC'&&action!=='IN'&&!cncNote&&!hasCobc4) { alert('Please describe where the item is.'); return; }
   // COBC 4 defaults — shift vehicle, no dispatched call
   if(hasCobc4) { if(!call) call='SHIFT'; if(!ccSel) ccSel='CC'; }
 var blocked = [];
@@ -4467,7 +4469,6 @@ function qrSubmit(action) {
     var it = _qrAllItems.find(function(i){ return i.name === name; });
     if (it) {
       if (action === 'IN'  && it.status === 'IN')  blocked.push(name + ' (already IN)');
-      if (action === 'OUT' && it.status === 'OUT') blocked.push(name + ' (already OUT)');
     }
   });
   if (blocked.length > 0) {
