@@ -2070,7 +2070,7 @@ function addModalItem(row) {
   document.getElementById('modal-search-results').style.display = 'none';
 }
 function isCarItem(name) {
-  return name && /^cobc[\s-]*\d+$/i.test(name.toString().trim());
+  return name && /^cobc\b/i.test(name.toString().trim());
 }
 // ── Multi-vehicle helpers ─────────────────────────────────────────────────────
 // Vehicle list is derived from inventory items named like "COBC 4", "COBC 5"…
