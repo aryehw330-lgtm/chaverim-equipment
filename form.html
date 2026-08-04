@@ -3784,7 +3784,7 @@ function qrSubmit(action) {
   }
   var allNames = qrSelectedNames();
   try{ if(call) sessionStorage.setItem('qr_last_call', call); }catch(e){}
-  var done = 0; var total = allNames.length;
+  var done = 0; var total = allNames.length; var failed = [];
   allNames.forEach(function(name) {
     fetch(BASE_URL, {
       method:'POST', redirect:'follow', credentials:'omit',
@@ -3794,7 +3794,12 @@ function qrSubmit(action) {
     .then(function(r){ return r.json(); })
     .then(function(d) {
       done++;
+      if (!d || d.success === false) failed.push(name + (d && d.error ? ' ('+d.error+')' : ''));
       if (done === total) {
+        if (failed.length > 0) {
+          alert('\u26a0\ufe0f Could not save to the sheet for: ' + failed.join(', ') + '.\n\nCheck your connection and try again \u2014 nothing was recorded for these items.');
+          return;
+        }
         document.getElementById('qr-form-wrap').style.display = 'none';
         var conf = document.getElementById('qr-confirm');
         conf.style.display = 'flex';
@@ -3816,7 +3821,13 @@ function qrSubmit(action) {
         }
       }
     })
-    .catch(function(){ done++; });
+    .catch(function(e) {
+      done++;
+      failed.push(name + ' (connection error)');
+      if (done === total) {
+        alert('\u26a0\ufe0f Could not save to the sheet for: ' + failed.join(', ') + '.\n\nCheck your connection and try again \u2014 nothing was recorded for these items.');
+      }
+    });
   });
 }
 </script>
