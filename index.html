@@ -20,8 +20,9 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#f4f6f9;--surface:#fff;--surface2:#f0f4f8;--text:#1a1a1a;--text2:#555;--text3:#888;--border:#e0e6ed;--border2:#d0d8e4;--navy:#1a3a5c;--tabbar:#fff}
 body.dark{--bg:#0f1923;--surface:#1a2840;--surface2:#162234;--text:#e0eaf4;--text2:#8aa8c8;--text3:#5a7a9a;--border:#2a3f5a;--border2:#1e3248;--navy:#7fb3e0;--tabbar:#162234}
-html,body{height:100%;max-height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior:none;overflow:hidden;position:fixed;width:100%}
-#app{display:flex;flex-direction:column;position:fixed;top:0;left:0;right:0;bottom:0;overflow:hidden}
+html,body{height:100%;max-height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#1a3a5c;color:var(--text);-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior:none;overflow:hidden;position:fixed;width:100%}
+#app{display:flex;flex-direction:column;position:fixed;top:0;left:0;right:0;bottom:0;overflow:hidden;background:var(--bg)}
+#header{position:relative}#header::before{content:'';position:absolute;left:0;right:0;bottom:100%;height:200px;background:#1a3a5c}
 #pin-gate{position:fixed;inset:0;background:#1a3a5c;z-index:9999;display:flex;align-items:center;justify-content:center}
 #pin-gate.hidden{display:none}
 .pin-card{background:#fff;border-radius:16px;padding:2rem 1.5rem;width:min(320px,90vw);text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.2);animation:cardIn .5s cubic-bezier(.34,1.56,.64,1) both}
@@ -32,12 +33,12 @@ html,body{height:100%;max-height:100%;font-family:-apple-system,BlinkMacSystemFo
 @keyframes logoIn{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
 @keyframes splashPulse{0%,100%{transform:scale(1);opacity:.08}50%{transform:scale(1.15);opacity:.18}}
 .pin-title{font-size:20px;font-weight:700;color:#1a3a5c;margin-bottom:4px}
-.pin-sub{font-size:14px;color:#666;margin-bottom:20px}
+.pin-sub{font-size:14px;color:#4b5563;margin-bottom:20px}
 .pin-inp{width:100%;border:2px solid #ddd;border-radius:10px;padding:12px;font-size:28px;text-align:center;letter-spacing:10px;outline:none;margin-bottom:8px}
 .pin-inp:focus{border-color:#1a3a5c}
 .pin-err{color:#c0392b;font-size:13px;height:18px;margin-bottom:8px}
 .pin-btn{width:100%;padding:13px;background:#1a3a5c;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer}
-.pin-divider{display:flex;align-items:center;gap:8px;margin:14px 0;color:#aaa;font-size:12px}
+.pin-divider{display:flex;align-items:center;gap:8px;margin:14px 0;color:#6b7280;font-size:13px}
 .pin-divider::before,.pin-divider::after{content:'';flex:1;height:1px;background:#e0e0e0}
 .google-btn{width:100%;padding:12px;background:#fff;color:#444;border:1.5px solid #ddd;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px}
 .google-btn:hover{background:#f8f8f8;border-color:#ccc}
@@ -47,10 +48,10 @@ html,body{height:100%;max-height:100%;font-family:-apple-system,BlinkMacSystemFo
 .sec-card{background:#fff;border-radius:16px;padding:2rem 1.5rem;width:min(300px,88vw);text-align:center}
 .sec-icon{font-size:32px;margin-bottom:8px}
 .sec-title{font-size:17px;font-weight:700;color:#1a3a5c;margin-bottom:4px}
-.sec-sub{font-size:13px;color:#666;margin-bottom:16px}
+.sec-sub{font-size:13px;color:#4b5563;margin-bottom:16px}
 .sec-inp{width:100%;border:2px solid #ddd;border-radius:10px;padding:11px;font-size:18px;text-align:center;letter-spacing:4px;outline:none;margin-bottom:8px}
 .sec-inp:focus{border-color:#1a3a5c}
-.sec-err{color:#c0392b;font-size:12px;height:16px;margin-bottom:8px}
+.sec-err{color:#c0392b;font-size:13px;height:16px;margin-bottom:8px}
 .sec-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .sec-ok{padding:11px;background:#1a3a5c;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer}
 .sec-cancel{padding:11px;background:#f0f0f0;color:#444;border:none;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer}
@@ -58,18 +59,18 @@ html,body{height:100%;max-height:100%;font-family:-apple-system,BlinkMacSystemFo
 #member-avatar{width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.4);display:none;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0;margin-right:12px;cursor:pointer}
 #header-member-wrap{display:flex;align-items:center}
 .h-title{font-size:22px;font-weight:700;color:#fff;letter-spacing:.2px}
-.h-sub{font-size:15px;color:rgba(255,255,255,.7);margin-top:3px;letter-spacing:.2px}
+.h-sub{font-size:15px;color:rgba(255,255,255,.88);margin-top:3px;letter-spacing:.2px}
 .h-right{display:flex;align-items:center;gap:10px}
-.stat-pill{background:rgba(255,255,255,.15);color:#fff;border-radius:20px;padding:4px 10px;font-size:12px;font-weight:600}
+.stat-pill{background:rgba(255,255,255,.15);color:#fff;border-radius:20px;padding:4px 10px;font-size:13px;font-weight:600}
 .stat-pill.red{background:#c0392b}
-#sync-btn{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer}
+#sync-btn{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer}
 #tabbar{display:flex;background:var(--tabbar);border-bottom:2px solid var(--border);flex-shrink:0;overflow:visible;scrollbar-width:none;touch-action:none;z-index:200;position:relative;padding-bottom:8px}
 #tabbar::-webkit-scrollbar{display:none}
-.tab{flex:1;min-width:44px;max-width:90px;padding:8px 2px 7px;border:none;background:none;color:var(--text3);font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;position:relative;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;overflow:visible;transition:transform .12s ease,color .1s;transform-origin:bottom center;will-change:transform;z-index:201}
+.tab{flex:1;min-width:44px;max-width:90px;padding:8px 2px 7px;border:none;background:none;color:var(--text3);font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;position:relative;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;overflow:visible;transition:transform .12s ease,color .1s;transform-origin:bottom center;will-change:transform;z-index:201}
 .tab .ti{font-size:22px}
 .tab.active{color:#1a3a5c;border-bottom-color:#1a3a5c}
 body.dark .tab.active{color:#e8c14a;border-bottom-color:#e8c14a}
-.tab-badge{position:absolute;top:4px;right:calc(50% - 18px);background:#c0392b;color:#fff;font-size:9px;font-weight:700;min-width:15px;height:15px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px}
+.tab-badge{position:absolute;top:4px;right:calc(50% - 18px);background:#c0392b;color:#fff;font-size:11px;font-weight:700;min-width:15px;height:15px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px}
 #content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:none}
 .page{display:none;padding:14px;padding-bottom:20px;animation:pageIn .18s ease both}
 @keyframes pageIn{from{opacity:0}to{opacity:1}}
@@ -77,15 +78,15 @@ body.dark .tab.active{color:#e8c14a;border-bottom-color:#e8c14a}
 .section-label{font-size:13px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;margin-top:18px}
 .section-label:first-child{margin-top:0}
 .card{background:var(--surface);border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:12px;font-weight:700}
 .badge-in{background:#e8f5e9;color:#2e7d32}
 .badge-out{background:#fdecea;color:#c0392b}
 .badge-cnc{background:#fff3e0;color:#e65100}
 .badge-miss{background:#fdecea;color:#c0392b}
 .badge-dmg{background:#fff8e1;color:#f57f17}
 .badge-more{background:#e3f2fd;color:#1565c0}
-.badge-na{background:#f5f5f5;color:#666}
-.field-label{font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px}
+.badge-na{background:#f5f5f5;color:#4b5563}
+.field-label{font-size:13px;font-weight:600;color:#555;display:block;margin-bottom:5px}
 input,select,textarea{width:100%;border:1.5px solid #ddd;border-radius:9px;padding:14px 12px;font-size:16px;outline:none;background:#fff;color:#1a1a1a;font-family:inherit;-webkit-appearance:none}
 input:focus,select:focus,textarea:focus{border-color:#1a3a5c}
 textarea{resize:vertical;min-height:70px}
@@ -96,11 +97,11 @@ textarea{resize:vertical;min-height:70px}
 .btn-success{background:#2e7d32;color:#fff}
 .btn-danger{background:#c0392b;color:#fff}
 .btn-ghost{background:#f0f0f0;color:#333;border:1px solid #ddd}
-.btn-sm{padding:7px 12px;font-size:12px;border-radius:8px;width:auto}
+.btn-sm{padding:7px 12px;font-size:13px;border-radius:8px;width:auto}
 .btn-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .search-wrap{position:relative;margin-bottom:12px}
 .search-wrap input{padding-left:36px}
-.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#aaa;font-size:16px;pointer-events:none}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#6b7280;font-size:16px;pointer-events:none}
 #loading{display:none;position:fixed;inset:0;background:rgba(255,255,255,.8);z-index:400;align-items:center;justify-content:center}
 #loading.show{display:flex}
 .spinner{width:36px;height:36px;border:4px solid #e0e0e0;border-top-color:#1a3a5c;border-radius:50%;animation:spin .7s linear infinite}
@@ -124,7 +125,7 @@ textarea{resize:vertical;min-height:70px}
 .scan-tile-icon .scan-line{animation:scanLineMove 1.8s ease-in-out infinite}
 @keyframes scanLineMove{0%,100%{transform:translateY(-2px);opacity:.5}50%{transform:translateY(2px);opacity:1}}
 .scan-tile-title{font-size:15px;font-weight:800;letter-spacing:.2px;display:block}
-.scan-tile-sub{font-size:10.5px;color:rgba(255,255,255,.7);font-weight:600;display:block;margin-top:1px}
+.scan-tile-sub{font-size:12px;color:rgba(255,255,255,.88);font-weight:600;display:block;margin-top:1px}
 /* ── In-app camera scanner overlay ── */
 #scan-overlay{display:none;position:fixed;inset:0;z-index:9998;background:#0a0d12;flex-direction:column}
 #scan-overlay.open{display:flex}
@@ -154,13 +155,13 @@ textarea{resize:vertical;min-height:70px}
 .scan-fb-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:11px;margin-bottom:8px;cursor:pointer}
 .scan-fb-item:active{background:var(--surface2)}
 .scan-fb-item .nm{font-size:14px;font-weight:700;color:var(--text)}
-.scan-fb-item .mt{font-size:11.5px;color:var(--text3);margin-top:2px}
+.scan-fb-item .mt{font-size:13px;color:var(--text3);margin-top:2px}
 .ripple-btn{position:relative;overflow:hidden}
 .ripple-btn .ripple-el{position:absolute;border-radius:50%;background:rgba(255,255,255,.4);pointer-events:none;animation:ripple .5s ease-out forwards}
 .modal-bar{display:none}
-.modal-close{position:absolute;top:1rem;right:1rem;background:#f0f0f0;border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;color:#666;display:flex;align-items:center;justify-content:center}
+.modal-close{position:absolute;top:1rem;right:1rem;background:#f0f0f0;border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;color:#4b5563;display:flex;align-items:center;justify-content:center}
 .modal-title{font-size:19px;font-weight:700;color:#1a3a5c;margin-bottom:4px;padding-right:40px}
-.modal-sub{font-size:14px;color:#666;margin-bottom:18px}
+.modal-sub{font-size:14px;color:#4b5563;margin-bottom:18px}
 .modal-footer{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
 .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
 .kpi{background:#fff;border-radius:12px;padding:12px 8px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.08)}
@@ -168,24 +169,24 @@ textarea{resize:vertical;min-height:70px}
 .kpi-out .kpi-val{color:#c0392b}
 .kpi-iss .kpi-val{color:#e65100}
 .kpi-cnc .kpi-val{color:#f57f17}
-.kpi-label{font-size:11px;font-weight:600;color:#888;margin-top:3px;text-transform:uppercase}
+.kpi-label{font-size:12px;font-weight:600;color:#5f6b7a;margin-top:3px;text-transform:uppercase}
 .alert-card{background:#fff3e0;border-left:4px solid #e65100;border-radius:8px;padding:10px 12px;margin-bottom:8px}
 .alert-card.red{background:#fdecea;border-left-color:#c0392b}
 .alert-name{font-size:13px;font-weight:700;color:var(--text)}
-.alert-detail{font-size:12px;color:var(--text2);margin-top:2px}
+.alert-detail{font-size:13px;color:var(--text2);margin-top:2px}
 .out-card{background:#fff;border-radius:10px;padding:11px 13px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .out-name{font-size:15px;font-weight:700;color:var(--text)}
 .out-meta{font-size:13px;color:var(--text2);margin-top:2px;line-height:1.5}
-.out-time{font-size:12px;color:#999;white-space:nowrap;flex-shrink:0}
+.out-time{font-size:13px;color:#6b7280;white-space:nowrap;flex-shrink:0}
 .recent-card{background:#fff;border-radius:10px;padding:11px 13px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);display:flex;align-items:flex-start;gap:10px}
 .rdot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px}
 .rdot-in{background:#2e7d32}.rdot-out{background:#c0392b}
 .r-name{font-size:14px;font-weight:600;color:var(--text)}
-.r-detail{font-size:12px;color:var(--text2);margin-top:2px;line-height:1.5}
-.r-time{font-size:11px;color:#999;white-space:nowrap;flex-shrink:0}
+.r-detail{font-size:13px;color:var(--text2);margin-top:2px;line-height:1.5}
+.r-time{font-size:12px;color:#6b7280;white-space:nowrap;flex-shrink:0}
 .filter-row{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
 .filter-row::-webkit-scrollbar{display:none}
-.fchip{flex-shrink:0;padding:6px 14px;border-radius:20px;background:#fff;border:1.5px solid #ddd;color:#555;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+.fchip{flex-shrink:0;padding:6px 14px;border-radius:20px;background:#fff;border:1.5px solid #ddd;color:#555;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
 .fchip.active{background:#1a3a5c;border-color:#1a3a5c;color:#fff}
 .inv-card{background:var(--surface);border-radius:12px;padding:13px;margin-bottom:9px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
 .inv-card.fl-cnc{border-left:4px solid #e65100}
@@ -195,22 +196,22 @@ textarea{resize:vertical;min-height:70px}
 .inv-name{font-size:15px;font-weight:700;color:var(--text);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .inv-badges{display:flex;gap:4px;flex-shrink:0}
 .inv-meta{font-size:14px;color:var(--text2);margin-top:3px}
-.inv-cnc{font-size:12px;color:#e65100;margin-top:4px;background:#fff3e0;border-radius:6px;padding:4px 8px}
+.inv-cnc{font-size:13px;color:#e65100;margin-top:4px;background:#fff3e0;border-radius:6px;padding:4px 8px}
 .inv-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .btn-in{width:100%;padding:11px;background:#1a3a5c;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer}
 .btn-out{width:100%;padding:11px;background:#c0392b;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer}
 .btn-reset{width:100%;padding:8px;background:#fff;color:#2e7d32;border:2px solid #2e7d32;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer}
 .loc-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;scrollbar-width:none}
 .loc-tabs::-webkit-scrollbar{display:none}
-.ltab{flex-shrink:0;padding:7px 14px;border-radius:20px;background:#fff;border:1.5px solid #ddd;color:#555;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+.ltab{flex-shrink:0;padding:7px 14px;border-radius:20px;background:#fff;border:1.5px solid #ddd;color:#555;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
 .ltab.active{background:#1a3a5c;border-color:#1a3a5c;color:#fff}
-.ltab .lc{background:rgba(255,255,255,.3);border-radius:10px;padding:0 5px;font-size:10px;margin-left:4px}
+.ltab .lc{background:rgba(255,255,255,.3);border-radius:10px;padding:0 5px;font-size:12px;margin-left:4px}
 .ltab:not(.active) .lc{background:#e0e6ed;color:#555}
 .chk-card{background:#fff;border-radius:10px;padding:12px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.07);display:flex;align-items:center;gap:12px}
 .chk-box{width:24px;height:24px;border-radius:6px;border:2px solid #ccc;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff}
 .chk-box.checked{background:#2e7d32;border-color:#2e7d32}
 .chk-name{font-size:14px;font-weight:600;color:var(--text)}
-.chk-meta{font-size:12px;color:var(--text2);margin-top:1px}
+.chk-meta{font-size:13px;color:var(--text2);margin-top:1px}
 .chk-summary{background:#e8f4fd;border-radius:10px;padding:12px;margin-bottom:12px}
 .chk-sum-row{display:flex;justify-content:space-between;font-size:13px;color:#333;margin-bottom:4px}
 .chk-sum-row:last-child{margin-bottom:0}
@@ -223,38 +224,38 @@ textarea{resize:vertical;min-height:70px}
 .mem-card{background:var(--surface);border-radius:12px;padding:13px;margin-bottom:9px;box-shadow:0 1px 4px rgba(0,0,0,.08);display:flex;align-items:center;gap:12px}
 .mem-av{width:44px;height:44px;background:#1a3a5c;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
 .mem-name{font-size:15px;font-weight:700;color:var(--text)}
-.mem-sub{font-size:12px;color:var(--text2);margin-top:2px}
+.mem-sub{font-size:13px;color:var(--text2);margin-top:2px}
 .mem-call{width:40px;height:40px;background:#e8f5e9;border:1.5px solid #a5d6a7;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;text-decoration:none;flex-shrink:0}
 .adm-sec{background:#fff;border-radius:12px;padding:0;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);overflow:hidden}
 .adm-title{font-size:14px;font-weight:700;color:#1a3a5c;padding:14px;margin:0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;border-bottom:1px solid transparent}
 .adm-title:hover{background:#f8fafc}
 .adm-title.open{border-bottom-color:#e0e6ed}
-.adm-title .toggle{font-size:12px;color:#aaa;transition:transform .2s}
+.adm-title .toggle{font-size:13px;color:#6b7280;transition:transform .2s}
 .adm-title.open .toggle{transform:rotate(180deg)}
 .adm-body{display:none;padding:14px}
 .adm-body.open{display:block}
 .mem-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f0f0f0}
 .mem-row:last-child{border-bottom:none}
-.mem-num{width:36px;height:36px;background:#eef3f8;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#1a3a5c;flex-shrink:0}
-.empty{text-align:center;padding:3rem 1rem;color:#aaa}
+.mem-num{width:36px;height:36px;background:#eef3f8;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#1a3a5c;flex-shrink:0}
+.empty{text-align:center;padding:3rem 1rem;color:#6b7280}
 .empty-icon{font-size:56px;margin-bottom:12px;display:block;animation:emptyBounce 2.5s ease-in-out infinite}
 @keyframes emptyBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 .empty-text{font-size:15px;font-weight:600;color:#555;margin-bottom:6px}
-.empty-sub{font-size:13px;color:#aaa;margin-top:4px}
+.empty-sub{font-size:13px;color:#6b7280;margin-top:4px}
 /* HOME LOCATION EDITOR */
 .hloc-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0f0}
 .hloc-row:last-child{border-bottom:none}
 .hloc-name{font-size:13px;font-weight:600;color:var(--text);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hloc-select{flex-shrink:0;width:140px;padding:6px 8px;font-size:12px;border:1.5px solid #ddd;border-radius:8px;background:#fff;color:#1a1a1a;-webkit-appearance:none}
+.hloc-select{flex-shrink:0;width:140px;padding:6px 8px;font-size:13px;border:1.5px solid #ddd;border-radius:8px;background:#fff;color:#1a1a1a;-webkit-appearance:none}
 .hloc-select:focus{border-color:#1a3a5c}
-.hloc-save{padding:6px 12px;font-size:12px;font-weight:700;background:#1a3a5c;color:#fff;border:none;border-radius:8px;cursor:pointer;flex-shrink:0}
-.hloc-saved{color:#2e7d32;font-size:11px;font-weight:700;flex-shrink:0}
+.hloc-save{padding:6px 12px;font-size:13px;font-weight:700;background:#1a3a5c;color:#fff;border:none;border-radius:8px;cursor:pointer;flex-shrink:0}
+.hloc-saved{color:#2e7d32;font-size:12px;font-weight:700;flex-shrink:0}
 /* CAR SCHEDULE */
 .car-cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .car-cal-nav button{background:#1a3a5c;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:18px;font-weight:700;cursor:pointer;line-height:1}
 .car-cal-month{font-size:17px;font-weight:700;color:#1a3a5c;text-align:center}
 .car-cal-header{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:3px}
-.car-cal-dow{text-align:center;font-size:10px;font-weight:700;color:#888;text-transform:uppercase;padding:4px 0}
+.car-cal-dow{text-align:center;font-size:12px;font-weight:700;color:#5f6b7a;text-transform:uppercase;padding:4px 0}
 .car-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
 .car-cal-day{min-height:52px;background:#fff;border-radius:7px;border:1.5px solid #e8ecf0;padding:4px 3px;cursor:pointer;position:relative;transition:border-color .15s}
 .car-cal-day:hover{border-color:#1a3a5c}
@@ -301,6 +302,32 @@ body.dark .car-cal-day.other-month .car-day-num{color:var(--text3)}
 body.dark .chk-card{background:var(--surface)}
 body.dark .out-card{background:var(--surface)}
 body.dark .recent-card{background:var(--surface)}
+/* ── Readability pass ── */
+:root{--text:#16202b;--text2:#3d4855;--text3:#5f6b7a}
+body.dark{--text2:#b4c8dd;--text3:#8fa6bf}
+html,body{line-height:1.4}
+.tab{font-size:11px;letter-spacing:0;color:var(--text2)}
+.tab.active{font-weight:800}
+.section-label{font-size:14px;color:var(--text);letter-spacing:.04em}
+.field-label{font-size:14px;color:var(--text);margin-bottom:6px}
+.badge{font-size:12px;padding:4px 10px}
+.kpi-label{color:var(--text2)}
+.alert-name{font-size:15px}.alert-detail{font-size:14px;line-height:1.45}
+.out-meta,.r-detail,.inv-meta,.mem-sub,.chk-meta{font-size:14px;line-height:1.45}
+.r-name,.chk-name{font-size:15px}
+.out-time,.r-time{color:var(--text3)}
+.modal-sub,.pin-sub,.sec-sub{color:var(--text2);font-size:15px;line-height:1.45}
+.btn-ghost,.sec-cancel{color:#1f2933}
+.fchip,.ltab{font-size:14px;color:#3d4855;padding:8px 15px}
+.empty-text{color:var(--text2);font-size:16px}.empty-sub{color:var(--text3);font-size:14px}
+.car-cal-dow{color:var(--text2)}
+.car-cal-day.past{opacity:.65}.car-cal-day.other-month{opacity:.4}
+.car-shift-card.done-shift{opacity:.72;filter:none}
+.scan-tile-sub{color:rgba(255,255,255,.9)}
+.h-sub{color:rgba(255,255,255,.88)}
+input::placeholder,textarea::placeholder{color:#7a8594}
+body.dark .fchip:not(.active),body.dark .ltab:not(.active){background:var(--surface);color:var(--text2);border-color:var(--border2)}
+body.dark .btn-ghost{background:var(--surface2);color:var(--text);border-color:var(--border2)}
 </style>
 </head>
 <body>
@@ -313,8 +340,8 @@ body.dark .recent-card{background:var(--surface)}
   </div>
   <div style="color:#fff;font-size:20px;font-weight:700;letter-spacing:.5px;animation:cardIn .5s ease .3s both">COBC Equipment</div>
   <div style="color:#a0bcd8;font-size:13px;animation:cardIn .5s ease .45s both">Bergen County Chaverim</div>
-  <div id="splash-msg" style="color:#7badd4;font-size:12px;min-height:18px;margin-top:4px;animation:cardIn .5s ease .6s both;transition:opacity .3s"></div>
-  <div style="position:absolute;bottom:28px;color:#4a6a8a;font-size:11px;animation:cardIn .5s ease .8s both">v1.0</div>
+  <div id="splash-msg" style="color:#7badd4;font-size:13px;min-height:18px;margin-top:4px;animation:cardIn .5s ease .6s both;transition:opacity .3s"></div>
+  <div style="position:absolute;bottom:28px;color:#4a6a8a;font-size:12px;animation:cardIn .5s ease .8s both">v1.0</div>
 </div>
 <!-- PIN GATE -->
 <div id="pin-gate">
@@ -367,20 +394,20 @@ body.dark .recent-card{background:var(--surface)}
       <div style="font-size:15px;font-weight:700;color:#1a3a5c">Customize Avatar</div>
     </div>
     <div style="margin-bottom:16px">
-      <div style="font-size:12px;font-weight:700;color:#666;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Display</div>
+      <div style="font-size:13px;font-weight:700;color:#4b5563;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Display</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <button id="av-btn-initials" onclick="setAvatarDisplay(false)" style="padding:10px;border-radius:10px;border:2px solid #1a3a5c;background:#1a3a5c;color:#fff;font-size:13px;font-weight:700;cursor:pointer">Initials</button>
         <button id="av-btn-number" onclick="setAvatarDisplay(true)" style="padding:10px;border-radius:10px;border:2px solid #ddd;background:#fff;color:#555;font-size:13px;font-weight:700;cursor:pointer">BC Number</button>
       </div>
     </div>
     <div style="margin-bottom:16px">
-      <div style="font-size:12px;font-weight:700;color:#666;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Color</div>
+      <div style="font-size:13px;font-weight:700;color:#4b5563;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Color</div>
       <div id="avatar-color-swatches" style="display:flex;gap:10px;flex-wrap:wrap"></div>
     </div>
     <div style="margin-bottom:20px">
-      <div style="font-size:12px;font-weight:700;color:#666;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Or pick an emoji</div>
+      <div style="font-size:13px;font-weight:700;color:#4b5563;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Or pick an emoji</div>
       <div id="avatar-emoji-row" style="display:flex;gap:8px;flex-wrap:wrap"></div>
-      <button id="av-clear-emoji" onclick="clearAvatarEmoji()" style="display:none;margin-top:8px;padding:5px 12px;background:#f5f5f5;color:#555;border:1px solid #ddd;border-radius:8px;font-size:12px;cursor:pointer">✕ Clear emoji</button>
+      <button id="av-clear-emoji" onclick="clearAvatarEmoji()" style="display:none;margin-top:8px;padding:5px 12px;background:#f5f5f5;color:#555;border:1px solid #ddd;border-radius:8px;font-size:13px;cursor:pointer">✕ Clear emoji</button>
     </div>
     <button onclick="closeAvatarEditor()" style="width:100%;padding:13px;background:#1a3a5c;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer">Save</button>
   </div>
@@ -433,7 +460,7 @@ body.dark .recent-card{background:var(--surface)}
       <select id="modal-log-for" onchange="updateModalLogForNote()" style="width:100%;padding:11px 12px;border:1.5px solid #1a3a5c;border-radius:9px;font-size:15px;font-weight:600;color:#1a3a5c;background:#f0f4f8;outline:none">
         <option value="">— My own unit —</option>
       </select>
-      <div id="modal-log-for-note" style="display:none;margin-top:6px;padding:6px 10px;background:#fff8e1;border-radius:7px;font-size:12px;color:#e65100;font-weight:600"></div>
+      <div id="modal-log-for-note" style="display:none;margin-top:6px;padding:6px 10px;background:#fff8e1;border-radius:7px;font-size:13px;color:#e65100;font-weight:600"></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-success" id="modal-btn-in" onclick="submitCheckout('IN')">✓ Check IN All</button>
@@ -449,22 +476,22 @@ body.dark .recent-card{background:var(--surface)}
       <div>
         <div class="h-title">COBC Equipment</div>
         <div class="h-sub" id="h-sub">Bergen County Chaverim</div>
-        <button id="sync-btn" onclick="loadData()" title="Sync" style="background:none;border:none;color:rgba(255,255,255,.45);font-size:11px;cursor:pointer;padding:0;margin-top:3px;line-height:1;letter-spacing:.3px">↻ Sync</button>
+        <button id="sync-btn" onclick="loadData()" title="Sync" style="background:none;border:none;color:rgba(255,255,255,.88);font-size:12px;cursor:pointer;padding:0;margin-top:3px;line-height:1;letter-spacing:.3px">↻ Sync</button>
       </div>
     </div>
     <div class="h-right" style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-      <button onclick="logout()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">Sign Out</button>
-      <span class="stat-pill" id="stat-out-pill" style="display:none;font-size:11px;padding:3px 10px;"></span>
-      <div id="live-clock" style="font-size:13px;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:.5px"></div>
+      <button onclick="logout()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">Sign Out</button>
+      <span class="stat-pill" id="stat-out-pill" style="display:none;font-size:12px;padding:3px 10px;"></span>
+      <div id="live-clock" style="font-size:13px;font-weight:700;color:rgba(255,255,255,.88);letter-spacing:.5px"></div>
     </div>
   </div>
   <div id="tabbar">
     <button class="tab active" data-page="dashboard" onclick="showPage('dashboard',this)"><span class="ti">📊</span>Dash</button>
     <button class="tab" data-page="inventory" onclick="showPage('inventory',this)"><span class="ti">📦</span>Items</button>
-    <button class="tab" data-page="checklist" onclick="showPage('checklist',this)"><span class="ti">✅</span>Check<span class="tab-badge" id="issues-badge" style="display:none">0</span></button>
+    <button class="tab" data-page="members" onclick="showPage('members',this)"><span class="ti">👥</span>Members</button>
     <button class="tab" data-page="report" onclick="showPage('report',this)"><span class="ti">🚨</span>Report</button>
-    <button class="tab" data-page="members" onclick="showPage('members',this)"><span class="ti">👥</span>People</button>
-    <button class="tab" data-page="car" onclick="showPage('car',this)"><span class="ti" style="position:relative;display:inline-block">🚗<span id="car-tab-badge" style="display:none;position:absolute;top:-5px;right:-9px;min-width:16px;height:16px;padding:0 4px;background:#c0392b;color:#fff;border-radius:8px;font-size:10px;font-weight:800;line-height:16px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.3)"></span></span>Car</button>
+    <button class="tab" data-page="checklist" onclick="showPage('checklist',this)"><span class="ti">✅</span>Check<span class="tab-badge" id="issues-badge" style="display:none">0</span></button>
+    <button class="tab" data-page="car" onclick="showPage('car',this)"><span class="ti" style="position:relative;display:inline-block">🚗<span id="car-tab-badge" style="display:none;position:absolute;top:-5px;right:-9px;min-width:16px;height:16px;padding:0 4px;background:#c0392b;color:#fff;border-radius:8px;font-size:12px;font-weight:800;line-height:16px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.3)"></span></span>Car</button>
     <button class="tab" data-page="admin" onclick="showPage('admin',this)"><span class="ti">⚙️</span>Admin</button>
   </div>
   <div id="content">
@@ -500,12 +527,12 @@ body.dark .recent-card{background:var(--surface)}
       <div id="dash-overdue-wrap" style="display:none;margin-top:14px"></div>
       <!-- Quick Settings -->
       <div style="margin-top:20px;background:var(--surface);border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.08)">
-        <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">⚙️ Quick Settings</div>
+        <div style="font-size:13px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">⚙️ Quick Settings</div>
         <!-- Notifications -->
         <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
           <div>
             <div style="font-size:14px;font-weight:600;color:var(--text)">🔔 Notifications</div>
-            <div id="notif-setting-sub" style="font-size:11px;color:var(--text3);margin-top:2px">Tap to enable</div>
+            <div id="notif-setting-sub" style="font-size:12px;color:var(--text3);margin-top:2px">Tap to enable</div>
           </div>
           <button id="notif-toggle-btn" onclick="handleNotifToggle()" style="padding:7px 16px;border-radius:20px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:#e8f5e9;color:#2e7d32">Enable</button>
         </div>
@@ -513,11 +540,11 @@ body.dark .recent-card{background:var(--surface)}
         <div style="padding:10px 0 4px">
           <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px">🌙 Display Mode</div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px" id="theme-btns">
-            <button onclick="setThemeMode('auto')"  id="theme-auto"  style="padding:8px 4px;border-radius:10px;border:2px solid #ddd;background:#fff;color:#555;font-size:12px;font-weight:700;cursor:pointer">Auto</button>
-            <button onclick="setThemeMode('light')" id="theme-light" style="padding:8px 4px;border-radius:10px;border:2px solid #ddd;background:#fff;color:#555;font-size:12px;font-weight:700;cursor:pointer">☀️ Light</button>
-            <button onclick="setThemeMode('dark')"  id="theme-dark"  style="padding:8px 4px;border-radius:10px;border:2px solid #ddd;background:#fff;color:#555;font-size:12px;font-weight:700;cursor:pointer">🌙 Dark</button>
+            <button onclick="setThemeMode('auto')"  id="theme-auto"  style="padding:8px 4px;border-radius:10px;border:2px solid #ddd;background:#fff;color:#555;font-size:13px;font-weight:700;cursor:pointer">Auto</button>
+            <button onclick="setThemeMode('light')" id="theme-light" style="padding:8px 4px;border-radius:10px;border:2px solid #ddd;background:#fff;color:#555;font-size:13px;font-weight:700;cursor:pointer">☀️ Light</button>
+            <button onclick="setThemeMode('dark')"  id="theme-dark"  style="padding:8px 4px;border-radius:10px;border:2px solid #ddd;background:#fff;color:#555;font-size:13px;font-weight:700;cursor:pointer">🌙 Dark</button>
           </div>
-          <div style="font-size:11px;color:var(--text3);margin-top:6px">Auto switches at actual sunrise/sunset for Bergen County</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:6px">Auto switches at actual sunrise/sunset for Bergen County</div>
         </div>
       </div>
     </div>
@@ -568,7 +595,7 @@ body.dark .recent-card{background:var(--surface)}
       <div id="chk-list"></div>
       <button class="wa-btn" id="wa-btn" onclick="sendWA()" style="display:none">📲 Send WhatsApp Summary</button>
       <button id="submit-chk-btn" onclick="showSubmitChecklist()" style="display:none;width:100%;padding:13px;background:#2e7d32;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px">✅ Submit Checklist</button>
-      <div id="chk-last-submitted" style="display:none;margin-top:16px;padding-top:12px;border-top:1px solid var(--border)"><div style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">🗂 Last Submitted Per Location</div><div id="chk-last-submitted-text"></div></div>
+      <div id="chk-last-submitted" style="display:none;margin-top:16px;padding-top:12px;border-top:1px solid var(--border)"><div style="font-size:12px;font-weight:700;color:#4b5563;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">🗂 Last Submitted Per Location</div><div id="chk-last-submitted-text"></div></div>
     </div>
     <!-- REPORT -->
     <div class="page" id="page-report">
@@ -601,14 +628,14 @@ body.dark .recent-card{background:var(--surface)}
         <span class="search-icon">🔍</span>
         <input id="mem-search" type="text" placeholder="Search name, BC#, phone..." oninput="renderMembers()" style="padding-left:36px"/>
       </div>
-      <div id="mem-count" style="font-size:13px;color:#666;margin-bottom:10px"></div>
+      <div id="mem-count" style="font-size:13px;color:#4b5563;margin-bottom:10px"></div>
       <div id="mem-list"></div>
     </div>
     <!-- CAR SCHEDULE -->
     <div class="page" id="page-car">
       <div style="display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#1a3a5c,#2a5a8c);color:#fff;border-radius:12px;padding:14px 16px;margin-bottom:14px">
         <div style="font-size:28px">🚗</div>
-        <div><div style="font-size:16px;font-weight:700">COBC 4 — Car Schedule</div><div style="font-size:11px;opacity:.7;margin-top:2px">Book shifts · Sign up anytime</div></div>
+        <div><div style="font-size:16px;font-weight:700">COBC 4 — Car Schedule</div><div style="font-size:12px;opacity:.9;margin-top:2px">Book shifts · Sign up anytime</div></div>
       </div>
       <!-- Live car status (from inventory) -->
       <div id="car-live-status" style="display:none;margin-bottom:12px"></div>
@@ -629,7 +656,7 @@ body.dark .recent-card{background:var(--surface)}
       <div id="car-day-panel" class="car-day-panel" style="display:none">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
           <div id="car-day-title" style="font-size:15px;font-weight:700;color:#1a3a5c"></div>
-          <button onclick="closeCarDay()" style="background:none;border:none;font-size:20px;color:#999;cursor:pointer;padding:0 4px">✕</button>
+          <button onclick="closeCarDay()" style="background:none;border:none;font-size:20px;color:#6b7280;cursor:pointer;padding:0 4px">✕</button>
         </div>
         <div id="car-day-shifts"></div>
         <div id="car-book-wrap" style="margin-top:8px"></div>
@@ -690,7 +717,7 @@ body.dark .recent-card{background:var(--surface)}
           <select id="car-book-for" onchange="updateCarBookForNote()" style="width:100%;padding:11px 12px;border:1.5px solid #1a3a5c;border-radius:9px;font-size:15px;font-weight:600;color:#1a3a5c;background:#f0f4f8;outline:none">
             <option value="">— My own unit —</option>
           </select>
-          <div id="car-book-for-note" style="display:none;margin-top:6px;padding:6px 10px;background:#fff8e1;border-radius:7px;font-size:12px;color:#e65100;font-weight:600"></div>
+          <div id="car-book-for-note" style="display:none;margin-top:6px;padding:6px 10px;background:#fff8e1;border-radius:7px;font-size:13px;color:#e65100;font-weight:600"></div>
         </div>
         <div style="display:flex;gap:8px;margin-top:4px">
           <button onclick="closeCarBooking()" class="btn btn-ghost" style="flex:1">Cancel</button>
@@ -701,7 +728,7 @@ body.dark .recent-card{background:var(--surface)}
       <div style="margin-top:18px">
         <div class="section-label">📋 COBC 4 History</div>
         <div id="car-history-list" style="background:#fff;border-radius:12px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,.08)">
-          <div style="color:#aaa;font-size:13px;padding:4px 0">Loading…</div>
+          <div style="color:#6b7280;font-size:13px;padding:4px 0">Loading…</div>
         </div>
       </div>
     </div>
@@ -742,7 +769,7 @@ body.dark .recent-card{background:var(--surface)}
       <div class="adm-sec">
         <div class="adm-title" onclick="toggleAdm(this)">🏠 Equipment Home Locations<span class="toggle">▼</span></div>
         <div class="adm-body">
-          <p style="font-size:13px;color:#666;margin-bottom:12px">Change the home location (column D) for any piece of equipment.</p>
+          <p style="font-size:13px;color:#4b5563;margin-bottom:12px">Change the home location (column D) for any piece of equipment.</p>
           <div class="search-wrap" style="margin-bottom:10px">
             <span class="search-icon">🔍</span>
             <input id="hloc-search" type="text" placeholder="Search equipment..." oninput="renderHlocList()" style="padding-left:36px;font-size:14px"/>
@@ -754,7 +781,7 @@ body.dark .recent-card{background:var(--surface)}
       <div class="adm-sec">
         <div class="adm-title" onclick="toggleAdm(this)">🚗 Car Access (<span id="car-access-count">0</span> approved)<span class="toggle">▼</span></div>
         <div class="adm-body">
-          <div style="font-size:13px;color:#666;margin-bottom:10px">Toggle to grant or revoke COBC 4 access for each member.</div>
+          <div style="font-size:13px;color:#4b5563;margin-bottom:10px">Toggle to grant or revoke COBC 4 access for each member.</div>
           <div class="search-wrap" style="margin-bottom:10px">
             <span class="search-icon">🔍</span>
             <input id="car-access-search" type="text" placeholder="Search members..." oninput="renderCarAccessAdmin()" style="padding-left:36px;font-size:14px"/>
@@ -766,7 +793,7 @@ body.dark .recent-card{background:var(--surface)}
       <div class="adm-sec">
         <div class="adm-title" onclick="toggleAdm(this);if(this.classList.contains('open')){renderAlertRecipientsAdmin();}">🔔 Overdue Alert Recipients<span class="toggle">▼</span></div>
         <div class="adm-body">
-          <div style="font-size:13px;color:#666;margin-bottom:10px">Members who receive a notification when any inventory item has been checked out for 72+ hours.</div>
+          <div style="font-size:13px;color:#4b5563;margin-bottom:10px">Members who receive a notification when any inventory item has been checked out for 72+ hours.</div>
           <div class="search-wrap" style="margin-bottom:10px">
             <span class="search-icon">🔍</span>
             <input id="alert-recip-search" type="text" placeholder="Search members..." oninput="renderAlertRecipientsAdmin()" style="padding-left:36px;font-size:14px"/>
@@ -811,10 +838,10 @@ body.dark .recent-card{background:var(--surface)}
         <div class="adm-title" onclick="toggleAdm(this)">🗂 Checklist History<span class="toggle">▼</span></div>
         <div class="adm-body">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
-            <div style="font-size:12px;color:var(--text2);flex:1">Latest checklist submission per location.</div>
+            <div style="font-size:13px;color:var(--text2);flex:1">Latest checklist submission per location.</div>
             <div style="display:flex;align-items:center;gap:6px">
-              <label style="font-size:12px;color:var(--text2);white-space:nowrap">📅 Filter by date:</label>
-              <input type="date" id="adm-chk-date-filter" oninput="renderAdmChkHistory()" style="font-size:12px;padding:4px 8px;border:1px solid var(--border2);border-radius:8px;color:var(--text);background:var(--surface)"/>
+              <label style="font-size:13px;color:var(--text2);white-space:nowrap">📅 Filter by date:</label>
+              <input type="date" id="adm-chk-date-filter" oninput="renderAdmChkHistory()" style="font-size:13px;padding:4px 8px;border:1px solid var(--border2);border-radius:8px;color:var(--text);background:var(--surface)"/>
             </div>
           </div>
           <div id="adm-chk-history"></div>
@@ -826,21 +853,21 @@ body.dark .recent-card{background:var(--surface)}
         <div class="adm-body">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1">
-              <label style="font-size:12px;color:#555;white-space:nowrap">From</label>
-              <input type="date" id="adm-car-hist-from" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:8px;color:#1a3a5c"/>
-              <label style="font-size:12px;color:#555;white-space:nowrap">To</label>
-              <input type="date" id="adm-car-hist-to" style="font-size:12px;padding:4px 8px;border:1px solid #ddd;border-radius:8px;color:#1a3a5c"/>
-              <button onclick="renderAdminCarHistory()" style="padding:5px 14px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">Search</button>
+              <label style="font-size:13px;color:#555;white-space:nowrap">From</label>
+              <input type="date" id="adm-car-hist-from" style="font-size:13px;padding:4px 8px;border:1px solid #ddd;border-radius:8px;color:#1a3a5c"/>
+              <label style="font-size:13px;color:#555;white-space:nowrap">To</label>
+              <input type="date" id="adm-car-hist-to" style="font-size:13px;padding:4px 8px;border:1px solid #ddd;border-radius:8px;color:#1a3a5c"/>
+              <button onclick="renderAdminCarHistory()" style="padding:5px 14px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Search</button>
             </div>
           </div>
-          <div id="adm-car-hist-list"><div style="color:#aaa;font-size:13px;padding:4px 0">Open to load history.</div></div>
+          <div id="adm-car-hist-list"><div style="color:#6b7280;font-size:13px;padding:4px 0">Open to load history.</div></div>
         </div>
       </div>
       <!-- Equipment Status -->
       <div class="adm-sec">
         <div class="adm-title" onclick="toggleAdm(this);if(this.classList.contains('open'))renderQRLinks();">🖨️ QR Code Stickers<span class="toggle">▼</span></div>
         <div class="adm-body">
-          <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Tap a link to open the printable QR sticker for that item.</div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:10px">Tap a link to open the printable QR sticker for that item.</div>
           <div class="search-wrap" style="margin-bottom:10px"><span class="search-icon">🔍</span><input id="qr-search" type="text" placeholder="Search items..." oninput="renderQRLinks()" style="padding-left:36px;font-size:14px"/></div>
           <div id="qr-link-list"></div>
         </div>
@@ -912,6 +939,8 @@ function loadWeather() {
   _weatherLoaded = true;
   var el = document.getElementById('dash-weather');
   if (!el) return;
+  var wxBox = function(inner){ return '<div style="background:var(--surface);border-radius:12px;padding:10px 12px;box-shadow:0 1px 4px rgba(0,0,0,.08);height:100%;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;color:var(--text2)">'+inner+'</div>'; };
+  if (!el.innerHTML.trim() || el.dataset.wxErr) el.innerHTML = wxBox('⛅ Loading weather…');
   // Open-Meteo API — free, no key needed. Bergen County NJ: 40.93, -74.17
   var url = 'https://api.open-meteo.com/v1/forecast?latitude=40.93&longitude=-74.17&current=temperature_2m,weathercode,windspeed_10m,apparent_temperature&temperature_unit=fahrenheit&windspeed_unit=mph&timezone=America%2FNew_York';
   fetch(url).then(function(r){ return r.json(); }).then(function(d) {
@@ -927,10 +956,16 @@ function loadWeather() {
       +'<div style="display:flex;align-items:center;gap:9px">'
       +'<span style="font-size:30px;line-height:1">'+icon+'</span>'
       +'<div style="min-width:0"><div style="font-size:21px;font-weight:800;color:var(--text);line-height:1.1">'+temp+'°F</div>'
-      +'<div style="font-size:11.5px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+desc+'</div></div></div>'
-      +'<div style="font-size:11px;color:var(--text3);margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Feels '+feels+'° · 💨 '+wind+' mph · Bergen Co.</div>'
+      +'<div style="font-size:13px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+desc+'</div></div></div>'
+      +'<div style="font-size:12px;color:var(--text3);margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Feels '+feels+'° · 💨 '+wind+' mph · Bergen Co.</div>'
       +'</div>';
-  }).catch(function() { _weatherLoaded = false; }); // retry next time
+    delete el.dataset.wxErr;
+  }).catch(function() {
+    _weatherLoaded = false;
+    el.dataset.wxErr = '1';
+    el.innerHTML = '<div onclick="loadWeather()" style="cursor:pointer;height:100%">'+wxBox('Weather unavailable<br><b style="color:var(--accent,#1e4a72)">Tap to retry</b>')+'</div>';
+    clearTimeout(window._wxRetry); window._wxRetry = setTimeout(loadWeather, 30000);
+  });
 }
 function weatherIcon(code) {
   if (code === 0) return '☀️';
@@ -1370,13 +1405,13 @@ function openItemHistory(itemName, row) {
       list.innerHTML = events.map(function(ev) {
         var isOut = ev.action === 'OUT';
         var dot = '<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+(isOut?'#c0392b':'#2e7d32')+';margin-right:8px;flex-shrink:0"></span>';
-        var who = 'BC-' + ev.member + (ev.loggedBy ? ' <span style="color:#e65100;font-size:11px;">by BC-'+ev.loggedBy+'</span>' : '');
+        var who = 'BC-' + ev.member + (ev.loggedBy ? ' <span style="color:#e65100;font-size:12px;">by BC-'+ev.loggedBy+'</span>' : '');
         var ts = ev.ts ? new Date(ev.ts).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true}) : '';
         return '<div style="display:flex;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">'
           + dot
           + '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">'+(isOut?'Checked OUT':'Returned IN')+'</div>'
-          + '<div style="font-size:12px;color:var(--text2);margin-top:2px">'+who+'</div></div>'
-          + '<div style="font-size:11px;color:var(--text3);text-align:right">'+ts+'</div></div>';
+          + '<div style="font-size:13px;color:var(--text2);margin-top:2px">'+who+'</div></div>'
+          + '<div style="font-size:12px;color:var(--text3);text-align:right">'+ts+'</div></div>';
       }).join('');
     }).catch(function() {
       list.innerHTML = '<div style="text-align:center;padding:20px;color:#c0392b;">Could not load history</div>';
@@ -1772,14 +1807,14 @@ function renderDashboard() {
       +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
       +'<div class="alert-name">'+esc(it.name)+'</div>'
       +'<div style="text-align:right;flex-shrink:0">'
-      +(kStatus?'<span style="display:block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;background:'+(cls==='red'?'#fdecea':'#fff3e0')+';color:'+(cls==='red'?'#c0392b':'#e65100')+'">'+esc(kStatus)+'</span>':'')
-      +(timeStr?'<span style="display:block;font-size:10px;color:#999;margin-top:2px">'+esc(timeStr)+'</span>':'')
+      +(kStatus?'<span style="display:block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:10px;background:'+(cls==='red'?'#fdecea':'#fff3e0')+';color:'+(cls==='red'?'#c0392b':'#e65100')+'">'+esc(kStatus)+'</span>':'')
+      +(timeStr?'<span style="display:block;font-size:12px;color:#6b7280;margin-top:2px">'+esc(timeStr)+'</span>':'')
       +'</div></div>'
       +'<div class="alert-detail" style="margin-top:4px">📍 '+esc(it.homeLocation)
       +(it.member?' · <b>'+fmtMemberBadge(it.member)+'</b>':'')
       +(it.call?' · Call #'+esc(it.call):'')+'</div>'
-      +(hDisplay?'<div style="margin-top:5px;font-size:12px;color:#e65100;font-weight:600;background:#fff8f0;border-radius:6px;padding:4px 8px">📍 Member: '+esc(hDisplay)+'</div>':'')
-      +(lNote?'<div style="margin-top:5px;font-size:12px;color:#c0392b;font-weight:700;background:#fff5f5;border-radius:6px;padding:4px 8px">🔧 ET Note: '+esc(lNote)+'</div>':'<div style="margin-top:5px;font-size:11px;color:#aaa;font-style:italic;padding:2px 4px">No ET note yet</div>')
+      +(hDisplay?'<div style="margin-top:5px;font-size:13px;color:#e65100;font-weight:600;background:#fff8f0;border-radius:6px;padding:4px 8px">📍 Member: '+esc(hDisplay)+'</div>':'')
+      +(lNote?'<div style="margin-top:5px;font-size:13px;color:#c0392b;font-weight:700;background:#fff5f5;border-radius:6px;padding:4px 8px">🔧 ET Note: '+esc(lNote)+'</div>':'<div style="margin-top:5px;font-size:12px;color:#6b7280;font-style:italic;padding:2px 4px">No ET note yet</div>')
       +'</div>';
   }).join('');
   var ow = document.getElementById('dash-out-wrap');
@@ -1787,9 +1822,9 @@ function renderDashboard() {
   document.getElementById('dash-out').innerHTML = out.map(function(it) {
     var cc = it.isCNC ? '<span class="badge badge-cnc">'+cncLabel(it)+'</span>' : '<span class="badge badge-in">CC</span>';
     return '<div class="out-card" data-row="'+it.row+'"><div style="flex:1;min-width:0"><div class="out-name">'+esc(it.name)+'</div>'
-      +'<div class="out-meta"><b>Home Location -</b> '+esc(it.homeLocation)
-      +(it.member?' · <b>Member '+(it.status==='OUT'?'Check Out':'Check In')+':</b> '+fmtMemberBadge(it.member):'')
-      +(it.call?' · <b>Call #'+esc(it.call)+'</b>':'')+'</div>'
+      +'<div class="out-meta">Home Location - <b>'+esc(it.homeLocation)+'</b>'
+      +(it.member?' · Member '+(it.status==='OUT'?'Check Out':'Check In')+': <b>'+fmtMemberBadge(it.member)+'</b>':'')
+      +(it.call?' · Call # <b>'+esc(it.call)+'</b>':'')+'</div>'
       +(it.isCNC?'<div class="out-meta" style="color:#e65100">'+esc(it.cncNote||it.ccnc)+'</div>':'')
       +'</div><div style="text-align:right">'+cc+'<div class="out-time">'+fmtTime(it.lastUpdated)+'</div></div></div>';
   }).join('');
@@ -1812,9 +1847,9 @@ function renderDashboard() {
           return '<div style="background:#fdecea;border-left:4px solid #c0392b;border-radius:8px;padding:10px 12px;margin-bottom:7px">'
             +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
             +'<div style="font-size:13px;font-weight:700;color:#c0392b">'+esc(it.name)+'</div>'
-            +'<span style="font-size:11px;font-weight:700;background:#c0392b;color:#fff;padding:2px 8px;border-radius:10px">'+hrs+'h out</span>'
+            +'<span style="font-size:12px;font-weight:700;background:#c0392b;color:#fff;padding:2px 8px;border-radius:10px">'+hrs+'h out</span>'
             +'</div>'
-            +'<div style="font-size:12px;color:#666;margin-top:3px">📍 '+esc(it.homeLocation)
+            +'<div style="font-size:13px;color:#4b5563;margin-top:3px">📍 '+esc(it.homeLocation)
             +(it.member?' · '+fmtMemberBadge(it.member):'')
             +(it.call?' · Call #'+esc(it.call):'')+'</div>'
             +'</div>';
@@ -1978,7 +2013,7 @@ function renderInventory() {
     var eb = getEB(it.equipStatus);
     var cb = it.isCNC?'<span class="badge badge-cnc">'+cncLabel(it)+'</span>':'';
     var fl = it.equipStatus==='Missing'?'fl-miss':it.equipStatus==='Damaged'?'fl-dmg':it.isCNC?'fl-cnc':'';
-    var histBtn = (isAdminUser()||isDispatchUser()) ? '<button onclick="openItemHistory(\''+it.name.replace(/'/g,"\\'")+'\')" style="background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;padding:2px 4px;float:right" title="View history">🕐 History</button>' : '';
+    var histBtn = (isAdminUser()||isDispatchUser()) ? '<button onclick="openItemHistory(\''+it.name.replace(/'/g,"\\'")+'\')" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:2px 4px;float:right" title="View history">🕐 History</button>' : '';
     return '<div class="inv-card '+fl+'">'
       +'<div class="inv-top"><div class="inv-name">'+esc(it.name)+'</div><div class="inv-badges">'+sb+eb+cb+'</div></div>'
       +'<div class="inv-meta">📍 '+esc(it.homeLocation)+(it.member?' · '+fmtMemberBadge(it.member):'')+(it.call?' · Call #'+esc(it.call):'')+(it.lastUpdated?' · '+fmtTime(it.lastUpdated):'')+'</div>'
@@ -2016,13 +2051,13 @@ function getEB(s) {
 function renderModalItemList() {
   var el = document.getElementById('modal-item-list');
   if (!modalItems.length) {
-    el.innerHTML = '<div style="color:#aaa;font-size:13px;padding:6px">No items selected yet</div>';
+    el.innerHTML = '<div style="color:#6b7280;font-size:13px;padding:6px">No items selected yet</div>';
     return;
   }
   el.innerHTML = modalItems.map(function(it, idx){
     return '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 8px;background:#f8fafc;border-radius:8px;margin-bottom:5px">'
       +'<div><div style="font-size:13px;font-weight:600">'+esc(it.name)+'</div>'
-      +'<div style="font-size:11px;color:#888">'+esc(it.homeLocation)+'</div></div>'
+      +'<div style="font-size:12px;color:#5f6b7a">'+esc(it.homeLocation)+'</div></div>'
       +'<button onclick="removeModalItem('+idx+')" style="background:none;border:none;color:#c0392b;font-size:18px;cursor:pointer;padding:0 4px">✕</button>'
       +'</div>';
   }).join('');
@@ -2042,9 +2077,9 @@ function renderModalSearch() {
   res.style.display = 'block';
  res.innerHTML = matches.map(function(it){
     var isOut = it.status === 'OUT';
-    var badge = '<span style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;margin-left:6px;background:'+(isOut?'#fdecea':'#e8f5e9')+';color:'+(isOut?'#c0392b':'#2e7d32')+'">'+(isOut?'OUT':'IN')+'</span>';
+    var badge = '<span style="font-size:12px;font-weight:700;padding:2px 6px;border-radius:8px;margin-left:6px;background:'+(isOut?'#fdecea':'#e8f5e9')+';color:'+(isOut?'#c0392b':'#2e7d32')+'">'+(isOut?'OUT':'IN')+'</span>';
     return '<div onclick="addModalItem('+it.row+')" style="padding:9px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:13px;font-weight:600;color:#1a3a5c;display:flex;align-items:center;justify-content:space-between">'
-      +'<span>'+esc(it.name)+' <span style="color:#aaa;font-weight:400;font-size:11px">'+esc(it.homeLocation)+'</span></span>'+badge+'</div>';
+      +'<span>'+esc(it.name)+' <span style="color:#6b7280;font-weight:400;font-size:12px">'+esc(it.homeLocation)+'</span></span>'+badge+'</div>';
   }).join('');
 }
 function addModalItem(row) {
@@ -2083,7 +2118,7 @@ function getVehicleList() {
 }
 function bookingVehicle(b){ return (b && b.vehicle) ? b.vehicle.toString().trim() : 'COBC 4'; }
 function multiVehicle(){ return getVehicleList().length > 1; }
-function vehicleTag(b){ return multiVehicle() ? ' <span style="font-size:10px;font-weight:800;color:#1a3a5c;background:#e8eef5;padding:1px 7px;border-radius:8px">🚗 '+esc(bookingVehicle(b))+'</span>' : ''; }
+function vehicleTag(b){ return multiVehicle() ? ' <span style="font-size:12px;font-weight:800;color:#1a3a5c;background:#e8eef5;padding:1px 7px;border-radius:8px">🚗 '+esc(bookingVehicle(b))+'</span>' : ''; }
 function openCheckout(row, action) {
   var it = items.find(function(i){return i.row===row;});
   if(!it) return;
@@ -2375,8 +2410,8 @@ function renderChecklist() {
       var mName = mObj ? (mObj.firstName || mObj.name || '') : '';
       return '<div style="background:#fff;border-radius:8px;padding:9px 12px;margin-bottom:6px;box-shadow:0 1px 3px rgba(0,0,0,.07);border-left:3px solid #2e7d32">'
         +'<div style="font-size:13px;font-weight:700;color:#1a3a5c">📍 '+esc(loc)+'</div>'
-        +'<div style="font-size:11px;color:#555;margin-top:2px">👤 '+esc(member)+(mName?' — '+esc(mName):'')+'</div>'
-        +'<div style="font-size:11px;color:#888;margin-top:2px">🕐 '+esc(dateTime)+'</div>'
+        +'<div style="font-size:12px;color:#555;margin-top:2px">👤 '+esc(member)+(mName?' — '+esc(mName):'')+'</div>'
+        +'<div style="font-size:12px;color:#5f6b7a;margin-top:2px">🕐 '+esc(dateTime)+'</div>'
         +'</div>';
     }).join('');
     document.getElementById('chk-last-submitted-text').innerHTML = cards;
@@ -2416,8 +2451,8 @@ function renderChkItems() {
       return '<div class="alert-card '+(it.equipStatus==='Missing'||it.equipStatus==='Damaged'?'red':'')+'">'
         +'<div class="alert-name">'+esc(it.name)+'</div>'
         +'<div class="alert-detail">'+esc(it.equipStatus||'')+(it.member?' · BC-'+esc(it.member):'')+(it.call?' · Call #'+esc(it.call):'')+'</div>'
-        +((it.ccnc&&it.ccnc!=='CC')?'<div style="font-size:11px;color:#e65100;margin-top:3px">📍 '+esc(it.ccnc)+'</div>':'')
-        +(lNote?'<div style="font-size:11px;color:#c0392b;font-weight:600;margin-top:3px">🔧 ET: '+esc(lNote)+'</div>':'')
+        +((it.ccnc&&it.ccnc!=='CC')?'<div style="font-size:12px;color:#e65100;margin-top:3px">📍 '+esc(it.ccnc)+'</div>':'')
+        +(lNote?'<div style="font-size:12px;color:#c0392b;font-weight:600;margin-top:3px">🔧 ET: '+esc(lNote)+'</div>':'')
         +'</div>';
     }).join('');
   }
@@ -2445,25 +2480,25 @@ function renderChkItems() {
     var st=chkStatus[it.row]||'';
     var noteVal=chkNotes[it.row]||'';
     var stColors={'OK':'#2e7d32','Missing':'#c0392b','Missing Part':'#e65100','Damaged':'#f57f17','Need More':'#1565c0','Not Active':'#888'};
-    var stLabel=st?'<span style="font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;background:'+(st==='OK'?'#e8f5e9':st==='Missing'||st==='Missing Part'?'#fdecea':st==='Damaged'?'#fff8e1':st==='Need More'?'#e3f2fd':'#f5f5f5')+';color:'+(stColors[st]||'#333')+'">'+esc(st)+'</span>':'';
+    var stLabel=st?'<span style="font-size:12px;font-weight:700;padding:2px 7px;border-radius:10px;background:'+(st==='OK'?'#e8f5e9':st==='Missing'||st==='Missing Part'?'#fdecea':st==='Damaged'?'#fff8e1':st==='Need More'?'#e3f2fd':'#f5f5f5')+';color:'+(stColors[st]||'#333')+'">'+esc(st)+'</span>':'';
     var rawNote = it.equipNote || '';
     var noteFromSheet = rawNote.match(/^[A-Z ]+\s*-\s*(.+)$/i);
     var sheetNote = noteFromSheet ? noteFromSheet[1].trim() : '';
     var noteHtml=(st&&st!=='OK')?'<div style="margin-top:6px">'
-      +(sheetNote&&!noteVal?'<div style="font-size:11px;color:#c0392b;font-weight:600;margin-bottom:4px">Last note: '+esc(sheetNote)+'</div>':'')
+      +(sheetNote&&!noteVal?'<div style="font-size:12px;color:#c0392b;font-weight:600;margin-bottom:4px">Last note: '+esc(sheetNote)+'</div>':'')
       +'<input type="text" placeholder="Describe issue (optional)..." value="'+esc(noteVal||sheetNote)+'" oninput="chkNotes['+it.row+']=this.value;saveChkNote('+it.row+')" style="font-size:13px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;width:100%"/></div>':'';
     var btns=['OK','Missing','Damaged','Need More','Not Active'].map(function(s){
       var active=st===s;
       var col=stColors[s]||'#333';
-      return '<button onclick="setChkStatus('+it.row+',&quot;'+s+'&quot;)" style="flex:1;min-width:0;padding:6px 2px;font-size:10px;font-weight:700;border:2px solid '+(active?col:'#ddd')+';border-radius:7px;background:'+(active?col:'#fff')+';color:'+(active?'#fff':'#666')+';cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+s+'</button>';
+      return '<button onclick="setChkStatus('+it.row+',&quot;'+s+'&quot;)" style="flex:1;min-width:0;padding:6px 2px;font-size:12px;font-weight:700;border:2px solid '+(active?col:'#ddd')+';border-radius:7px;background:'+(active?col:'#fff')+';color:'+(active?'#fff':'#666')+';cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+s+'</button>';
     }).join('');
     return '<div class="chk-card" style="flex-direction:column;align-items:stretch;gap:0">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(it.name)+'</div>'
-      +(crossLoc?'<div style="font-size:11px;color:var(--text2);margin-top:1px">📍 '+esc(it.homeLocation)+'</div>':'')
+      +(crossLoc?'<div style="font-size:12px;color:var(--text2);margin-top:1px">📍 '+esc(it.homeLocation)+'</div>':'')
       +'</div>'
-      +'<div style="font-size:11px;color:#888;flex-shrink:0">'+(it.lastUpdated?fmtTime(it.lastUpdated):'')+' '+stLabel+'</div></div>'
+      +'<div style="font-size:12px;color:#5f6b7a;flex-shrink:0">'+(it.lastUpdated?fmtTime(it.lastUpdated):'')+' '+stLabel+'</div></div>'
       +'<div style="display:flex;gap:4px">'+btns+'</div>'
       +noteHtml+'</div>';
   }).join('');
@@ -2600,14 +2635,14 @@ function renderAdmin(){
   document.getElementById('loc-list').innerHTML=locations.map(function(loc,i){
     return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f0f0f0">'
       +'<span style="font-size:14px">'+esc(loc)+'</span>'
-      +'<button class="btn btn-ghost btn-sm" onclick="removeLoc('+i+')" style="padding:4px 10px;font-size:12px">Remove</button></div>';
+      +'<button class="btn btn-ghost btn-sm" onclick="removeLoc('+i+')" style="padding:4px 10px;font-size:13px">Remove</button></div>';
   }).join('');
   var al=document.getElementById('add-loc');
   al.innerHTML=locations.map(function(l){return '<option value="'+esc(l)+'">'+esc(l)+'</option>';}).join('');
   document.getElementById('adm-mem-count').textContent=members.length;
   if(document.getElementById('adm-item-list')){ renderAdminItems(); renderAdmCatChips(); }
   var ml=document.getElementById('adm-mem-list');
-  if(!members.length){ml.innerHTML='<div style="padding:10px 0;color:#888;font-size:14px">No members loaded</div>';return;}
+  if(!members.length){ml.innerHTML='<div style="padding:10px 0;color:#5f6b7a;font-size:14px">No members loaded</div>';return;}
   var searchBox = document.getElementById('adm-mem-search');
   var sq = searchBox ? searchBox.value.toLowerCase().trim() : '';
   var filtered = members.filter(function(m){
@@ -2621,12 +2656,12 @@ function renderAdmin(){
       var idSafe=esc(String(m.id||m.unit));
       return '<div class="mem-row" style="flex-wrap:wrap;gap:6px"><div class="mem-num">'+esc(unit)+'</div>'
         +'<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600">'+esc(name)+'</div>'
-        +'<div style="font-size:12px;color:#666">'+esc(m.phone||'')+'</div>'
+        +'<div style="font-size:13px;color:#4b5563">'+esc(m.phone||'')+'</div>'
         +'<div style="display:flex;align-items:center;gap:6px;margin-top:5px">'
-        +'<input id="email-'+idSafe+'" type="email" placeholder="Add Gmail..." value="'+esc(m.email||'')+'" style="font-size:12px;padding:4px 8px;border:1px solid var(--border2);border-radius:6px;flex:1;min-width:0;color:var(--text);background:var(--surface)"/>'
-        +'<button onclick="saveMemberEmail(&quot;'+idSafe+'&quot;)" style="padding:4px 10px;font-size:12px;font-weight:600;background:#1a3a5c;color:#fff;border:none;border-radius:6px;cursor:pointer;white-space:nowrap">Save</button>'
+        +'<input id="email-'+idSafe+'" type="email" placeholder="Add Gmail..." value="'+esc(m.email||'')+'" style="font-size:13px;padding:4px 8px;border:1px solid var(--border2);border-radius:6px;flex:1;min-width:0;color:var(--text);background:var(--surface)"/>'
+        +'<button onclick="saveMemberEmail(&quot;'+idSafe+'&quot;)" style="padding:4px 10px;font-size:13px;font-weight:600;background:#1a3a5c;color:#fff;border:none;border-radius:6px;cursor:pointer;white-space:nowrap">Save</button>'
         +'</div></div>'
-        +'<button onclick="deleteMember(&quot;'+idSafe+'&quot;)" style="padding:5px 10px;font-size:12px;font-weight:600;border:1.5px solid #ffcdd2;background:#fdecea;color:#c0392b;border-radius:7px;cursor:pointer;flex-shrink:0;align-self:flex-start">Delete</button>'
+        +'<button onclick="deleteMember(&quot;'+idSafe+'&quot;)" style="padding:5px 10px;font-size:13px;font-weight:600;border:1.5px solid #ffcdd2;background:#fdecea;color:#c0392b;border-radius:7px;cursor:pointer;flex-shrink:0;align-self:flex-start">Delete</button>'
         +'</div>';
     }).join('');
 }
@@ -2696,7 +2731,7 @@ function renderHlocList() {
     return true;
   }).sort(function(a,b){ return a.name.localeCompare(b.name, undefined, {numeric:true, sensitivity:'base'}); });
   if (!filtered.length) {
-    el.innerHTML = '<div style="padding:10px 0;color:#aaa;font-size:13px">No items found</div>';
+    el.innerHTML = '<div style="padding:10px 0;color:#6b7280;font-size:13px">No items found</div>';
     return;
   }
   var locOptions = locations.map(function(l){ return '<option value="'+esc(l)+'">'+esc(l)+'</option>'; }).join('');
@@ -2789,7 +2824,7 @@ function renderQRLinks() {
     var qrUrl = BASE_URL + '?item=' + encodeURIComponent(it.name) + '&view=qr';
     return '<a href="'+qrUrl+'" target="_blank" style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);text-decoration:none;gap:10px">'
       +'<div style="font-size:13px;font-weight:600;color:var(--text);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(it.name)+'</div>'
-      +'<div style="font-size:11px;color:#1a3a5c;font-weight:700;flex-shrink:0;background:#eef2f8;padding:4px 10px;border-radius:6px">🖨️ Print</div>'
+      +'<div style="font-size:12px;color:#1a3a5c;font-weight:700;flex-shrink:0;background:#eef2f8;padding:4px 10px;border-radius:6px">🖨️ Print</div>'
       +'</a>';
   }).join('');
 }
@@ -2807,7 +2842,7 @@ function renderAdminItems() {
   }).sort(function(a,b){ return a.name.localeCompare(b.name, undefined, {numeric:true, sensitivity:'base'}); });
   document.getElementById('adm-item-count').textContent = items.length;
   var el = document.getElementById('adm-item-list');
-  if (!filtered.length) { el.innerHTML = '<div style="padding:10px 0;color:#888;font-size:14px">No items found</div>'; return; }
+  if (!filtered.length) { el.innerHTML = '<div style="padding:10px 0;color:#5f6b7a;font-size:14px">No items found</div>'; return; }
   var statusColors = {'OK':'#2e7d32','Missing':'#c0392b','Damaged':'#f57f17','Need More':'#1565c0','Not Active':'#888'};
   el.innerHTML = filtered.map(function(it) {
     var st = it.equipStatus || 'OK';
@@ -2816,16 +2851,16 @@ function renderAdminItems() {
     var stBtns = ['OK','Missing','Damaged','Need More','Not Active'].map(function(s){
       var active = st === s;
       var col = statusColors[s];
-      return '<button onclick="adminSetStatus('+it.row+',&quot;'+s+'&quot;)" style="flex:1;padding:5px 2px;font-size:10px;font-weight:700;border:2px solid '+(active?col:'#ddd')+';border-radius:6px;background:'+(active?col:'#fff')+';color:'+(active?'#fff':'#666')+';cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+s+'</button>';
+      return '<button onclick="adminSetStatus('+it.row+',&quot;'+s+'&quot;)" style="flex:1;padding:5px 2px;font-size:12px;font-weight:700;border:2px solid '+(active?col:'#ddd')+';border-radius:6px;background:'+(active?col:'#fff')+';color:'+(active?'#fff':'#666')+';cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+s+'</button>';
     }).join('');
     return '<div style="padding:10px 0;border-bottom:1px solid var(--border)">'
       + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px">'
       + '<div style="flex:1;min-width:0">'
       + '<div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(it.name)+'</div>'
-      + '<div style="font-size:11px;color:var(--text2);margin-top:1px">'+esc(it.homeLocation)+'</div>'
-      + (noteDisplay?'<div style="font-size:11px;color:#c0392b;font-weight:600;margin-top:2px">📝 '+esc(noteDisplay)+'</div>':'')
+      + '<div style="font-size:12px;color:var(--text2);margin-top:1px">'+esc(it.homeLocation)+'</div>'
+      + (noteDisplay?'<div style="font-size:12px;color:#c0392b;font-weight:600;margin-top:2px">📝 '+esc(noteDisplay)+'</div>':'')
       + '</div>'
-      + '<span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:10px;background:'+(st==='OK'?'#e8f5e9':st==='Not Active'?'#f5f5f5':'#fdecea')+';color:'+stColor+';flex-shrink:0">'+esc(st)+'</span>'
+      + '<span style="font-size:12px;font-weight:700;padding:3px 8px;border-radius:10px;background:'+(st==='OK'?'#e8f5e9':st==='Not Active'?'#f5f5f5':'#fdecea')+';color:'+stColor+';flex-shrink:0">'+esc(st)+'</span>'
       + '</div>'
       + '<div style="display:flex;gap:4px">'+stBtns+'</div>'
       + '</div>';
@@ -2927,8 +2962,8 @@ function renderAdmChkHistory() {
         var mObj = members.find(function(m){ return String(m.id||m.unit)===bcNum; });
         var mName = mObj?(mObj.firstName||mObj.name||''): '';
         return '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)">'
-          +'<div style="font-size:12px;color:var(--text)"><b>BC-'+esc(e.bc||'')+'</b>'+(mName?' — '+esc(mName):'')+'</div>'
-          +'<div style="font-size:11px;color:var(--text2)">'+esc(e.timestamp||'')+'</div></div>';
+          +'<div style="font-size:13px;color:var(--text)"><b>BC-'+esc(e.bc||'')+'</b>'+(mName?' — '+esc(mName):'')+'</div>'
+          +'<div style="font-size:12px;color:var(--text2)">'+esc(e.timestamp||'')+'</div></div>';
       }).join('');
       return '<div style="margin-bottom:12px"><div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:4px">📍 '+esc(loc)+'</div>'+rows+'</div>';
     }).join('');
@@ -2938,7 +2973,7 @@ function renderAdmChkHistory() {
     buildUI(_admChkLogCache);
     return;
   }
-  el.innerHTML = '<div style="color:#aaa;font-size:13px;padding:6px 0">Loading...</div>';
+  el.innerHTML = '<div style="color:#6b7280;font-size:13px;padding:6px 0">Loading...</div>';
   fetchJ(BASE_URL+'?action=getChecklistLog')
     .then(function(data) {
       _admChkLogCache = data.log || [];
@@ -3055,23 +3090,23 @@ function renderCarDay(dateStr) {
   var isAdm  = userLevel >= 3;
   var el     = document.getElementById('car-day-shifts');
   if (!shifts.length) {
-    el.innerHTML = '<div style="color:#aaa;font-size:13px;padding:6px 0 10px">No shifts booked for this day yet.</div>';
+    el.innerHTML = '<div style="color:#6b7280;font-size:13px;padding:6px 0 10px">No shifts booked for this day yet.</div>';
   } else {
     el.innerHTML = shifts.map(function(b) {
       var isMine = myId && parseInt((b.memberId||'').toString().replace(/^BC-?/i,''),10) === parseInt(myId,10);
       var cls = 'car-shift-card' + (b.status==='pending'?' pending':'') + (isMine?' mine':'') + (b.status==='active'?' active-shift':'') + (b.status==='done'?' done-shift':'');
-      var stLabel = {approved:'<span style="color:#2e7d32;font-size:11px;font-weight:700">✓ Approved</span>',
-                     pending: '<span style="color:#e65100;font-size:11px;font-weight:700">⏳ Awaiting Approval</span>',
-                     active:  '<span style="color:#c0392b;font-size:11px;font-weight:700">🚗 Active</span>',
-                     done:    '<span style="font-size:11px;font-weight:800;padding:3px 9px;border-radius:8px;background:#e0e0e0;color:#555;letter-spacing:0.3px">✓ Done</span>'}[b.status] || '';
+      var stLabel = {approved:'<span style="color:#2e7d32;font-size:12px;font-weight:700">✓ Approved</span>',
+                     pending: '<span style="color:#e65100;font-size:12px;font-weight:700">⏳ Awaiting Approval</span>',
+                     active:  '<span style="color:#c0392b;font-size:12px;font-weight:700">🚗 Active</span>',
+                     done:    '<span style="font-size:12px;font-weight:800;padding:3px 9px;border-radius:8px;background:#e0e0e0;color:#555;letter-spacing:0.3px">✓ Done</span>'}[b.status] || '';
       var actions = '';
       // Member delete: only for their OWN pending/approved booking (not started, not done)
       var memberDeleteBtn = isMine && !isAdm && (b.status === 'approved' || b.status === 'pending')
-        ? '<button onclick="deleteCarShift(\''+b.id+'\')" style="margin-top:7px;padding:6px 12px;background:#fdecea;color:#c0392b;border:1.5px solid #ffcdd2;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">🗑 Delete Booking</button>'
+        ? '<button onclick="deleteCarShift(\''+b.id+'\')" style="margin-top:7px;padding:6px 12px;background:#fdecea;color:#c0392b;border:1.5px solid #ffcdd2;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">🗑 Delete Booking</button>'
         : '';
       // Admin delete: can delete ANY booking
       var deleteBtn = isAdm
-        ? '<button onclick="deleteCarShift(\''+b.id+'\')" style="margin-top:7px;padding:6px 12px;background:#fff0f0;color:#9b1c1c;border:1.5px solid #fca5a5;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">🗑 Delete</button>'
+        ? '<button onclick="deleteCarShift(\''+b.id+'\')" style="margin-top:7px;padding:6px 12px;background:#fff0f0;color:#9b1c1c;border:1.5px solid #fca5a5;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">🗑 Delete</button>'
         : '';
       if (isMine || isAdm) {
         if (b.status === 'approved') {
@@ -3085,7 +3120,7 @@ function renderCarDay(dateStr) {
           } else {
             var hLeft = Math.floor(minsUntilChk/60), mLeft = Math.round(minsUntilChk%60);
             var cdTxt = hLeft > 0 ? hLeft+'h '+mLeft+'m' : mLeft+'m';
-            actions = '<div style="margin-top:8px;font-size:11px;color:#888;padding:7px 10px;background:#f0f4ff;border-radius:7px;border:1px solid #d0d8f0;text-align:center">'
+            actions = '<div style="margin-top:8px;font-size:12px;color:#5f6b7a;padding:7px 10px;background:#f0f4ff;border-radius:7px;border:1px solid #d0d8f0;text-align:center">'
               +'🔑 Start Shift available in <strong>'+cdTxt+'</strong><br>'
               +'<span style="color:#1a3a5c">Unlocks 1 hour before '+esc(b.startTime)+'</span></div>'
               + memberDeleteBtn + deleteBtn;
@@ -3116,28 +3151,28 @@ function renderCarDay(dateStr) {
       }
       // Admin approve button for pending
       if (isAdm && b.status === 'pending') {
-        actions += '<button onclick="approveCarShift(\''+b.id+'\')" style="margin-top:7px;margin-left:6px;padding:6px 12px;background:#e8f5e9;color:#2e7d32;border:1.5px solid #a5d6a7;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">✓ Approve</button>';
+        actions += '<button onclick="approveCarShift(\''+b.id+'\')" style="margin-top:7px;margin-left:6px;padding:6px 12px;background:#e8f5e9;color:#2e7d32;border:1.5px solid #a5d6a7;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">✓ Approve</button>';
       }
       var bookedByLine = b.bookedBy ? (function(){
         var lbName = getMemberName(b.bookedBy);
-        return '<div style="font-size:11px;font-weight:700;color:#e65100;margin-top:1px">· booked by BC-'+esc(b.bookedBy)+(lbName?' '+esc(lbName):'')+'</div>';
+        return '<div style="font-size:12px;font-weight:700;color:#e65100;margin-top:1px">· booked by BC-'+esc(b.bookedBy)+(lbName?' '+esc(lbName):'')+'</div>';
       })() : '';
       var canEditNote = isMine || isAdm || isDispatchUser();
       var noteHtml;
       if (b.note) {
-        noteHtml = '<div style="font-size:11px;color:#888;margin-top:2px">📝 '+esc(b.note)
+        noteHtml = '<div style="font-size:12px;color:#5f6b7a;margin-top:2px">📝 '+esc(b.note)
           + (canEditNote?' <a href="#" onclick="editCarShiftNote(\''+b.id+'\');return false;" style="color:#1a3a5c;font-weight:700;text-decoration:none;margin-left:4px">✏️ Edit</a>':'')
           + '</div>';
       } else if (canEditNote) {
-        noteHtml = '<div style="font-size:11px;margin-top:2px"><a href="#" onclick="editCarShiftNote(\''+b.id+'\');return false;" style="color:#1a3a5c;font-weight:700;text-decoration:none">📝 Add note</a></div>';
+        noteHtml = '<div style="font-size:12px;margin-top:2px"><a href="#" onclick="editCarShiftNote(\''+b.id+'\');return false;" style="color:#1a3a5c;font-weight:700;text-decoration:none">📝 Add note</a></div>';
       } else {
         noteHtml = '';
       }
       return '<div class="'+cls+'">'
         + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
-        + '<div><div style="font-size:13px;font-weight:700;color:#1a1a1a">BC-'+esc(b.memberId)+' '+esc(b.memberName||'')+(isMine?' <span style="font-size:10px;color:#1a3a5c;background:#dbeafe;padding:1px 6px;border-radius:8px">You</span>':'')+vehicleTag(b)+'</div>'
+        + '<div><div style="font-size:13px;font-weight:700;color:#1a1a1a">BC-'+esc(b.memberId)+' '+esc(b.memberName||'')+(isMine?' <span style="font-size:12px;color:#1a3a5c;background:#dbeafe;padding:1px 6px;border-radius:8px">You</span>':'')+vehicleTag(b)+'</div>'
         + bookedByLine
-        + '<div style="font-size:12px;color:#555;margin-top:3px">🕐 '+esc(b.startTime)+' – '+esc(b.endTime)+overnightEndLabel(b)+'</div>'
+        + '<div style="font-size:13px;color:#555;margin-top:3px">🕐 '+esc(b.startTime)+' – '+esc(b.endTime)+overnightEndLabel(b)+'</div>'
         + noteHtml
         + '</div><div style="text-align:right">'+stLabel+'</div></div>'
         + (actions?'<div style="display:flex;flex-wrap:wrap;gap:4px">'+actions+'</div>':'')
@@ -3167,9 +3202,9 @@ function renderCarDay(dateStr) {
         var free = slots.filter(function(s){ return s.e-s.s >= 30; });
         if (free.length) {
           var f = free[0];
-          nextSlotHtml = '<div style="font-size:12px;color:#2e7d32;background:#e8f5e9;border-radius:8px;padding:7px 10px;margin-top:8px;text-align:center">🟢 Next free: <b>'+fmt12FromMins(f.s)+'</b> – <b>'+fmt12FromMins(Math.min(f.e,1440))+'</b></div>';
+          nextSlotHtml = '<div style="font-size:13px;color:#2e7d32;background:#e8f5e9;border-radius:8px;padding:7px 10px;margin-top:8px;text-align:center">🟢 Next free: <b>'+fmt12FromMins(f.s)+'</b> – <b>'+fmt12FromMins(Math.min(f.e,1440))+'</b></div>';
         } else {
-          nextSlotHtml = '<div style="font-size:12px;color:#c0392b;background:#fdecea;border-radius:8px;padding:7px 10px;margin-top:8px;text-align:center">🔴 Fully booked — no slots available</div>';
+          nextSlotHtml = '<div style="font-size:13px;color:#c0392b;background:#fdecea;border-radius:8px;padding:7px 10px;margin-top:8px;text-align:center">🔴 Fully booked — no slots available</div>';
         }
       }
     }
@@ -3479,7 +3514,7 @@ function renderCarAccessAdmin() {
     var idSafe = esc(String(m.id||m.unit));
     return '<div class="car-access-row">'
       + '<div><div style="font-size:13px;font-weight:600;color:var(--text)">'+esc(name)+'</div>'
-      + '<div style="font-size:11px;color:var(--text2)">BC-'+esc(unit)+'</div></div>'
+      + '<div style="font-size:12px;color:var(--text2)">BC-'+esc(unit)+'</div></div>'
       + '<label class="car-toggle">'
       + '<input type="checkbox" '+(m.carAccess?'checked':'')+' onchange="toggleCarAccess(\''+idSafe+'\',this.checked)"/>'
       + '<span class="car-toggle-slider"></span>'
@@ -3595,7 +3630,7 @@ function renderCarItemStatus() {
       +'background:'+(isOut?'#fdecea':'#e8f5e9')+';border:1.5px solid '+(isOut?'#ffcdd2':'#a5d6a7')+'">'
       +'<span style="font-size:20px">'+(isOut?'🔴':'🟢')+'</span>'
       +'<div><div style="font-size:13px;font-weight:700;color:'+(isOut?'#c0392b':'#2e7d32')+'">'+esc(carItem.name)+' is currently '+(isOut?'OUT — in use':'IN — available')+'</div>'
-      +(isOut&&carItem.member?'<div style="font-size:11px;color:#666;margin-top:1px">Signed out by '+fmtMemberBadge(carItem.member)+(carItem.lastUpdated?' · '+esc(carItem.lastUpdated):'')+'</div>':'')
+      +(isOut&&carItem.member?'<div style="font-size:12px;color:#4b5563;margin-top:1px">Signed out by '+fmtMemberBadge(carItem.member)+(carItem.lastUpdated?' · '+esc(carItem.lastUpdated):'')+'</div>':'')
       +'</div></div>';
   }).join('');
 }
@@ -3629,7 +3664,7 @@ function renderCarActionBanner() {
       }
       banners.push('<div style="background:linear-gradient(135deg,#c0392b,#e74c3c);border-radius:14px;padding:16px 18px;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 4px 16px rgba(192,57,43,.3);margin-bottom:8px">'
         +'<div><div style="font-size:15px;font-weight:800">🏁 '+esc(veh)+' is out</div>'
-        +'<div style="font-size:12px;opacity:.85;margin-top:2px">Tap to return it to inventory</div></div>'
+        +'<div style="font-size:13px;opacity:.85;margin-top:2px">Tap to return it to inventory</div></div>'
         +(bookingId
           ? '<button onclick="endCarShift(\''+bookingId+'\')" style="background:#fff;color:#c0392b;border:none;border-radius:10px;padding:11px 18px;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap">Return Car</button>'
           : '<button onclick="navigateToCarCheckout(\'IN\',\''+esc(veh)+'\')" style="background:#fff;color:#c0392b;border:none;border-radius:10px;padding:11px 18px;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap">Sign IN</button>')
@@ -3650,7 +3685,7 @@ function renderCarActionBanner() {
       if (myTodayBkg) {
         banners.push('<div style="background:linear-gradient(135deg,#1a3a5c,#2a5a8c);border-radius:14px;padding:16px 18px;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 4px 16px rgba(26,58,92,.3);margin-bottom:8px">'
           +'<div><div style="font-size:15px;font-weight:800">🔑 Your shift is ready</div>'
-          +'<div style="font-size:12px;opacity:.85;margin-top:2px">Tap to start and sign '+esc(veh)+' out</div></div>'
+          +'<div style="font-size:13px;opacity:.85;margin-top:2px">Tap to start and sign '+esc(veh)+' out</div></div>'
           +'<button onclick="startCarShift(\''+myTodayBkg.id+'\')" style="background:#fff;color:#1a3a5c;border:none;border-radius:10px;padding:11px 18px;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap">Start Shift</button>'
           +'</div>');
       }
@@ -3674,7 +3709,7 @@ function renderCarHistory() {
       var ka = a.date+parse12to24(a.startTime), kb = b.date+parse12to24(b.startTime);
       return ka < kb ? 1 : -1;
     });
-  if (!hist.length) { el.innerHTML='<div style="color:#aaa;font-size:13px;padding:4px 0">No completed shifts yet.</div>'; return; }
+  if (!hist.length) { el.innerHTML='<div style="color:#6b7280;font-size:13px;padding:4px 0">No completed shifts yet.</div>'; return; }
   el.innerHTML = hist.slice(0,30).map(function(b){
     var d = new Date(b.date+'T12:00:00');
     var ds = d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
@@ -3689,26 +3724,26 @@ function renderCarHistory() {
     var actualOut = fmtActual(b.actualSignOut);
     var actualIn  = fmtActual(b.actualSignIn);
     var timeRow = actualOut || actualIn
-      ? '<div style="font-size:11px;color:#555;margin-top:3px">'
+      ? '<div style="font-size:12px;color:#555;margin-top:3px">'
           +(actualOut ? '🔑 Took out: <b>'+esc(actualOut)+'</b>' : '🔑 Took out: —')
           +' &nbsp;·&nbsp; '
           +(actualIn  ? '🏁 Returned: <b>'+esc(actualIn)+'</b>'  : '🏁 Returned: —')
         +'</div>'
-      : '<div style="font-size:11px;color:#aaa;margin-top:3px">🕐 Scheduled: '+esc(b.startTime)+' – '+esc(b.endTime)+overnightEndLabel(b)+'</div>';
+      : '<div style="font-size:12px;color:#6b7280;margin-top:3px">🕐 Scheduled: '+esc(b.startTime)+' – '+esc(b.endTime)+overnightEndLabel(b)+'</div>';
     var histBookedByLine = b.bookedBy ? (function(){
       var lbName = getMemberName(b.bookedBy);
-      return '<div style="font-size:11px;font-weight:700;color:#e65100;margin-top:1px">· booked by BC-'+esc(b.bookedBy)+(lbName?' '+esc(lbName):'')+'</div>';
+      return '<div style="font-size:12px;font-weight:700;color:#e65100;margin-top:1px">· booked by BC-'+esc(b.bookedBy)+(lbName?' '+esc(lbName):'')+'</div>';
     })() : '';
     return '<div style="padding:9px 0;border-bottom:1px solid #f0f0f0">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start">'
       +'<div><div style="font-size:13px;font-weight:600;color:#1a1a1a">BC-'+esc(b.memberId)+(b.memberName?' · '+esc(b.memberName):'')+vehicleTag(b)+'</div>'
       +histBookedByLine
       +timeRow
-      +(b.note?'<div style="font-size:11px;color:#888;margin-top:2px">📝 '+esc(b.note)+'</div>':'')
+      +(b.note?'<div style="font-size:12px;color:#5f6b7a;margin-top:2px">📝 '+esc(b.note)+'</div>':'')
       +'</div>'
-      +'<div style="text-align:right"><div style="font-size:12px;color:#555">'+ds+'</div>'
-      +'<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;display:inline-block;margin-top:3px;'
-      +(b.status==='active'?'background:#fdecea;color:#c0392b':'background:#f0f0f0;color:#666')+'">'
+      +'<div style="text-align:right"><div style="font-size:13px;color:#555">'+ds+'</div>'
+      +'<span style="font-size:12px;font-weight:700;padding:2px 7px;border-radius:8px;display:inline-block;margin-top:3px;'
+      +(b.status==='active'?'background:#fdecea;color:#c0392b':'background:#f0f0f0;color:#4b5563')+'">'
       +esc(b.status==='active'?'Out Now':'Done')+'</span></div>'
       +'</div></div>';
   }).join('');
@@ -3718,7 +3753,7 @@ function loadAdminCarHistory() {
   // Ensure carSchedule is loaded before rendering
   if (!carSchedule.length) {
     var el = document.getElementById('adm-car-hist-list');
-    if (el) el.innerHTML = '<div style="color:#aaa;font-size:13px;padding:4px 0">Loading...</div>';
+    if (el) el.innerHTML = '<div style="color:#6b7280;font-size:13px;padding:4px 0">Loading...</div>';
     loadCarSchedule(function(){ renderAdminCarHistory(); });
   } else {
     renderAdminCarHistory();
@@ -3744,7 +3779,7 @@ function renderAdminCarHistory() {
     return ka < kb ? 1 : -1;
   });
   if (!hist.length) {
-    el.innerHTML = '<div style="color:#aaa;font-size:13px;padding:8px 0">'+(fromVal||toVal?'No records found for that date range.':'No history yet.')+'</div>';
+    el.innerHTML = '<div style="color:#6b7280;font-size:13px;padding:8px 0">'+(fromVal||toVal?'No records found for that date range.':'No history yet.')+'</div>';
     return;
   }
   function fmtActual(ts) {
@@ -3764,14 +3799,14 @@ function renderAdminCarHistory() {
     return '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border);gap:8px">'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:13px;font-weight:600;color:var(--text)">BC-'+esc(b.memberId)+(b.memberName?' · '+esc(b.memberName):'')+'</div>'
-      +(b.bookedBy?(function(){ var lbName=getMemberName(b.bookedBy); return '<div style="font-size:11px;font-weight:700;color:#e65100;margin-top:1px">· booked by BC-'+esc(b.bookedBy)+(lbName?' '+esc(lbName):'')+' </div>'; })():'')
-      +'<div style="font-size:11px;color:var(--text2);margin-top:2px">'+timeRow+'</div>'
-      +(b.note?'<div style="font-size:11px;color:var(--text3);margin-top:1px">📝 '+esc(b.note)+'</div>':'')
+      +(b.bookedBy?(function(){ var lbName=getMemberName(b.bookedBy); return '<div style="font-size:12px;font-weight:700;color:#e65100;margin-top:1px">· booked by BC-'+esc(b.bookedBy)+(lbName?' '+esc(lbName):'')+' </div>'; })():'')
+      +'<div style="font-size:12px;color:var(--text2);margin-top:2px">'+timeRow+'</div>'
+      +(b.note?'<div style="font-size:12px;color:var(--text3);margin-top:1px">📝 '+esc(b.note)+'</div>':'')
       +'</div>'
       +'<div style="text-align:right;flex-shrink:0">'
-      +'<div style="font-size:11px;color:var(--text3);margin-bottom:3px">'+esc(ds)+'</div>'
-      +'<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;display:inline-block;'+statusBadge+'">'+statusLabel+'</span>'
-      +'<br><button onclick="deleteCarShift(\''+b.id+'\',true)" style="margin-top:5px;padding:3px 9px;background:#fff0f0;color:#9b1c1c;border:1.5px solid #fca5a5;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer">🗑 Delete</button>'
+      +'<div style="font-size:12px;color:var(--text3);margin-bottom:3px">'+esc(ds)+'</div>'
+      +'<span style="font-size:12px;font-weight:700;padding:2px 7px;border-radius:8px;display:inline-block;'+statusBadge+'">'+statusLabel+'</span>'
+      +'<br><button onclick="deleteCarShift(\''+b.id+'\',true)" style="margin-top:5px;padding:3px 9px;background:#fff0f0;color:#9b1c1c;border:1.5px solid #fca5a5;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer">🗑 Delete</button>'
       +'</div></div>';
   }).join('');
 }
@@ -3791,10 +3826,10 @@ function showCarBookingSuccess(startTime, endTime, date, memberName, note) {
   wrap.innerHTML = '<div style="background:#fff8f0;border:1.5px solid #ffcc80;border-radius:10px;padding:16px;margin-top:6px;text-align:center">'
     +'<div style="font-size:28px;margin-bottom:6px">⏳</div>'
     +'<div style="font-size:15px;font-weight:700;color:#e65100">Shift requested for '+dateLabel+'</div>'
-    +'<div style="font-size:12px;color:#e65100;margin-top:2px;font-weight:600">Awaiting admin approval</div>'
+    +'<div style="font-size:13px;color:#e65100;margin-top:2px;font-weight:600">Awaiting admin approval</div>'
     +'<div style="font-size:13px;color:#555;margin-top:4px">'+startTime+' – '+endTime+(memberName?' · '+memberName:'')+'</div>'
-    +(note?'<div style="font-size:12px;color:#888;margin-top:3px">'+note+'</div>':'')
-    +'<button onclick="renderCarDay(carSelectedDate)" style="margin-top:12px;background:none;border:none;color:#888;font-size:12px;cursor:pointer;text-decoration:underline">Dismiss</button>'
+    +(note?'<div style="font-size:13px;color:#5f6b7a;margin-top:3px">'+note+'</div>':'')
+    +'<button onclick="renderCarDay(carSelectedDate)" style="margin-top:12px;background:none;border:none;color:#5f6b7a;font-size:13px;cursor:pointer;text-decoration:underline">Dismiss</button>'
     +'</div>';
 }
 function pad2(n){ return n < 10 ? '0'+n : String(n); }
@@ -3824,7 +3859,7 @@ function renderAdmChkFromItems(el) {
     if (i.lastChecked && (!byLoc[i.homeLocation]||i.lastChecked>byLoc[i.homeLocation])) byLoc[i.homeLocation]=i.lastChecked;
   });
   var locs = Object.keys(byLoc).sort();
-  if (!locs.length) { el.innerHTML='<div style="color:#aaa;font-size:13px">No checklist data yet.</div>'; return; }
+  if (!locs.length) { el.innerHTML='<div style="color:#6b7280;font-size:13px">No checklist data yet.</div>'; return; }
   el.innerHTML = locs.map(function(loc){
     var raw = byLoc[loc];
     var parts = raw.split(' · ');
@@ -3835,8 +3870,8 @@ function renderAdmChkFromItems(el) {
     var mName = mObj?(mObj.firstName||mObj.name||''): '';
     return '<div style="padding:8px 0;border-bottom:1px solid #f0f0f0">'
       +'<div style="font-size:13px;font-weight:700;color:#1a3a5c">📍 '+esc(loc)+'</div>'
-      +'<div style="font-size:12px;color:#444;margin-top:2px">👤 '+esc(member)+(mName?' — '+esc(mName):'')+'</div>'
-      +'<div style="font-size:11px;color:#888;margin-top:1px">🕐 '+esc(dt)+'</div></div>';
+      +'<div style="font-size:13px;color:#444;margin-top:2px">👤 '+esc(member)+(mName?' — '+esc(mName):'')+'</div>'
+      +'<div style="font-size:12px;color:#5f6b7a;margin-top:1px">🕐 '+esc(dt)+'</div></div>';
   }).join('');
 }
 // BOOT
@@ -3961,7 +3996,7 @@ function renderNotifCard() {
   var el = document.getElementById('notif-card');
   if (!el) return;
   if (!('Notification' in window)) {
-    el.innerHTML = '<div style="background:#f5f5f5;border-radius:12px;padding:14px 16px;font-size:13px;color:#888">🔔 Notifications not supported on this browser.</div>';
+    el.innerHTML = '<div style="background:#f5f5f5;border-radius:12px;padding:14px 16px;font-size:13px;color:#5f6b7a">🔔 Notifications not supported on this browser.</div>';
     return;
   }
   var perm = Notification.permission;
@@ -3970,11 +4005,11 @@ function renderNotifCard() {
     ? 'Get notified when items are checked in/out and about your upcoming shifts.'
     : 'Get notified 10 min before your shift starts and ends.';
   if (perm === 'granted') {
-    el.innerHTML = '<div style="background:#e8f5e9;border:1.5px solid #a5d6a7;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:10px"><span style="font-size:22px">🔔</span><div><div style="font-size:14px;font-weight:700;color:#2e7d32">Notifications Enabled</div><div style="font-size:12px;color:#388e3c;margin-top:2px">'+notifDesc+'</div></div></div>';
+    el.innerHTML = '<div style="background:#e8f5e9;border:1.5px solid #a5d6a7;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:10px"><span style="font-size:22px">🔔</span><div><div style="font-size:14px;font-weight:700;color:#2e7d32">Notifications Enabled</div><div style="font-size:13px;color:#388e3c;margin-top:2px">'+notifDesc+'</div></div></div>';
   } else if (perm === 'denied') {
-    el.innerHTML = '<div style="background:#fdecea;border:1.5px solid #ef9a9a;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:10px"><span style="font-size:22px">🔕</span><div><div style="font-size:14px;font-weight:700;color:#c0392b">Notifications Blocked</div><div style="font-size:12px;color:#c0392b;margin-top:2px">Go to your browser settings and allow notifications for this site, then reload.</div></div></div>';
+    el.innerHTML = '<div style="background:#fdecea;border:1.5px solid #ef9a9a;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:10px"><span style="font-size:22px">🔕</span><div><div style="font-size:14px;font-weight:700;color:#c0392b">Notifications Blocked</div><div style="font-size:13px;color:#c0392b;margin-top:2px">Go to your browser settings and allow notifications for this site, then reload.</div></div></div>';
   } else {
-    el.innerHTML = '<div style="background:#fff;border:1.5px solid #ddd;border-radius:12px;padding:14px 16px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:22px">🔔</span><div><div style="font-size:14px;font-weight:700;color:#1a3a5c">Enable Notifications</div><div style="font-size:12px;color:#666;margin-top:2px">'+notifDesc+'</div></div></div><button onclick="requestNotifPermission()" style="width:100%;padding:12px;background:#1a3a5c;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer">Enable Notifications</button></div>';
+    el.innerHTML = '<div style="background:#fff;border:1.5px solid #ddd;border-radius:12px;padding:14px 16px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:22px">🔔</span><div><div style="font-size:14px;font-weight:700;color:#1a3a5c">Enable Notifications</div><div style="font-size:13px;color:#4b5563;margin-top:2px">'+notifDesc+'</div></div></div><button onclick="requestNotifPermission()" style="width:100%;padding:12px;background:#1a3a5c;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer">Enable Notifications</button></div>';
   }
 }
 function requestNotifPermission() {
@@ -4095,7 +4130,7 @@ function buildEndingBannerHtml(booking, minsToEnd) {
   return '<div style="background:linear-gradient(135deg,#e65100,#f57c00);border-radius:14px;padding:14px 16px;color:#fff;box-shadow:0 4px 16px rgba(230,81,0,.35)">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">'
     +'<div><div style="font-size:15px;font-weight:800">⏰ Shift ending in '+minsToEnd+' min</div>'
-    +'<div style="font-size:12px;opacity:.9;margin-top:2px">Ends '+esc(booking.endTime)+(nextFree?' · Next slot is open':'')+'</div></div>'
+    +'<div style="font-size:13px;opacity:.9;margin-top:2px">Ends '+esc(booking.endTime)+(nextFree?' · Next slot is open':'')+'</div></div>'
     +'<div style="display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end">'
     + continueBtns + returnBtn
     +'</div></div></div>';
@@ -4222,7 +4257,7 @@ function renderAlertRecipientsAdmin() {
     var id = String(m.id||m.unit||'');
     return !q || nm.indexOf(q)>=0 || id.indexOf(q)>=0;
   });
-  if (!list.length) { el.innerHTML='<div style="color:#aaa;font-size:13px;padding:8px">No members found.</div>'; return; }
+  if (!list.length) { el.innerHTML='<div style="color:#6b7280;font-size:13px;padding:8px">No members found.</div>'; return; }
   el.innerHTML = list.map(function(m) {
     var idNum = parseInt(String(m.id||m.unit||''), 10);
     var enabled = _alertRecipients.indexOf(idNum) >= 0;
@@ -4247,8 +4282,8 @@ function toggleAlertRecipient(memberId, enabled) {
   <div style="background:#fff;border-radius:20px;padding:2rem 1.5rem;max-width:320px;width:90%;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.2)">
     <div style="font-size:36px;margin-bottom:12px">✅</div>
     <div style="font-size:18px;font-weight:700;color:#1a3a5c;margin-bottom:4px">Submit Checklist</div>
-    <div id="chk-submit-loc" style="font-size:13px;color:#888;margin-bottom:16px"></div>
-    <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px;text-align:left">Your BC Member #</label>
+    <div id="chk-submit-loc" style="font-size:13px;color:#5f6b7a;margin-bottom:16px"></div>
+    <label style="font-size:13px;font-weight:600;color:#555;display:block;margin-bottom:5px;text-align:left">Your BC Member #</label>
     <input id="chk-submit-bc" type="text" inputmode="numeric" placeholder="e.g. 38" style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:14px 12px;font-size:20px;text-align:center;outline:none;margin-bottom:8px"/>
     <div id="chk-submit-err" style="color:#c0392b;font-size:13px;height:18px;margin-bottom:8px"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px">
@@ -4264,7 +4299,7 @@ function toggleAlertRecipient(memberId, enabled) {
       <div style="font-size:48px;margin-bottom:12px">🔒</div>
       <div style="font-size:18px;font-weight:700;color:#1a3a5c;margin-bottom:4px">Bergen County Chaverim</div>
       <div id="qr-item-title" style="font-size:15px;font-weight:600;color:#555;margin-bottom:16px"></div>
-      <div style="font-size:13px;color:#888;margin-bottom:20px">Enter your member PIN</div>
+      <div style="font-size:13px;color:#5f6b7a;margin-bottom:20px">Enter your member PIN</div>
       <input id="qr-pin-input" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN"
         style="width:100%;padding:16px;font-size:32px;text-align:center;letter-spacing:12px;border:2px solid #e0e0e0;border-radius:12px;outline:none;margin-bottom:10px"/>
       <div id="qr-pin-error" style="color:#c0392b;font-size:13px;height:18px;margin-bottom:8px"></div>
@@ -4275,21 +4310,21 @@ function toggleAlertRecipient(memberId, enabled) {
     <div style="background:#fff;border-radius:20px;padding:1.5rem;box-shadow:0 4px 24px rgba(0,0,0,.08)">
       <div style="font-size:13px;font-weight:700;color:#1a3a5c;text-transform:uppercase;text-align:center;margin-bottom:8px">Bergen County Chaverim</div>
       <div id="qr-form-name" style="font-size:22px;font-weight:800;text-align:center;color:#1a1a1a;margin-bottom:4px"></div>
-      <div id="qr-form-loc" style="font-size:13px;color:#888;text-align:center;margin-bottom:8px"></div>
+      <div id="qr-form-loc" style="font-size:13px;color:#5f6b7a;text-align:center;margin-bottom:8px"></div>
       <div id="qr-form-badge" style="padding:5px 16px;border-radius:20px;font-size:13px;font-weight:600;margin:0 auto 16px;display:block;width:fit-content;text-align:center"></div>
       <div id="qr-member-display" style="display:none;background:#eef3f8;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:13px;font-weight:600;color:#1a3a5c;text-align:center"></div>
       <div id="qr-member-wrap">
-        <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px">Your BC Member #</label>
+        <label style="font-size:13px;font-weight:600;color:#555;display:block;margin-bottom:5px">Your BC Member #</label>
         <input id="qr-member" type="text" inputmode="numeric" placeholder="e.g. 38"
           style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:14px 12px;font-size:16px;outline:none;margin-bottom:13px"/>
       </div>
       <div id="qr-call-group">
-        <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px">Call Number</label>
+        <label style="font-size:13px;font-weight:600;color:#555;display:block;margin-bottom:5px">Call Number</label>
         <input id="qr-call" type="text" inputmode="numeric" placeholder="Dispatched call #"
           style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:14px 12px;font-size:16px;outline:none;margin-bottom:13px"/>
       </div>
       <div id="qr-ccnc-group">
-        <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px">Status</label>
+        <label style="font-size:13px;font-weight:600;color:#555;display:block;margin-bottom:5px">Status</label>
         <select id="qr-ccnc" onchange="qrToggleCNC()"
           style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:14px 12px;font-size:16px;outline:none;background:#fff;-webkit-appearance:none;margin-bottom:13px">
           <option value="">-- Select --</option>
@@ -4298,14 +4333,14 @@ function toggleAlertRecipient(memberId, enabled) {
         </select>
       </div>
       <div id="qr-cnc-wrap" style="display:none">
-        <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:5px">Where is the item?</label>
+        <label style="font-size:13px;font-weight:600;color:#555;display:block;margin-bottom:5px">Where is the item?</label>
         <input id="qr-cnc-note" type="text" placeholder="e.g. Left at Teaneck Garage"
           style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:14px 12px;font-size:16px;outline:none;margin-bottom:13px"/>
       </div>
-      <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:6px">Items</div>
+      <div style="font-size:13px;font-weight:600;color:#555;margin-bottom:6px">Items</div>
       <div id="qr-items-list" style="margin-bottom:8px"></div>
       <div style="position:relative;margin-bottom:8px">
-        <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#aaa;font-size:15px;pointer-events:none">🔍</span>
+        <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#6b7280;font-size:15px;pointer-events:none">🔍</span>
         <input id="qr-item-search" type="text" placeholder="Add more items..."
           oninput="qrItemSearch()"
           style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:12px 12px 12px 36px;font-size:14px;outline:none"/>
@@ -4321,7 +4356,7 @@ function toggleAlertRecipient(memberId, enabled) {
     <div style="background:#fff;border-radius:20px;padding:2rem 1.5rem;max-width:320px;width:100%;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.1)">
       <div id="qr-conf-icon" style="width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 16px;color:#fff"></div>
       <div id="qr-conf-title" style="font-size:22px;font-weight:800;margin-bottom:8px"></div>
-      <div id="qr-conf-detail" style="font-size:14px;color:#666;margin-bottom:20px;line-height:1.6"></div>
+      <div id="qr-conf-detail" style="font-size:14px;color:#4b5563;margin-bottom:20px;line-height:1.6"></div>
       <button onclick="document.getElementById('qr-overlay').style.display='none'" style="width:100%;padding:14px;background:#1a3a5c;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">Done</button>
     </div>
   </div>
@@ -4415,7 +4450,7 @@ function qrRenderItemsList() {
   var all = [{name: _qrName, main: true}].concat(_qrExtraItems.map(function(n){ return {name:n, main:false}; }));
   el.innerHTML = all.map(function(it, idx) {
     return '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 8px;background:#f8fafc;border-radius:8px;margin-bottom:4px">'
-      + '<span style="font-size:13px;font-weight:600;color:#1a1a1a">'+esc(it.name)+(it.main?' <span style="font-size:10px;color:#aaa;font-weight:400">(scanned)</span>':'')+'</span>'
+      + '<span style="font-size:13px;font-weight:600;color:#1a1a1a">'+esc(it.name)+(it.main?' <span style="font-size:12px;color:#6b7280;font-weight:400">(scanned)</span>':'')+'</span>'
       + (!it.main ? '<button onclick="qrRemoveItem('+idx+')" style="background:none;border:none;color:#c0392b;font-size:18px;cursor:pointer;padding:0 4px;line-height:1">\u2715</button>' : '')
       + '</div>';
   }).join('');
@@ -4436,9 +4471,9 @@ function qrItemSearch() {
   res.style.display = 'block';
   res.innerHTML = matches.map(function(it){
     var isOut = it.status === 'OUT';
-    var badge = '<span style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;margin-left:6px;background:'+(isOut?'#fdecea':'#e8f5e9')+';color:'+(isOut?'#c0392b':'#2e7d32')+'">'+(isOut?'OUT':'IN')+'</span>';
+    var badge = '<span style="font-size:12px;font-weight:700;padding:2px 6px;border-radius:8px;margin-left:6px;background:'+(isOut?'#fdecea':'#e8f5e9')+';color:'+(isOut?'#c0392b':'#2e7d32')+'">'+(isOut?'OUT':'IN')+'</span>';
     return '<div onclick="qrAddItem(this)" data-name="'+esc(it.name)+'" style="padding:9px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:13px;font-weight:600;color:#1a3a5c;display:flex;align-items:center;justify-content:space-between">'
-      +'<span>'+esc(it.name)+' <span style="color:#aaa;font-weight:400;font-size:11px">'+esc(it.homeLocation)+'</span></span>'+badge+'</div>';
+      +'<span>'+esc(it.name)+' <span style="color:#6b7280;font-weight:400;font-size:12px">'+esc(it.homeLocation)+'</span></span>'+badge+'</div>';
   }).join('');
 }
 function qrAddItem(el) {
@@ -4665,7 +4700,7 @@ function showScanFallback(msg) {
     var out = it.status === 'OUT';
     return '<div class="scan-fb-item" onclick="pickScanItem(' + JSON.stringify(it.row) + ')">'
       + '<div><div class="nm">' + esc(it.name) + '</div><div class="mt">' + esc(it.homeLocation || '') + '</div></div>'
-      + '<span style="font-size:10px;font-weight:700;padding:2px 9px;border-radius:9px;background:' + (out ? '#fdecea' : '#e8f5e9') + ';color:' + (out ? '#c0392b' : '#2e7d32') + '">' + (out ? 'OUT' : 'IN') + '</span></div>';
+      + '<span style="font-size:12px;font-weight:700;padding:2px 9px;border-radius:9px;background:' + (out ? '#fdecea' : '#e8f5e9') + ';color:' + (out ? '#c0392b' : '#2e7d32') + '">' + (out ? 'OUT' : 'IN') + '</span></div>';
   }).join('') || '<div style="text-align:center;color:var(--text3);padding:36px 0">No equipment loaded yet.</div>';
   document.getElementById('scan-fallback').classList.add('show');
 }
