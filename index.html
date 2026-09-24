@@ -305,6 +305,20 @@ body.dark .car-cal-day.other-month .car-day-num{color:var(--text3)}
 body.dark .chk-card{background:var(--surface)}
 body.dark .out-card{background:var(--surface)}
 body.dark .recent-card{background:var(--surface)}
+/* ── Equipment at a Glance ── */
+.glance{background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 3px rgba(16,32,48,.05)}
+.glance-head{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:12px 14px;cursor:pointer;min-height:44px}
+.glance-title{font-size:15px;font-weight:800;color:var(--text)}
+.glance-sum{display:flex;align-items:center;gap:5px}
+.glance-chev{font-size:16px;color:var(--text3);transition:transform .2s;margin-left:4px;transform:rotate(-90deg)}.glance-chev.open{transform:none}
+.glance-list{display:flex;flex-direction:column;border-top:1px solid var(--border)}
+.glance-row{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;min-height:44px;cursor:pointer;border-bottom:1px solid var(--border)}
+.glance-row:last-child{border-bottom:none}.glance-row:active{background:var(--surface2)}
+.glance-name{font-size:15px;font-weight:700;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.glance-pills{display:flex;gap:5px;flex-shrink:0}
+.gp{font-size:12px;font-weight:700;padding:3px 8px;border-radius:999px;white-space:nowrap}
+.gp-in{background:#e6f4ea;color:#1e6b34}.gp-out{background:#fff3e0;color:#9a4a00}.gp-bad{background:#fdecea;color:#b0281a}.gp-tot{background:var(--surface2);color:var(--text2);min-width:26px;text-align:center}
+body.dark .gp-in{background:#1d3b28;color:#8fdca6}body.dark .gp-out{background:#43301a;color:#ffc27a}body.dark .gp-bad{background:#4a2020;color:#ff9b8f}
 /* ── Readability pass ── */
 :root{--text:#16202b;--text2:#3d4855;--text3:#5f6b7a}
 body.dark{--text2:#b4c8dd;--text3:#8fa6bf}
@@ -517,6 +531,7 @@ body.dark .btn-ghost{background:var(--surface2);color:var(--text);border-color:v
         </button>
       </div>
       <div id="dash-car-action" style="display:none;margin-bottom:14px"></div>
+      <div id="inv-glance" class="glance"></div>
       <div id="dash-out-wrap" style="display:none">
         <div class="section-label">📤 Currently Out</div>
         <div id="dash-out"></div>
@@ -1793,6 +1808,7 @@ function updateStats() {
   checkConfetti(out);
 }
 function renderDashboard() {
+  if (typeof renderGlance==='function') renderGlance();
   var out    = items.filter(function(i){return i.status==='OUT';});
   var alerts = items.filter(function(i){return i.isCNC||i.equipStatus==='Missing'||i.equipStatus==='Damaged';});
   var aw = document.getElementById('dash-alerts-wrap');
@@ -1991,7 +2007,43 @@ function setFilter(f,btn) {
   if(btn) btn.classList.add('active');
   renderInventory();
 }
+var glanceOpen = localStorage.getItem('glanceOpen') !== '0';
+function glanceKey(it){ var c=getCat(it.name); if(c!=='Other') return c; return (it.name||'Other').replace(/[\s#-]*\d+[a-z]?$/i,'').trim()||'Other'; }
+function toggleGlance(){ glanceOpen=!glanceOpen; localStorage.setItem('glanceOpen',glanceOpen?'1':'0'); renderGlance(); }
+function glancePick(k){
+  var invTab=document.querySelector('.tab[data-page="inventory"]'); if(curPage!=='inventory') showPage('inventory',invTab);
+  var cats=['Fan','Heater','Light Tower','Shop Vac','A/C','EZ Spare','Generator','Wheel Chair Ramp','Sump Pump'];
+  var sb=document.getElementById('inv-search');
+  if(cats.indexOf(k)>=0){ var b=[].slice.call(document.querySelectorAll('#inv-cat-row .fchip')).filter(function(x){return x.textContent===k;})[0]; setCat(k,b||null); }
+  else { if(curCat!=='all'){ var a=document.querySelector('#inv-cat-row .fchip'); setCat('all',a); } if(sb){ sb.value=k; renderInventory(); } }
+  var c=document.getElementById('content'); var t=document.getElementById('inv-list'); if(c&&t) c.scrollTo({top:Math.max(0,t.offsetTop-80),behavior:'smooth'});
+}
+function renderGlance(){
+  var el=document.getElementById('inv-glance'); if(!el) return;
+  var g={};
+  items.forEach(function(it){
+    if(it.equipStatus==='Not Active'||isCarItem(it.name)) return;
+    var k=glanceKey(it); var o=g[k]||(g[k]={avail:0,out:0,bad:0,total:0});
+    o.total++;
+    if(it.equipStatus==='Missing'||it.equipStatus==='Damaged') o.bad++;
+    else if(it.status==='OUT') o.out++;
+    else o.avail++;
+  });
+  var keys=Object.keys(g).sort(function(a,b){return g[b].total-g[a].total||a.localeCompare(b);});
+  if(!keys.length){ el.style.display='none'; return; }
+  el.style.display='block';
+  var sum={avail:0,out:0,bad:0}; keys.forEach(function(k){sum.avail+=g[k].avail;sum.out+=g[k].out;sum.bad+=g[k].bad;});
+  el.innerHTML='<button class="glance-head" onclick="toggleGlance()"><span class="glance-title">Equipment at a Glance</span>'
+    +'<span class="glance-sum">'+(glanceOpen?'':'<span class="gp gp-in">'+sum.avail+' avail</span>'+(sum.out?'<span class="gp gp-out">'+sum.out+' out</span>':'')+(sum.bad?'<span class="gp gp-bad">'+sum.bad+' issue</span>':''))+'<span class="glance-chev'+(glanceOpen?' open':'')+'">▾</span></span></button>'
+    +(glanceOpen?'<div class="glance-list">'+keys.map(function(k){var o=g[k];
+      return '<button class="glance-row" data-k="'+esc(k)+'" onclick="glancePick(this.dataset.k)"><span class="glance-name">'+esc(k)+'</span><span class="glance-pills">'
+        +'<span class="gp gp-in">'+o.avail+' avail</span>'
+        +(o.out?'<span class="gp gp-out">'+o.out+' out</span>':'')
+        +(o.bad?'<span class="gp gp-bad">'+o.bad+' issue</span>':'')
+        +'<span class="gp gp-tot">'+o.total+'</span></span></button>';}).join('')+'</div>':'');
+}
 function renderInventory() {
+  renderGlance();
   var q = document.getElementById('inv-search').value.toLowerCase().trim();
   var filtered = items.filter(function(it) {
     if(it.equipStatus==='Not Active') return false;
