@@ -1740,21 +1740,53 @@ function postJ(body) {
     headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)
   }).then(function(r){return r.json();});
 }
+// Equipment list cache: show the last-loaded list instantly, then refresh in the
+// background. Google's Apps Script web app sometimes takes 10–30 s to answer, and
+// without this the screen sat empty until it did.
+var _EQ_CACHE_KEY = 'cobc_eq_cache_v1';
+function _eqApplyItems(newItems, locs) {
+  items = newItems || [];
+  if (locs && locs.length) locations = locs.slice();
+  items.forEach(function(it){ if(it.homeLocation && locations.indexOf(it.homeLocation)<0) locations.push(it.homeLocation); });
+}
+function _eqRenderAll() {
+  updateStats(); renderDashboard(); renderInventory(); renderInvLocChips(); renderCatChips(); populateRptItems(); renderAdmin(); renderAdmCatChips(); renderMembers(); renderHlocList();
+  renderCarItemStatus();
+}
 function loadData() {
-  showLoad(true);
+  // 1. Cached list first (no blocking spinner when we have one)
+  var hadCache = false;
+  if (!items.length) {
+    try {
+      var c = JSON.parse(localStorage.getItem(_EQ_CACHE_KEY) || 'null');
+      if (c && c.items && c.items.length) { _eqApplyItems(c.items, c.locations); _eqRenderAll(); _prevOutCount = null; hadCache = true; } // reset so the fresh list can't fire confetti on open
+    } catch(e) {}
+  } else { hadCache = true; }
+  if (!hadCache) showLoad(true);
   document.getElementById('sync-btn').textContent = '...';
-  _getAuthToken().then(function(tok){
+
+  // 2. Items + locations — no longer wait for the member list
+  var invP = Promise.all([
+    fetchJ(BASE_URL+'?action=getInventory'),
+    fetchJ(BASE_URL+'?action=getLocations').catch(function(){ return null; })
+  ]).then(function(res) {
+    var inv = res[0] || {};
+    if (!Array.isArray(inv.items)) throw new Error('no items');
+    var locs = (res[1] && res[1].locations) || [];
+    _eqApplyItems(inv.items, locs);
+    try { localStorage.setItem(_EQ_CACHE_KEY, JSON.stringify({items: inv.items, locations: locs, at: Date.now()})); } catch(e) {}
+    _eqRenderAll();
+    updateSyncTime();
+  }).catch(function(){
+    showToast(hadCache ? 'Showing saved list — could not refresh' : 'Failed to load — check connection');
+  }).finally(function(){ showLoad(false); });
+
+  // 3. Members (needs the Firebase token) — loads on its own
+  var memP = _getAuthToken().then(function(tok){
     var membersUrl=BASE_URL+'?action=getMembers'+(tok?'&authToken='+encodeURIComponent(tok):'');
-    Promise.all([
-      fetchJ(BASE_URL+'?action=getInventory'),
-      fetchJ(membersUrl),
-      fetchJ(BASE_URL+'?action=getLocations')
-    ]).then(function(res) {
-    items   = res[0].items   || [];
-    members = res[1].members || [];
-    var locs = res[2].locations || [];
-    if (locs.length) locations = locs;
-    items.forEach(function(it){ if(it.homeLocation && locations.indexOf(it.homeLocation)<0) locations.push(it.homeLocation); });
+    return fetchJ(membersUrl);
+  }).then(function(r) {
+    members = (r && r.members) || [];
     // Ensure carAccess field exists on each member
     members.forEach(function(m){ if (m.carAccess === undefined) m.carAccess = false; });
     // Build member PIN lookup
@@ -1782,15 +1814,17 @@ function loadData() {
         applyAccessLevel(); // refresh header with name
       }
     }
-    updateStats(); renderDashboard(); renderInventory(); renderInvLocChips(); renderCatChips(); populateRptItems(); renderAdmin(); renderAdmCatChips(); renderMembers(); renderHlocList();
-    updateSyncTime();
+    // Re-render with the restored member/access level (items may already be on screen)
+    if (items.length) _eqRenderAll(); else { renderMembers(); renderAdmin(); }
+  }).catch(function(){});
+
+  // 4. When both are done: same follow-ups as before
+  Promise.all([invP, memP]).then(function(){
     loadCarSchedule(); // keep schedule fresh so inventory guard can check bookings
     if (loggedInMember) { initNotifications(); loadAlertRecipients(); }
     if (userLevel >= 3) { loadAlertRecipients(); }
     renderCarItemStatus();
-  }).catch(function(){ showToast('Failed to load — check connection'); })
-  .finally(function(){ showLoad(false); document.getElementById('sync-btn').textContent='↻ Sync'; });
-  }); // end _getAuthToken
+  }).finally(function(){ document.getElementById('sync-btn').textContent='↻ Sync'; });
 }
 function updateStats() {
   var out    = items.filter(function(i){return i.status==='OUT';}).length;
