@@ -3963,6 +3963,30 @@ function renderAdmChkFromItems(el) {
       +'<div style="font-size:12px;color:#5f6b7a;margin-top:1px">🕐 '+esc(dt)+'</div></div>';
   }).join('');
 }
+// ── Auto-update ──────────────────────────────────────────────────────────────
+// Home-screen apps can keep running an old copy of this page. On open and when
+// the app comes back to the front, ask GitHub (no cache) when this page last
+// changed; if that's newer than the copy we're running, load the new copy.
+// Tries once per new version, so it can never loop.
+var _lastUpdCheck = 0;
+function _checkForUpdate() {
+  if (Date.now() - _lastUpdCheck < 60000) return; // at most once a minute
+  _lastUpdCheck = Date.now();
+  try {
+    fetch(location.pathname, { method: 'HEAD', cache: 'no-store' }).then(function(r) {
+      var lm = r.headers.get('last-modified'); if (!lm) return;
+      var fresh = Date.parse(lm), cur = Date.parse(document.lastModified);
+      if (!fresh || !cur || fresh - cur < 2000) return; // already up to date
+      var key = 'cobc_upd_' + fresh;
+      try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, '1'); } catch(e) { return; }
+      var q = new URLSearchParams(location.search); q.set('v', String(fresh));
+      location.replace(location.pathname + '?' + q.toString() + location.hash); // new URL skips the cached copy
+    }).catch(function(){});
+  } catch(e) {}
+}
+document.addEventListener('visibilitychange', function() { if (!document.hidden) _checkForUpdate(); });
+window.addEventListener('load', function() { setTimeout(_checkForUpdate, 1500); });
+
 // BOOT
 document.addEventListener('DOMContentLoaded', function() {
   initFirebaseAuth();
