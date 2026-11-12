@@ -1230,6 +1230,7 @@ function checkPin() {
     .then(function(txt) {
       var d;
       try { d = JSON.parse(txt); } catch(e) { throw new Error('Bad response'); }
+      if (d && d.sess) _eqSaveSess(d.sess);
       if (d && d.isAdminPin && d.adminLevel > 0) {
         // Admin or Equipment Team PIN validated server-side
         userLevel = d.adminLevel;
@@ -1783,10 +1784,11 @@ function loadData() {
 
   // 3. Members (needs the Firebase token) — loads on its own
   var memP = _getAuthToken().then(function(tok){
-    var membersUrl=BASE_URL+'?action=getMembers'+(tok?'&authToken='+encodeURIComponent(tok):'');
+    var membersUrl=BASE_URL+'?action=getMembers'+(tok?'&authToken='+encodeURIComponent(tok):'')+_eqSessParam();
     return fetchJ(membersUrl);
   }).then(function(r) {
     members = (r && r.members) || [];
+    window._eqPhonesHidden = !!(r && r.phonesHidden);
     // Ensure carAccess field exists on each member
     members.forEach(function(m){ if (m.carAccess === undefined) m.carAccess = false; });
     // Build member PIN lookup
@@ -2699,6 +2701,16 @@ function submitReport(){
     } else{showToast('Error: '+(data.error||'Unknown'));}
   }).catch(function(){showToast('Network error');}).finally(function(){showLoad(false);});
 }
+// ── Member phone numbers: the server only sends them with a valid session pass,
+// which is handed out when you sign in with your PIN / password. ─────────────
+function _eqSess(){ try{ return localStorage.getItem('cobc_sess')||''; }catch(e){ return ''; } }
+function _eqSaveSess(s){ try{ if(s) localStorage.setItem('cobc_sess', s); }catch(e){} }
+function _eqSessParam(){ var s=_eqSess(); return s ? '&sess='+encodeURIComponent(s) : ''; }
+function _phonesNote(){
+  if(!window._eqPhonesHidden) return '';
+  return '<div style="margin:0 0 10px;padding:10px 12px;border-radius:10px;background:#fff7ed;border:1px solid #fdba74;color:#9a3412;font-size:13px;font-weight:600;line-height:1.4">'
+    +'Phone numbers are hidden. Sign out and sign back in with your PIN to see them.</div>';
+}
 function renderMembers(){
   var q=(document.getElementById('mem-search').value||'').toLowerCase().trim();
   var filtered=members.filter(function(m){
@@ -2708,7 +2720,7 @@ function renderMembers(){
   document.getElementById('mem-count').textContent=filtered.length+' member'+(filtered.length!==1?'s':'');
   var el=document.getElementById('mem-list');
   if(!filtered.length){el.innerHTML='<div class="empty"><div class="empty-icon">👤</div><div class="empty-text">No members found</div><div class="empty-sub">Try searching by name or unit number</div></div>';return;}
-  el.innerHTML=filtered.map(function(m){
+  el.innerHTML=_phonesNote()+filtered.map(function(m){
     var unit=(m.unit||m.id||'?').toString().replace(/^BC-/i,'');
     var name=m.name||((m.firstName||'')+' '+(m.lastName||'')).trim()||'Unknown';
     var phone=m.phone||'';
@@ -2979,6 +2991,7 @@ function toggleAdm(titleEl) {
 function logout() {
   localStorage.removeItem('cobc_level');
   localStorage.removeItem('cobc_member_id');
+  try{ localStorage.removeItem('cobc_sess'); }catch(e){}
   userLevel = 0;
   loggedInMember = null;
   document.getElementById('app').style.display = 'none';
