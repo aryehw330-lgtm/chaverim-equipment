@@ -1305,14 +1305,17 @@ function _autofillCallForMember(unitId, fieldId){
     var field = document.getElementById(fieldId);
     if(!field || field.value) return; // don't clobber a value (incl. COBC4 'SHIFT')
     var apiKey='AIzaSyBYAz3ohsJGX_zo-Yq3faZ2m0uv4tfuSl8';
-    var url='https://firestore.googleapis.com/v1/projects/cobc-dispatch/databases/(default)/documents/calls?key='+apiKey+'&pageSize=300';
+    // Only open/active calls (a handful) — not a page of the whole calls collection,
+    // which came back oldest-first and missed today's calls once there were 300+.
+    var url='https://firestore.googleapis.com/v1/projects/cobc-dispatch/databases/(default)/documents:runQuery?key='+apiKey;
+    var q={structuredQuery:{from:[{collectionId:'calls'}],where:{fieldFilter:{field:{fieldPath:'status'},op:'IN',value:{arrayValue:{values:[{stringValue:'open'},{stringValue:'active'}]}}}}}};
     var tokP = (typeof _getAuthToken==='function') ? _getAuthToken() : Promise.resolve(null);
     tokP.then(function(tok){
-      var h={}; if(tok) h['Authorization']='Bearer '+tok;
-      return fetch(url,{headers:h});
+      var h={'Content-Type':'application/json'}; if(tok) h['Authorization']='Bearer '+tok;
+      return fetch(url,{method:'POST',headers:h,body:JSON.stringify(q)});
     }).then(function(r){ if(!r.ok){ console.warn('[autofill] calls read failed', r.status); } return r.json(); }).then(function(data){
       if(data && data.error){ console.warn('[autofill] Firestore error:', data.error.message||data.error); }
-      var docs=(data&&data.documents)||[];
+      var docs=(Array.isArray(data)?data:[]).map(function(x){ return x&&x.document; }).filter(Boolean);
       var matches=[];
       docs.forEach(function(d){
         var f=d.fields||{};
