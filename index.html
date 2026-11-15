@@ -4068,7 +4068,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // DASHBOARD MODE
   var savedLevel = parseInt(localStorage.getItem('cobc_level')||'0');
   var savedMemberId = localStorage.getItem('cobc_member_id');
-  if(savedLevel === 1 && !savedMemberId) {
+  if(savedLevel > 0 && !savedMemberId) {   // old shared staff login (retired) → back to PIN screen
     localStorage.removeItem('cobc_level');
     savedLevel = 0;
   }
