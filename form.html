@@ -694,11 +694,38 @@ textarea{resize:vertical;min-height:70px}
 </div>
 <script>
 const BASE_URL = 'https://script.google.com/macros/s/AKfycbwjnEHbt8v1aVKUO7361uc8XTodz5yBWGKoRgQ3H26UFOJeAQarVQAGaEuYj277Ed14rw/exec';
-const PASSWORDS = {
-  'faa3719c835d433bfb62878c18e28062c12146011bc16c332f3b4a2fed5ba2d9': 1,
-  '173c5ec3eea7bf07e14395ad73f741882e7637253831740557be9d4863dbda2e': 2,
-  '399d4e4b288b5fe2124ff08579e851feb7518cd5ca8eda73594fc1835084c066': 3
-};
+
+// ── Every save to the equipment server carries the sign-in proof ─────────────
+// (Firebase token and/or the signed session from the PIN login). The server uses
+// it to check who may do what. If the server says the sign-in expired, go back to
+// the PIN screen once.
+(function(){
+  if (window._eqFetchWrapped) return; window._eqFetchWrapped = true;
+  var _f = window.fetch.bind(window);
+  window.fetch = function(url, opts){
+    try{
+      if (opts && String(opts.method||'').toUpperCase()==='POST' && typeof url==='string' && url.indexOf(BASE_URL)===0 && typeof opts.body==='string' && opts.body.charAt(0)==='{'){
+        var b = JSON.parse(opts.body);
+        var s = ''; try{ s = localStorage.getItem('cobc_sess')||''; }catch(e){}
+        if (s && !b.sess) b.sess = s;
+        if (window._fbIdToken && !b.authToken) b.authToken = window._fbIdToken;
+        opts = Object.assign({}, opts, {body: JSON.stringify(b)});
+        return _f(url, opts).then(function(r){
+          try{ r.clone().json().then(function(d){
+            if (d && d.authRequired && !window._eqAuthPrompted){
+              window._eqAuthPrompted = true;
+              alert('Please sign in again with your PIN to keep saving changes.');
+              try{ ['cobc_level','cobc_member_id','cobc_sess'].forEach(function(k){ localStorage.removeItem(k); }); }catch(e){}
+              location.reload();
+            }
+          }).catch(function(){}); }catch(e){}
+          return r;
+        });
+      }
+    }catch(e){}
+    return _f(url, opts);
+  };
+})();
 var userLevel = 0;
 var items=[], members=[], locations=['COBC'];
 var curFilter='all', curPage='dashboard', curLoc=null, curCat='all', curInvLoc='all';
@@ -706,7 +733,6 @@ var checked={}, rptType='', modalItem=null;
 var chkStatus={}, chkNotes={}, chkFilter='all';
 var modalItems=[];
 var secTarget=null, secPrevPage='dashboard';
-const ADMIN_PASS='cobc2026';
 var loggedInMember = null; // set after member PIN login
 var memberPins = []; // loaded from members sheet
 
@@ -731,51 +757,41 @@ async function hashSHA256(str) {
 function checkPin() {
   var raw = document.getElementById('pin-input').value.trim();
   if (!raw) return;
-  // First check ET/admin hashed passwords
-  hashSHA256(raw).then(function(v) {
-    var level = PASSWORDS[v] || 0;
-    if (level > 0) {
-      // ET or Admin login
-      try{ fetch(BASE_URL + '?action=getMemberByPin&pin=' + encodeURIComponent(raw), {redirect:'follow', mode:'cors', credentials:'omit'})
-        .then(function(r){ return r.json(); }).then(function(d){ if(d && d.sess){ _eqSaveSess(d.sess); try{ loadData(); }catch(e){} } }).catch(function(){}); }catch(e){}
-      userLevel = level;
-      loggedInMember = null;
-      localStorage.setItem('cobc_level', level);
-      localStorage.removeItem('cobc_member_id');
-      document.getElementById('pin-gate').classList.add('hidden');
-      document.getElementById('app').style.display = 'flex';
-      applyAccessLevel();
-      loadData();
-      return;
-    }
-    // Not ET/admin — check against member PINs from sheet via API
-    var errEl = document.getElementById('pin-error');
-    errEl.textContent = 'Checking...';
-    var url = BASE_URL + '?action=getMemberByPin&pin=' + encodeURIComponent(raw);
-    fetch(url, {redirect:'follow', mode:'cors', credentials:'omit'})
-      .then(function(r){
-        if (!r.ok && r.status !== 0) throw new Error('HTTP ' + r.status);
-        return r.text();
-      })
-      .then(function(txt) {
-        var d;
-        try { d = JSON.parse(txt); } catch(e) { throw new Error('Bad response from server'); }
-        if (d && d.sess) _eqSaveSess(d.sess);
-        if (d && d.id) {
-          finishMemberLogin(d);
-          errEl.textContent = '';
-        } else {
-          errEl.textContent = '✕ Incorrect PIN';
-          document.getElementById('pin-input').value = '';
-          setTimeout(function(){ errEl.textContent=''; }, 2000);
-        }
-      })
-      .catch(function(err) {
-        errEl.textContent = '✕ Connection error — try again';
+  var errEl = document.getElementById('pin-input') && document.getElementById('pin-error');
+  if (errEl) errEl.textContent = 'Checking...';
+  // All PIN validation happens server-side — no secrets in client code
+  var url = BASE_URL + '?action=getMemberByPin&pin=' + encodeURIComponent(raw);
+  fetch(url, {redirect:'follow', mode:'cors', credentials:'omit'})
+    .then(function(r){ return r.text(); })
+    .then(function(txt) {
+      var d;
+      try { d = JSON.parse(txt); } catch(e) { throw new Error('Bad response'); }
+      if (d && d.sess) _eqSaveSess(d.sess);
+      if (d && d.isAdminPin && d.adminLevel > 0) {
+        // Admin or Equipment Team PIN validated server-side
+        userLevel = d.adminLevel;
+        loggedInMember = null;
+        localStorage.setItem('cobc_level', userLevel);
+        localStorage.removeItem('cobc_member_id');
+        document.getElementById('pin-gate').classList.add('hidden');
+        document.getElementById('app').style.display = 'flex';
+        applyAccessLevel();
+        loadData();
+        if (errEl) errEl.textContent = '';
+      } else if (d && d.id) {
+        finishMemberLogin(d);
+        if (errEl) errEl.textContent = '';
+      } else {
+        if (errEl) errEl.textContent = '✕ Incorrect PIN';
         document.getElementById('pin-input').value = '';
-        setTimeout(function(){ errEl.textContent=''; }, 3000);
-      });
-  });
+        setTimeout(function(){ if(errEl) errEl.textContent=''; }, 2000);
+      }
+    })
+    .catch(function() {
+      if (errEl) errEl.textContent = '✕ Connection error — try again';
+      document.getElementById('pin-input').value = '';
+      setTimeout(function(){ if(errEl) errEl.textContent=''; }, 3000);
+    });
 }
 document.getElementById('pin-input').addEventListener('keydown', function(e){ if(e.key==='Enter') checkPin(); });
 
@@ -882,15 +898,24 @@ function requireSec(page, icon, title, sub) {
 }
 function checkSec() {
   var v = document.getElementById('sec-input').value;
-  if (v === ADMIN_PASS) {
-    secUnlocked[secTarget] = true;
-    document.getElementById('sec-gate').classList.remove('open');
-    doShowPage(secTarget); secTarget = null;
-  } else {
-    document.getElementById('sec-error').textContent = '✕ Incorrect password';
-    document.getElementById('sec-input').value = '';
-    setTimeout(function(){ document.getElementById('sec-error').textContent=''; }, 2000);
-  }
+  if (!v) return;
+  var errEl = document.getElementById('sec-error');
+  errEl.textContent = 'Checking...';
+  fetch(BASE_URL + '?action=checkEquipPasscode&code=' + encodeURIComponent(v), {redirect:'follow', credentials:'omit'})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (d && d.ok) {
+        errEl.textContent = '';
+        secUnlocked[secTarget] = true;
+        document.getElementById('sec-gate').classList.remove('open');
+        doShowPage(secTarget); secTarget = null;
+      } else {
+        errEl.textContent = (d && d.locked) ? ('✕ ' + d.error) : '✕ Incorrect password';
+        document.getElementById('sec-input').value = '';
+        setTimeout(function(){ errEl.textContent=''; }, 2000);
+      }
+    })
+    .catch(function(){ errEl.textContent = '✕ Connection error — try again'; setTimeout(function(){ errEl.textContent=''; }, 2500); });
 }
 function cancelSec() {
   document.getElementById('sec-gate').classList.remove('open'); secTarget = null;
@@ -1193,9 +1218,9 @@ function renderInventory() {
 function resetStatus(row) {
   var pwd = prompt('Enter password to mark as OK:');
   if (pwd === null) return;
-  if (pwd !== ADMIN_PASS) { alert('Incorrect password.'); return; }
+  if (!pwd) return;
   showLoad(true);
-  postJ({action:'updateEquipmentStatus', row:row, status:'OK', resetNote:true})
+  postJ({action:'updateEquipmentStatus', row:row, status:'OK', resetNote:true, passcode:pwd})
   .then(function(data) {
     if (data.success) {
       var idx = items.findIndex(function(i){ return i.row===row; });
@@ -3426,13 +3451,14 @@ function qrCheckPin() {
   var v = document.getElementById('qr-pin-input').value.trim();
   if (!v) return;
   var errEl = document.getElementById('qr-pin-error');
-  if (v === 'cobcadmin' || v === 'cobcet') { _qrMember = null; qrShowForm(); return; }
   document.getElementById('qr-pin-input').disabled = true;
   fetch(BASE_URL + '?action=getMemberByPin&pin=' + encodeURIComponent(v), {redirect:'follow',credentials:'omit'})
     .then(function(r){ return r.json(); })
     .then(function(d) {
       document.getElementById('qr-pin-input').disabled = false;
-      if (d && d.id) { _qrMember = d; qrFirebaseSignIn(v, d.id); qrShowForm(); }
+      if (d && d.sess) _eqSaveSess(d.sess);
+      if (d && d.isAdminPin && d.adminLevel > 0) { _qrMember = null; qrShowForm(); }
+      else if (d && d.id) { _qrMember = d; qrFirebaseSignIn(v, d.id); qrShowForm(); }
       else { errEl.textContent = '\u2715 Incorrect PIN'; document.getElementById('qr-pin-input').value = ''; document.getElementById('qr-pin-input').focus(); setTimeout(function(){ errEl.textContent=''; }, 2000); }
     })
     .catch(function(){ document.getElementById('qr-pin-input').disabled = false; errEl.textContent = '\u2715 Connection error'; document.getElementById('qr-pin-input').value = ''; setTimeout(function(){ errEl.textContent=''; }, 3000); });
