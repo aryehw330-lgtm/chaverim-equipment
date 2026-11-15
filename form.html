@@ -1216,11 +1216,11 @@ function renderInventory() {
   }).join('');
 }
 function resetStatus(row) {
-  var pwd = prompt('Enter password to mark as OK:');
-  if (pwd === null) return;
-  if (!pwd) return;
+  if (!(isEquipTeamUser() || isAdminUser())) { showToast('Only the equipment team or an admin can mark items OK'); return; }
+  var it = items.find(function(i){ return i.row===row; });
+  if (!confirm('Mark ' + (it ? '"' + it.name + '"' : 'this item') + ' as OK?')) return;
   showLoad(true);
-  postJ({action:'updateEquipmentStatus', row:row, status:'OK', resetNote:true, passcode:pwd})
+  postJ({action:'updateEquipmentStatus', row:row, status:'OK', resetNote:true, markOk:true, member:(loggedInMember&&loggedInMember.id)||''})
   .then(function(data) {
     if (data.success) {
       var idx = items.findIndex(function(i){ return i.row===row; });
