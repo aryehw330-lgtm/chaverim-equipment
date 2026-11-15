@@ -238,6 +238,7 @@ textarea{resize:vertical;min-height:70px}
       Sign in with Google
     </button>
     <div class="pin-divider">or use your PIN</div>
+    <input id="pin-unit" class="pin-inp" type="text" inputmode="numeric" autocomplete="off" placeholder="BC #" style="font-size:18px;margin-bottom:8px"/>
     <input id="pin-input" class="pin-inp" type="password" autocomplete="off" placeholder="Enter PIN" style="letter-spacing:2px;font-size:18px"/>
     <div id="pin-error" class="pin-err"></div>
     <button class="pin-btn" onclick="checkPin()">Enter</button>
@@ -762,11 +763,14 @@ async function hashSHA256(str) {
 }
 function checkPin() {
   var raw = document.getElementById('pin-input').value.trim();
-  if (!raw) return;
+  var unitEl = document.getElementById('pin-unit');
+  var unitNo = unitEl ? String(unitEl.value||'').replace(/\D+/g,'').replace(/^0+(?=\d)/,'') : '';
   var errEl = document.getElementById('pin-input') && document.getElementById('pin-error');
+  if (!unitNo) { if (errEl) errEl.textContent = 'Enter your BC #'; if (unitEl) unitEl.focus(); return; }
+  if (!raw) return;
   if (errEl) errEl.textContent = 'Checking...';
-  // All PIN validation happens server-side — no secrets in client code
-  var url = BASE_URL + '?action=getMemberByPin&pin=' + encodeURIComponent(raw);
+  // All PIN validation happens server-side — the PIN must belong to this BC #
+  var url = BASE_URL + '?action=getMemberByPin&pin=' + encodeURIComponent(raw) + '&unit=' + encodeURIComponent('BC-' + unitNo);
   fetch(url, {redirect:'follow', mode:'cors', credentials:'omit'})
     .then(function(r){ return r.text(); })
     .then(function(txt) {
@@ -785,10 +789,11 @@ function checkPin() {
         loadData();
         if (errEl) errEl.textContent = '';
       } else if (d && d.id) {
+        try { localStorage.setItem('cobc_pin_unit', unitNo); } catch(e) {}
         finishMemberLogin(d);
         if (errEl) errEl.textContent = '';
       } else {
-        if (errEl) errEl.textContent = '✕ Incorrect PIN';
+        if (errEl) errEl.textContent = (d && d.locked) ? ('✕ ' + d.error) : '✕ Wrong BC # or PIN';
         document.getElementById('pin-input').value = '';
         setTimeout(function(){ if(errEl) errEl.textContent=''; }, 2000);
       }
@@ -800,6 +805,7 @@ function checkPin() {
     });
 }
 document.getElementById('pin-input').addEventListener('keydown', function(e){ if(e.key==='Enter') checkPin(); });
+try { var _pu = document.getElementById('pin-unit'); if (_pu && !_pu.value) _pu.value = localStorage.getItem('cobc_pin_unit') || ''; } catch(e) {}
 
 // ── Google Sign-In ─────────────────────────────────────────────────────────────
 function triggerGoogleSignIn() {
@@ -3342,7 +3348,9 @@ function toggleAlertRecipient(memberId, enabled) {
       <div style="font-size:48px;margin-bottom:12px">🔒</div>
       <div style="font-size:18px;font-weight:700;color:#1a3a5c;margin-bottom:4px">Bergen County Chaverim</div>
       <div id="qr-item-title" style="font-size:15px;font-weight:600;color:#555;margin-bottom:16px"></div>
-      <div style="font-size:13px;color:#888;margin-bottom:20px">Enter your member PIN</div>
+      <div style="font-size:13px;color:#888;margin-bottom:20px">Enter your BC # and PIN</div>
+      <input id="qr-unit-input" type="text" inputmode="numeric" autocomplete="off" placeholder="BC #"
+        style="width:100%;padding:12px;font-size:22px;text-align:center;border:2px solid #e0e0e0;border-radius:12px;outline:none;margin-bottom:8px"/>
       <input id="qr-pin-input" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN"
         style="width:100%;padding:16px;font-size:32px;text-align:center;letter-spacing:12px;border:2px solid #e0e0e0;border-radius:12px;outline:none;margin-bottom:10px"/>
       <div id="qr-pin-error" style="color:#c0392b;font-size:13px;height:18px;margin-bottom:8px"></div>
@@ -3429,7 +3437,8 @@ function showQRMode(name) {
   document.getElementById('qr-overlay').style.display = 'block';
   document.getElementById('qr-item-title').textContent = _qrGeneral ? 'Equipment Check In / Out' : name;
   document.getElementById('qr-pin-input').addEventListener('keydown', function(e){ if(e.key==='Enter') qrCheckPin(); });
-  setTimeout(function(){ document.getElementById('qr-pin-input').focus(); }, 100);
+  try { var _qu = document.getElementById('qr-unit-input'); if (_qu && !_qu.value) _qu.value = localStorage.getItem('cobc_pin_unit') || ''; } catch(e) {}
+  setTimeout(function(){ var _qu2 = document.getElementById('qr-unit-input'); document.getElementById(_qu2 && !_qu2.value ? 'qr-unit-input' : 'qr-pin-input').focus(); }, 100);
 }
 
 // Sign the QR member into Firebase with a custom token (same as the dispatch app) so
@@ -3455,17 +3464,20 @@ function qrFirebaseSignIn(pin, unit){
 
 function qrCheckPin() {
   var v = document.getElementById('qr-pin-input').value.trim();
-  if (!v) return;
   var errEl = document.getElementById('qr-pin-error');
+  var qu = document.getElementById('qr-unit-input');
+  var qUnit = qu ? String(qu.value||'').replace(/\D+/g,'').replace(/^0+(?=\d)/,'') : '';
+  if (!qUnit) { errEl.textContent = 'Enter your BC #'; if (qu) qu.focus(); return; }
+  if (!v) return;
   document.getElementById('qr-pin-input').disabled = true;
-  fetch(BASE_URL + '?action=getMemberByPin&pin=' + encodeURIComponent(v), {redirect:'follow',credentials:'omit'})
+  fetch(BASE_URL + '?action=getMemberByPin&pin=' + encodeURIComponent(v) + '&unit=' + encodeURIComponent('BC-' + qUnit), {redirect:'follow',credentials:'omit'})
     .then(function(r){ return r.json(); })
     .then(function(d) {
       document.getElementById('qr-pin-input').disabled = false;
       if (d && d.sess) _eqSaveSess(d.sess);
       if (d && d.isAdminPin && d.adminLevel > 0) { _qrMember = null; qrShowForm(); }
-      else if (d && d.id) { _qrMember = d; qrFirebaseSignIn(v, d.id); qrShowForm(); }
-      else { errEl.textContent = '\u2715 Incorrect PIN'; document.getElementById('qr-pin-input').value = ''; document.getElementById('qr-pin-input').focus(); setTimeout(function(){ errEl.textContent=''; }, 2000); }
+      else if (d && d.id) { try { localStorage.setItem('cobc_pin_unit', qUnit); } catch(e) {} _qrMember = d; qrFirebaseSignIn(v, d.id); qrShowForm(); }
+      else { errEl.textContent = (d && d.locked) ? ('\u2715 ' + d.error) : '\u2715 Wrong BC # or PIN'; document.getElementById('qr-pin-input').value = ''; document.getElementById('qr-pin-input').focus(); setTimeout(function(){ errEl.textContent=''; }, 2000); }
     })
     .catch(function(){ document.getElementById('qr-pin-input').disabled = false; errEl.textContent = '\u2715 Connection error'; document.getElementById('qr-pin-input').value = ''; setTimeout(function(){ errEl.textContent=''; }, 3000); });
 }
