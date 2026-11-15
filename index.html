@@ -4480,6 +4480,8 @@ function toggleAlertRecipient(memberId, enabled) {
       <div style="font-size:18px;font-weight:700;color:#1a3a5c;margin-bottom:4px">Bergen County Chaverim</div>
       <div id="qr-item-title" style="font-size:15px;font-weight:600;color:#555;margin-bottom:16px"></div>
       <div style="font-size:13px;color:#5f6b7a;margin-bottom:20px">Enter your BC # and PIN</div>
+      <button id="qr-fid-btn" type="button" onclick="qrFaceId()" style="display:none;width:100%;padding:14px;background:#111827;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:8px">Use Face ID</button>
+      <div id="qr-fid-or" style="display:none;font-size:12px;color:#888;margin-bottom:10px">or BC # and PIN</div>
       <input id="qr-unit-input" type="text" inputmode="numeric" autocomplete="off" placeholder="BC #"
         style="width:100%;padding:12px;font-size:22px;text-align:center;border:2px solid #e0e0e0;border-radius:12px;outline:none;margin-bottom:8px"/>
       <input id="qr-pin-input" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN"
@@ -4556,8 +4558,58 @@ function showQRMode(name) {
   document.getElementById('qr-overlay').style.display = 'block';
   document.getElementById('qr-item-title').textContent = name;
   document.getElementById('qr-pin-input').addEventListener('keydown', function(e){ if(e.key==='Enter') qrCheckPin(); });
+  qrFaceIdSetup();
   try { var _qu = document.getElementById('qr-unit-input'); if (_qu && !_qu.value) _qu.value = localStorage.getItem('cobc_pin_unit') || ''; } catch(e) {}
   setTimeout(function(){ var _qu2 = document.getElementById('qr-unit-input'); document.getElementById(_qu2 && !_qu2.value ? 'qr-unit-input' : 'qr-pin-input').focus(); }, 100);
+}
+// ── Face ID on QR scans (same Face ID members set up in the dispatch app) ──
+var _QR_PK_LIB='https://cdn.jsdelivr.net/npm/@simplewebauthn/browser@13.3.0/dist/bundle/index.umd.min.js';
+var _QR_AUTH_URL='https://us-east1-cobc-dispatch.cloudfunctions.net/getAuthToken';
+function _qrPkLib(){
+  if (window.SimpleWebAuthnBrowser) return Promise.resolve(window.SimpleWebAuthnBrowser);
+  return new Promise(function(res, rej){ var sc=document.createElement('script'); sc.src=_QR_PK_LIB; sc.onload=function(){ res(window.SimpleWebAuthnBrowser); }; sc.onerror=function(){ rej(new Error('Face ID could not load')); }; document.head.appendChild(sc); });
+}
+function _qrAuthCall(payload){
+  return fetch(_QR_AUTH_URL, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)})
+    .then(function(r){ return r.json().catch(function(){ return {}; }); });
+}
+function qrFaceIdSetup(){
+  try {
+    if (!window.PublicKeyCredential || !PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) return;
+    PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(function(ok){
+      if (!ok) return;
+      var b=document.getElementById('qr-fid-btn'), o=document.getElementById('qr-fid-or');
+      if (b) b.style.display='block'; if (o) o.style.display='block';
+    }).catch(function(){});
+  } catch(e) {}
+}
+function qrFaceId(){
+  var errEl=document.getElementById('qr-pin-error'), b=document.getElementById('qr-fid-btn');
+  if (b) { b.disabled=true; b.textContent='Checking…'; }
+  var opts;
+  _qrPkLib().then(function(lib){
+    return _qrAuthCall({action:'pkAuthOptions'}).then(function(o){
+      if (!o.ok) throw new Error(o.error || 'Face ID is unavailable right now');
+      opts=o; return lib.startAuthentication({optionsJSON:o.options});
+    });
+  }).then(function(resp){
+    return _qrAuthCall({action:'pkAuthVerify', challengeId:opts.challengeId, response:resp});
+  }).then(function(v){
+    if (!v.ok || !v.token) throw new Error(v.error || 'Face ID sign-in failed');
+    try { initFirebaseAuth(); } catch(e) {}
+    return firebase.auth().signInWithCustomToken(v.token).then(function(){ return firebase.auth().currentUser.getIdToken(true); }).then(function(t){
+      window._fbIdToken=t;
+      var mm=v.member||{}; var unit=String(mm.id||mm.unit||'').replace(/^BC-?/i,'');
+      try { localStorage.setItem('cobc_pin_unit', unit); } catch(e) {}
+      _qrMember={ id:unit, unit:unit, name:mm.name||((mm.firstName||'')+' '+(mm.lastName||'')).trim(), status:mm.status||'' };
+      if (b) { b.disabled=false; b.textContent='Use Face ID'; }
+      qrShowForm();
+    });
+  }).catch(function(e){
+    if (b) { b.disabled=false; b.textContent='Use Face ID'; }
+    var m=String(e && e.message || e);
+    errEl.textContent = /NotAllowed|cancel|abort/i.test(m) ? 'Face ID cancelled — use BC # and PIN' : ('✕ ' + m);
+  });
 }
 function qrCheckPin() {
   var v = document.getElementById('qr-pin-input').value.trim();
