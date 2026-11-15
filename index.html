@@ -1198,6 +1198,12 @@ const BASE_URL = 'https://script.google.com/macros/s/AKfycbwjnEHbt8v1aVKUO7361uc
   var _f = window.fetch.bind(window);
   window.fetch = function(url, opts){
     try{
+      // Lookups (GET) to the equipment server: add the signed session / token too.
+      if (typeof url==='string' && url.indexOf(BASE_URL+'?')===0 && (!opts || !opts.method || String(opts.method).toUpperCase()==='GET') && url.indexOf('&sess=')<0){
+        var s0 = ''; try{ s0 = localStorage.getItem('cobc_sess')||''; }catch(e){}
+        if (s0) url += '&sess=' + encodeURIComponent(s0);
+        if (window._fbIdToken && url.indexOf('authToken=')<0) url += '&authToken=' + encodeURIComponent(window._fbIdToken);
+      }
       if (opts && String(opts.method||'').toUpperCase()==='POST' && typeof url==='string' && url.indexOf(BASE_URL)===0 && typeof opts.body==='string' && opts.body.charAt(0)==='{'){
         var b = JSON.parse(opts.body);
         var s = ''; try{ s = localStorage.getItem('cobc_sess')||''; }catch(e){}
