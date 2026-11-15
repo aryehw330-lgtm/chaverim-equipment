@@ -3404,10 +3404,11 @@ function showQRMode(name) {
 // Sign the QR member into Firebase with a custom token (same as the dispatch app) so
 // authorized Firestore reads (e.g. the live-call autofill) work. Harmless if it fails.
 var _QR_GET_AUTH_TOKEN_URL='https://us-east1-cobc-dispatch.cloudfunctions.net/getAuthToken';
-function qrFirebaseSignIn(pin){
+function qrFirebaseSignIn(pin, unit){
   try{
-    if(!pin || typeof firebase==='undefined' || !firebase.auth) return;
-    fetch(_QR_GET_AUTH_TOKEN_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:pin})})
+    if(!pin || !unit || typeof firebase==='undefined' || !firebase.auth) return;
+    // The login server requires the PIN to belong to this unit.
+    fetch(_QR_GET_AUTH_TOKEN_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:pin, unit:unit})})
       .then(function(r){ return r.json(); })
       .then(function(data){
         if(!data || !data.ok || !data.token) return;
@@ -3431,7 +3432,7 @@ function qrCheckPin() {
     .then(function(r){ return r.json(); })
     .then(function(d) {
       document.getElementById('qr-pin-input').disabled = false;
-      if (d && d.id) { _qrMember = d; qrFirebaseSignIn(v); qrShowForm(); }
+      if (d && d.id) { _qrMember = d; qrFirebaseSignIn(v, d.id); qrShowForm(); }
       else { errEl.textContent = '\u2715 Incorrect PIN'; document.getElementById('qr-pin-input').value = ''; document.getElementById('qr-pin-input').focus(); setTimeout(function(){ errEl.textContent=''; }, 2000); }
     })
     .catch(function(){ document.getElementById('qr-pin-input').disabled = false; errEl.textContent = '\u2715 Connection error'; document.getElementById('qr-pin-input').value = ''; setTimeout(function(){ errEl.textContent=''; }, 3000); });
