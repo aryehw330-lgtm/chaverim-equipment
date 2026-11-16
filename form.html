@@ -3459,7 +3459,7 @@ function toggleAlertRecipient(memberId, enabled) {
       <input id="qr-pin-input" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN"
         style="width:100%;padding:16px;font-size:32px;text-align:center;letter-spacing:12px;border:2px solid #e0e0e0;border-radius:12px;outline:none;margin-bottom:10px"/>
       <div id="qr-pin-error" style="color:#c0392b;font-size:13px;height:18px;margin-bottom:8px"></div>
-      <button onclick="qrCheckPin()" style="width:100%;padding:16px;background:#1a3a5c;color:#fff;border:none;border-radius:12px;font-size:17px;font-weight:700;cursor:pointer">Enter</button>
+      <button id="qr-pin-btn" onclick="qrCheckPin()" style="width:100%;padding:16px;background:#1a3a5c;color:#fff;border:none;border-radius:12px;font-size:17px;font-weight:700;cursor:pointer">Enter</button>
     </div>
   </div>
   <div id="qr-form-wrap" style="display:none;padding:1rem;max-width:480px;margin:0 auto">
@@ -3624,17 +3624,23 @@ function qrCheckPin() {
   var qUnit = qu ? String(qu.value||'').replace(/\D+/g,'').replace(/^0+(?=\d)/,'') : '';
   if (!qUnit) { errEl.textContent = 'Enter your BC #'; if (qu) qu.focus(); return; }
   if (!v) return;
+  // Instant feedback: the check itself has to go to the server (2-4 s), so show it's working.
+  var _pb=document.getElementById('qr-pin-btn'); if(_pb){ if(_pb.disabled) return; _pb.disabled=true; _pb.dataset.t=_pb.textContent; _pb.textContent='⏳ Checking…'; _pb.style.opacity='.75'; }
+  try{ if(navigator.vibrate) navigator.vibrate(10); }catch(e){}
+  errEl.textContent='';
+  var _pbReset=function(){ if(_pb){ _pb.disabled=false; _pb.textContent=_pb.dataset.t||'Enter'; _pb.style.opacity=''; } };
   document.getElementById('qr-pin-input').disabled = true;
   fetch(BASE_URL + '?action=getMemberByPin&pin=' + encodeURIComponent(v) + '&unit=' + encodeURIComponent('BC-' + qUnit), {redirect:'follow',credentials:'omit'})
     .then(function(r){ return r.json(); })
     .then(function(d) {
+      _pbReset();
       document.getElementById('qr-pin-input').disabled = false;
       if (d && d.sess) _eqSaveSess(d.sess);
       if (d && d.isAdminPin && d.adminLevel > 0) { _qrMember = null; qrShowForm(); }
       else if (d && d.id) { try { localStorage.setItem('cobc_pin_unit', qUnit); } catch(e) {} _qrMember = d; qrFirebaseSignIn(v, d.id); qrShowForm(); }
       else { errEl.textContent = (d && d.locked) ? ('\u2715 ' + d.error) : '\u2715 Wrong BC # or PIN'; document.getElementById('qr-pin-input').value = ''; document.getElementById('qr-pin-input').focus(); setTimeout(function(){ errEl.textContent=''; }, 2000); }
     })
-    .catch(function(){ document.getElementById('qr-pin-input').disabled = false; errEl.textContent = '\u2715 Connection error'; document.getElementById('qr-pin-input').value = ''; setTimeout(function(){ errEl.textContent=''; }, 3000); });
+    .catch(function(){ _pbReset(); document.getElementById('qr-pin-input').disabled = false; errEl.textContent = '\u2715 Connection error'; document.getElementById('qr-pin-input').value = ''; setTimeout(function(){ errEl.textContent=''; }, 3000); });
 }
 
 function qrShowForm() {
