@@ -1193,6 +1193,77 @@ function setFilter(f,btn) {
   if(btn) btn.classList.add('active');
   renderInventory();
 }
+// ── Instant check-in/out with background save ────────────────────────────────
+// The screen updates at once; each sheet write is retried, and anything that still won't
+// save is kept on this phone (cobc_eq_unsaved), shown with ⚠️ and a red banner, and sent
+// again on tap, when the connection comes back, or next time the app opens.
+var _EQ_UNSAVED_KEY='cobc_eq_unsaved', _eqSaving={}, _eqFailed={};
+function _eqUnsaved(){ try{ return JSON.parse(localStorage.getItem(_EQ_UNSAVED_KEY)||'[]')||[]; }catch(e){ return []; } }
+function _eqSetUnsaved(list){ try{ localStorage.setItem(_EQ_UNSAVED_KEY, JSON.stringify(list)); }catch(e){} }
+function _eqSaveBadge(row){
+  if(_eqFailed[row]) return '<span class="badge" style="background:#fee2e2;color:#b91c1c;">⚠️ not saved</span>';
+  if(_eqSaving[row]) return '<span class="badge" style="background:#e0f2fe;color:#0369a1;">⏳ saving…</span>';
+  return '';
+}
+function _eqApplyLocal(itemsCopy, action, member, call, ccSel, cncNote, loggedBy){
+  itemsCopy.forEach(function(item){
+    var data={success:true};
+        var idx=items.findIndex(function(i){return i.row===item.row;});
+        if(idx>=0){items[idx].status=action;items[idx].member=loggedBy?member+' (by BC-'+loggedBy+')':member;items[idx].call=call;items[idx].isCNC=ccSel==='CNC';items[idx].cncNote=cncNote;items[idx].lastUpdated=new Date().toLocaleString();}
+    _eqSaving[item.row]=true; delete _eqFailed[item.row];
+  });
+}
+function _eqRerender(){ try{ updateStats(); renderInventory(); renderDashboard(); }catch(e){} _eqBanner(); }
+function _eqSave(body, item, action){
+  var waits=[0,3000,10000,20000], k=0;
+  function attempt(){
+    return postJ(body).then(function(d){ if(d&&d.success) return d; throw new Error((d&&d.error)||'not saved'); });
+  }
+  function loop(){
+    return new Promise(function(r){ setTimeout(r, waits[k]); }).then(attempt).then(function(){
+      delete _eqSaving[item.row]; delete _eqFailed[item.row]; _eqRerender(); return true;
+    }).catch(function(err){
+      k++; if(k<waits.length) return loop();
+      delete _eqSaving[item.row]; _eqFailed[item.row]=true;
+      var list=_eqUnsaved().filter(function(u){ return !(u.body&&u.body.row===body.row); });
+      list.push({ body:body, name:item.name, action:action, at:Date.now(), err:String(err&&err.message||err) });
+      _eqSetUnsaved(list);
+      try{ if(navigator.vibrate) navigator.vibrate([200,100,200]); }catch(e){}
+      _eqRerender(); return false;
+    });
+  }
+  return loop();
+}
+var _eqRetrying=false;
+function _eqRetryUnsaved(manual){
+  var list=_eqUnsaved(); if(!list.length||_eqRetrying){ _eqBanner(); return; }
+  _eqRetrying=true; if(manual) showToast('Retrying…');
+  var left=[];
+  Promise.all(list.map(function(u){
+    _eqSaving[u.body.row]=true;
+    return postJ(u.body).then(function(d){ if(!(d&&d.success)) throw new Error((d&&d.error)||'not saved'); delete _eqFailed[u.body.row]; })
+      .catch(function(e){ u.err=String(e&&e.message||e); left.push(u); _eqFailed[u.body.row]=true; })
+      .then(function(){ delete _eqSaving[u.body.row]; });
+  })).then(function(){
+    _eqSetUnsaved(left); _eqRetrying=false; _eqRerender();
+    if(manual) showToast(left.length?('⚠️ Still not saved — check your connection'):'✅ Saved to the sheet');
+  });
+}
+function _eqBanner(){
+  var list=_eqUnsaved(), b=document.getElementById('eqUnsavedBanner');
+  if(!list.length){ if(b) b.remove(); return; }
+  if(!b){ b=document.createElement('div'); b.id='eqUnsavedBanner'; b.onclick=function(){ _eqRetryUnsaved(true); };
+    b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#b91c1c;color:#fff;padding:12px 14px calc(12px) 14px;padding-top:calc(12px + env(safe-area-inset-top));font-size:14px;font-weight:700;text-align:center;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.3);';
+    document.body.appendChild(b); }
+  var u=list[0], verb=(u.action==='OUT'?'check-out':'check-in');
+  b.textContent = list.length===1 ? ('⚠️ '+u.name+' '+verb+" didn't save to the sheet. Tap to retry")
+                                  : ('⚠️ '+list.length+" check-ins/outs didn't save to the sheet. Tap to retry");
+}
+(function(){
+  function boot(){ _eqUnsaved().forEach(function(u){ _eqFailed[u.body.row]=true; }); _eqBanner(); setTimeout(function(){ _eqRetryUnsaved(false); }, 4000); }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+  window.addEventListener('online', function(){ _eqRetryUnsaved(false); });
+})();
 function renderInventory() {
   var q = document.getElementById('inv-search').value.toLowerCase().trim();
   var filtered = items.filter(function(it) {
@@ -1219,7 +1290,7 @@ function renderInventory() {
     var cb = it.isCNC?'<span class="badge badge-cnc">'+(/^in vehicle/i.test(it.cncNote||'')?'IN VEHICLE':'CNC')+'</span>':'';
     var fl = it.equipStatus==='Missing'?'fl-miss':it.equipStatus==='Damaged'?'fl-dmg':it.isCNC?'fl-cnc':'';
     return '<div class="inv-card '+fl+'">'
-      +'<div class="inv-top"><div class="inv-name">'+esc(it.name)+'</div><div class="inv-badges">'+sb+eb+cb+'</div></div>'
+      +'<div class="inv-top"><div class="inv-name">'+esc(it.name)+'</div><div class="inv-badges">'+_eqSaveBadge(it.row)+sb+eb+cb+'</div></div>'
       +'<div class="inv-meta">📍 '+esc(it.homeLocation)+(it.member?' · '+fmtMemberBadge(it.member):'')+(it.call?' · Call #'+esc(it.call):'')+(it.lastUpdated?' · '+fmtTime(it.lastUpdated):'')+'</div>'
       +(it.isCNC?'<div class="inv-cnc">📍 '+esc(it.cncNote||it.ccnc)+'</div>':'')
       +'<div class="inv-actions"><button class="btn-in" onclick="openCheckout('+it.row+')">✓ Check IN</button><button class="btn-out" onclick="openCheckout('+it.row+', &quot;OUT&quot;)">↓ Check OUT</button></div>'
@@ -1586,18 +1657,18 @@ var blocked = [];
     return;
   }
   var itemsCopy = modalItems.slice();
-  closeModal(); showLoad(true);
+  closeModal();
+  // Instant: show it done now. The sheet save runs in the background — it retries, and if it
+  // still can't save, a red banner stays up and the item shows ⚠️ until it does.
+  _eqApplyLocal(itemsCopy, action, member, call, ccSel, cncNote, loggedBy);
+  updateStats(); renderInventory(); renderDashboard();
+  haptic('success'); playSound('success');
+  showToast('✓ '+itemsCopy.length+' item'+(itemsCopy.length>1?'s':'')+' checked '+action);
   Promise.all(itemsCopy.map(function(item){
-    return postJ({action:'checkInOut',row:item.row,status:action,member:member,call:call,ccSel:ccSel,cncNote:cncNote,loggedBy:loggedBy||null})
-    .then(function(data){
-      if(data.success){
-        var idx=items.findIndex(function(i){return i.row===item.row;});
-        if(idx>=0){items[idx].status=action;items[idx].member=loggedBy?member+' (by BC-'+loggedBy+')':member;items[idx].call=call;items[idx].isCNC=ccSel==='CNC';items[idx].cncNote=cncNote;items[idx].lastUpdated=new Date().toLocaleString();}
-      }
-    });
-  })).then(function(){
-    updateStats(); renderInventory(); renderDashboard();
-    showToast('✓ '+itemsCopy.length+' item'+(itemsCopy.length>1?'s':'')+' checked '+action);
+    return _eqSave({action:'checkInOut',row:item.row,status:action,member:member,call:call,ccSel:ccSel,cncNote:cncNote,loggedBy:loggedBy||null}, item, action);
+  })).then(function(results){
+    if (results.some(function(ok){ return !ok; })) return; // unsaved ones are queued with a banner
+
     // ── Auto-end car shift when COBC 4 is signed back IN ──────────────────────
     if (action === 'IN') {
       var hasCobc4 = itemsCopy.some(function(item){ return isCarItem(item.name); });
@@ -1625,7 +1696,7 @@ var blocked = [];
       }
     }
     // ──────────────────────────────────────────────────────────────────────────
-  }).catch(function(){showToast('Network error');}).finally(function(){showLoad(false);});
+  }).catch(function(e){ console.warn('check-in follow-ups:', e); });
 }
 
 function renderChecklist() {
