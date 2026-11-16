@@ -986,7 +986,8 @@ function doShowPage(page) {
 
 function fetchJ(url) { return fetch(url,{redirect:'follow',credentials:'omit'}).then(function(r){return r.json();}); }
 function postJ(body) {
-  return fetch(BASE_URL,{method:'POST',redirect:'follow',credentials:'omit',
+  // keepalive: the send finishes even if the app is closed or the phone locks right after the tap.
+  return fetch(BASE_URL,{method:'POST',redirect:'follow',credentials:'omit',keepalive:true,
     headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)
   }).then(function(r){return r.json();});
 }
@@ -1245,14 +1246,22 @@ function _eqApplyLocal(itemsCopy, action, member, call, ccSel, cncNote, loggedBy
 if(typeof haptic!=='function'){ window.haptic=function(type){ try{ if(navigator.vibrate) navigator.vibrate(type==='error'?[30,20,30]:type==='success'?[15,40,15]:10); }catch(e){} }; }
 if(typeof playSound!=='function'){ window.playSound=function(){}; }
 function _eqRerender(){ try{ updateStats(); renderInventory(); renderDashboard(); }catch(e){} _eqBanner(); }
+function _eqKey(bd){ return bd ? (bd.row!=null ? 'r'+bd.row : 'n'+bd.name) : ''; }
+function _eqStorePending(body, item, action){
+  var list=_eqUnsaved().filter(function(u){ return _eqKey(u.body)!==_eqKey(body); });
+  list.push({ body:body, name:item.name, action:action, at:Date.now(), pending:true });
+  _eqSetUnsaved(list);
+}
+function _eqDropSaved(body){ _eqSetUnsaved(_eqUnsaved().filter(function(u){ return _eqKey(u.body)!==_eqKey(body); })); }
 function _eqSave(body, item, action){
   var waits=[0,3000,10000,20000], k=0;
+  _eqStorePending(body, item, action); // kept on the phone until the sheet confirms (survives the app being closed)
   function attempt(){
     return postJ(body).then(function(d){ if(d&&d.success) return d; throw new Error((d&&d.error)||'not saved'); });
   }
   function loop(){
     return new Promise(function(r){ setTimeout(r, waits[k]); }).then(attempt).then(function(){
-      delete _eqSaving[item.row]; delete _eqFailed[item.row]; _eqRerender(); return true;
+      delete _eqSaving[item.row]; delete _eqFailed[item.row]; _eqDropSaved(body); _eqRerender(); return true;
     }).catch(function(err){
       k++; if(k<waits.length) return loop();
       delete _eqSaving[item.row]; _eqFailed[item.row]=true;
@@ -1274,7 +1283,7 @@ function _eqRetryUnsaved(manual){
   Promise.all(list.map(function(u){
     _eqSaving[u.body.row]=true;
     return postJ(u.body).then(function(d){ if(!(d&&d.success)) throw new Error((d&&d.error)||'not saved'); delete _eqFailed[u.body.row]; })
-      .catch(function(e){ u.err=String(e&&e.message||e); left.push(u); _eqFailed[u.body.row]=true; })
+      .catch(function(e){ u.err=String(e&&e.message||e); u.pending=false; left.push(u); _eqFailed[u.body.row]=true; })
       .then(function(){ delete _eqSaving[u.body.row]; });
   })).then(function(){
     _eqSetUnsaved(left); _eqRetrying=false; _eqRerender();
@@ -1282,7 +1291,7 @@ function _eqRetryUnsaved(manual){
   });
 }
 function _eqBanner(){
-  var list=_eqUnsaved(), b=document.getElementById('eqUnsavedBanner');
+  var list=_eqUnsaved().filter(function(u){ return !u.pending; }), b=document.getElementById('eqUnsavedBanner');
   if(!list.length){ if(b) b.remove(); return; }
   if(!b){ b=document.createElement('div'); b.id='eqUnsavedBanner'; b.onclick=function(){ _eqRetryUnsaved(true); };
     b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#b91c1c;color:#fff;padding:12px 14px calc(12px) 14px;padding-top:calc(12px + env(safe-area-inset-top));font-size:14px;font-weight:700;text-align:center;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.3);';
@@ -1292,7 +1301,7 @@ function _eqBanner(){
                                   : ('⚠️ '+list.length+" check-ins/outs didn't save to the sheet. Tap to retry");
 }
 (function(){
-  function boot(){ _eqUnsaved().forEach(function(u){ _eqFailed[u.body.row]=true; }); _eqBanner(); setTimeout(function(){ _eqRetryUnsaved(false); }, 4000); }
+  function boot(){ _eqUnsaved().forEach(function(u){ if(!u.pending) _eqFailed[u.body.row]=true; }); _eqBanner(); setTimeout(function(){ _eqRetryUnsaved(false); }, 4000); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
   window.addEventListener('online', function(){ _eqRetryUnsaved(false); });
 })();
