@@ -3145,7 +3145,7 @@ function toggleAdm(titleEl) {
 function logout() {
   localStorage.removeItem('cobc_level');
   localStorage.removeItem('cobc_member_id');
-  try{ localStorage.removeItem('cobc_sess'); }catch(e){}
+  try{ localStorage.removeItem('cobc_sess'); localStorage.removeItem('cobc_qr_signin'); }catch(e){}
   userLevel = 0;
   loggedInMember = null;
   document.getElementById('app').style.display = 'none';

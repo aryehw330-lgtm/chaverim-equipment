@@ -3536,6 +3536,37 @@ var _qrIsCobc4 = false;
 var _qrCarSchedule = [];
 var _qrCarItemData = null;
 
+// Remember the sticker sign-in on this phone for 12 hours, so repeat scans open straight
+// to IN/OUT. Every save is still checked by the server against the current member sheet.
+var _QR_REMEMBER_KEY='cobc_qr_signin', _QR_REMEMBER_MS=12*3600*1000;
+function _qrRemember(m){ try{ localStorage.setItem(_QR_REMEMBER_KEY, JSON.stringify({ m:m, until:Date.now()+_QR_REMEMBER_MS })); }catch(e){} }
+function _qrRemembered(){
+  try{ var r=JSON.parse(localStorage.getItem(_QR_REMEMBER_KEY)||'null');
+    if(r && r.m && r.until>Date.now()) return r.m;
+    localStorage.removeItem(_QR_REMEMBER_KEY); }catch(e){}
+  return null;
+}
+function qrNotYou(){
+  try{ localStorage.removeItem(_QR_REMEMBER_KEY); }catch(e){}
+  _qrMember=null;
+  var bar=document.getElementById('qr-signed-bar'); if(bar) bar.remove();
+  document.getElementById('qr-form-wrap').style.display='none';
+  document.getElementById('qr-pin-gate').style.display='flex';
+  var mw=document.getElementById('qr-member-wrap'); if(mw) mw.style.display='';
+  var md=document.getElementById('qr-member-display'); if(md) md.style.display='none';
+  var mi=document.getElementById('qr-member'); if(mi) mi.value='';
+  var qu=document.getElementById('qr-unit-input'); if(qu){ qu.value=''; setTimeout(function(){ qu.focus(); },100); }
+  var pi=document.getElementById('qr-pin-input'); if(pi) pi.value='';
+}
+function _qrSignedBar(){
+  var wrap=document.getElementById('qr-form-wrap'); if(!wrap) return;
+  var bar=document.getElementById('qr-signed-bar');
+  if(!bar){ bar=document.createElement('div'); bar.id='qr-signed-bar';
+    bar.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:8px;background:#eef2f7;color:#334155;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;margin-bottom:10px;';
+    wrap.insertBefore(bar, wrap.firstChild); }
+  var who=_qrMember ? ('BC-'+esc(String(_qrMember.id))+(_qrMember.name?' — '+esc(_qrMember.name):'')) : 'staff login';
+  bar.innerHTML='<span>👤 Signed in as '+who+'</span><a href="#" onclick="qrNotYou();return false;" style="color:#c0392b;font-weight:700;text-decoration:underline;white-space:nowrap;">Not you?</a>';
+}
 function showQRMode(name) {
   _qrName = name;
   _qrGeneral = (name === '__general__');
@@ -3543,6 +3574,14 @@ function showQRMode(name) {
   document.getElementById('qr-item-title').textContent = _qrGeneral ? 'Equipment Check In / Out' : name;
   document.getElementById('qr-pin-input').addEventListener('keydown', function(e){ if(e.key==='Enter') qrCheckPin(); });
   qrFaceIdSetup();
+  var _rm=_qrRemembered();
+  if(_rm){
+    _qrMember = _rm.admin ? null : _rm;
+    try{ initFirebaseAuth(); }catch(e){}
+    try{ var _u=firebase.auth().currentUser; if(_u) _u.getIdToken().then(function(t){ window._fbIdToken=t; }).catch(function(){}); }catch(e){}
+    qrShowForm();
+    return;
+  }
   try { var _qu = document.getElementById('qr-unit-input'); if (_qu && !_qu.value) _qu.value = localStorage.getItem('cobc_pin_unit') || ''; } catch(e) {}
   setTimeout(function(){ var _qu2 = document.getElementById('qr-unit-input'); document.getElementById(_qu2 && !_qu2.value ? 'qr-unit-input' : 'qr-pin-input').focus(); }, 100);
 }
@@ -3609,6 +3648,7 @@ function qrFaceId(){
       try { localStorage.setItem('cobc_pin_unit', unit); } catch(e) {}
       _qrMember={ id:unit, unit:unit, name:mm.name||((mm.firstName||'')+' '+(mm.lastName||'')).trim(), status:mm.status||'' };
       if (b) { b.disabled=false; b.textContent='Use Face ID'; }
+      _qrRemember(_qrMember);
       qrShowForm();
     });
   }).catch(function(e){
@@ -3636,8 +3676,8 @@ function qrCheckPin() {
       _pbReset();
       document.getElementById('qr-pin-input').disabled = false;
       if (d && d.sess) _eqSaveSess(d.sess);
-      if (d && d.isAdminPin && d.adminLevel > 0) { _qrMember = null; qrShowForm(); }
-      else if (d && d.id) { try { localStorage.setItem('cobc_pin_unit', qUnit); } catch(e) {} _qrMember = d; qrFirebaseSignIn(v, d.id); qrShowForm(); }
+      if (d && d.isAdminPin && d.adminLevel > 0) { _qrMember = null; _qrRemember({admin:true}); qrShowForm(); }
+      else if (d && d.id) { try { localStorage.setItem('cobc_pin_unit', qUnit); } catch(e) {} _qrMember = d; _qrRemember({ id:d.id, unit:d.unit||d.id, name:d.name||((d.firstName||'')+' '+(d.lastName||'')).trim(), status:d.status||'' }); qrFirebaseSignIn(v, d.id); qrShowForm(); }
       else { errEl.textContent = (d && d.locked) ? ('\u2715 ' + d.error) : '\u2715 Wrong BC # or PIN'; document.getElementById('qr-pin-input').value = ''; document.getElementById('qr-pin-input').focus(); setTimeout(function(){ errEl.textContent=''; }, 2000); }
     })
     .catch(function(){ _pbReset(); document.getElementById('qr-pin-input').disabled = false; errEl.textContent = '\u2715 Connection error'; document.getElementById('qr-pin-input').value = ''; setTimeout(function(){ errEl.textContent=''; }, 3000); });
@@ -3655,6 +3695,7 @@ function qrShowForm() {
     setTimeout(function(){ var s=document.getElementById('qr-item-search'); if(s) s.focus(); }, 150);
   }
   _qrIsCobc4 = !_qrGeneral && isCarItem(_qrName);
+  try{ _qrSignedBar(); }catch(e){}
   if (_qrMember) {
     document.getElementById('qr-member').value = _qrMember.id;
     document.getElementById('qr-member-display').style.display = 'block';
