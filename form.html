@@ -1225,7 +1225,8 @@ function _eqSave(body, item, action){
     }).catch(function(err){
       k++; if(k<waits.length) return loop();
       delete _eqSaving[item.row]; _eqFailed[item.row]=true;
-      var list=_eqUnsaved().filter(function(u){ return !(u.body&&u.body.row===body.row); });
+      var _k=function(bd){ return bd ? (bd.row!=null ? 'r'+bd.row : 'n'+bd.name) : ''; };
+      var list=_eqUnsaved().filter(function(u){ return _k(u.body)!==_k(body); });
       list.push({ body:body, name:item.name, action:action, at:Date.now(), err:String(err&&err.message||err) });
       _eqSetUnsaved(list);
       try{ if(navigator.vibrate) navigator.vibrate([200,100,200]); }catch(e){}
@@ -3697,6 +3698,7 @@ function qrShowForm() {
 }
 
 function qrDone() {
+  window._qrSubmitBusy = 0;
   // General mode: reset the form in place so the member can check more items without re-PIN.
   if (_qrGeneral && _qrMember) {
     _qrExtraItems = [];
@@ -3968,52 +3970,42 @@ function qrSubmit(action) {
     alert('Cannot check ' + action + ': ' + blocked.join(', ') + '. Contact BC-38 if you need help.');
     return;
   }
+  // Ignore repeat taps (a slow-looking button used to get tapped several times = duplicate check-outs + notifications).
+  if (window._qrSubmitBusy && Date.now()-window._qrSubmitBusy < 8000) return;
+  window._qrSubmitBusy = Date.now();
   var allNames = qrSelectedNames();
   try{ if(call) sessionStorage.setItem('qr_last_call', call); }catch(e){}
-  var done = 0; var total = allNames.length; var failed = [];
-  allNames.forEach(function(name) {
-    fetch(BASE_URL, {
-      method:'POST', redirect:'follow', credentials:'omit',
-      headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({action:'checkInByName', name:name, status:action, member:member, call:call, ccSel:ccnc, cncNote:cncNote})
-    })
-    .then(function(r){ return r.json(); })
-    .then(function(d) {
-      done++;
-      if (!d || d.success === false) failed.push(name + (d && d.error ? ' ('+d.error+')' : ''));
-      if (done === total) {
-        if (failed.length > 0) {
-          alert('\u26a0\ufe0f Could not save to the sheet for: ' + failed.join(', ') + '.\n\nCheck your connection and try again \u2014 nothing was recorded for these items.');
-          return;
-        }
-        document.getElementById('qr-form-wrap').style.display = 'none';
-        var conf = document.getElementById('qr-confirm');
-        conf.style.display = 'flex';
-        var icon = document.getElementById('qr-conf-icon');
-        icon.style.background = action==='IN' ? '#1a3a5c' : '#c0392b';
-        icon.textContent = action==='IN' ? '\u2713' : '\u2193';
-        document.getElementById('qr-conf-title').textContent = action==='IN' ? 'Checked IN' : 'Checked OUT';
-        document.getElementById('qr-conf-detail').textContent = total + ' item' + (total>1?'s':'') + ' \u00b7 BC-' + member + (call !== 'SHIFT' ? ' \u00b7 Call #' + call : '');
-        // \u2500\u2500 Auto-end car shift when COBC 4 signed back IN via QR \u2500\u2500\u2500\u2500\u2500\u2500
-        if (_qrIsCobc4 && action === 'IN') {
-          var activeBkg = _qrCarSchedule.find(function(b) { return b.status === 'active'; });
-          if (activeBkg) {
-            fetch(BASE_URL, {
-              method:'POST', redirect:'follow', credentials:'omit',
-              headers:{'Content-Type':'text/plain;charset=utf-8'},
-              body: JSON.stringify({action:'endCarShift', id:activeBkg.id})
-            }).then(function(r){ return r.json(); }).catch(function(){});
-          }
-        }
+  var total = allNames.length;
+  // Instant: confirm on screen right away; the sheet save runs behind it (retries, then a red
+  // "tap to retry" banner, kept on this phone until it saves).
+  try{ if(navigator.vibrate) navigator.vibrate(30); }catch(e){}
+  document.getElementById('qr-form-wrap').style.display = 'none';
+  var conf = document.getElementById('qr-confirm');
+  conf.style.display = 'flex';
+  var icon = document.getElementById('qr-conf-icon');
+  icon.style.background = action==='IN' ? '#1a3a5c' : '#c0392b';
+  icon.textContent = action==='IN' ? '\u2713' : '\u2193';
+  document.getElementById('qr-conf-title').textContent = action==='IN' ? 'Checked IN' : 'Checked OUT';
+  var det = document.getElementById('qr-conf-detail');
+  var baseDetail = total + ' item' + (total>1?'s':'') + ' \u00b7 BC-' + member + (call !== 'SHIFT' ? ' \u00b7 Call #' + call : '');
+  det.textContent = baseDetail + ' \u00b7 \u23f3 saving\u2026';
+  Promise.all(allNames.map(function(name){
+    return _eqSave({action:'checkInByName', name:name, status:action, member:member, call:call, ccSel:ccnc, cncNote:cncNote}, {row:'n:'+name, name:name}, action);
+  })).then(function(results){
+    var ok = results.every(function(x){ return !!x; });
+    det.textContent = baseDetail + (ok ? ' \u00b7 \u2713 saved' : ' \u00b7 \u26a0\ufe0f not saved yet \u2014 tap the red banner to retry');
+    if (!ok) return;
+    // \u2500\u2500 Auto-end car shift when COBC 4 signed back IN via QR \u2500\u2500
+    if (_qrIsCobc4 && action === 'IN') {
+      var activeBkg = _qrCarSchedule.find(function(b) { return b.status === 'active'; });
+      if (activeBkg) {
+        fetch(BASE_URL, {
+          method:'POST', redirect:'follow', credentials:'omit',
+          headers:{'Content-Type':'text/plain;charset=utf-8'},
+          body: JSON.stringify({action:'endCarShift', id:activeBkg.id})
+        }).then(function(r){ return r.json(); }).catch(function(){});
       }
-    })
-    .catch(function(e) {
-      done++;
-      failed.push(name + ' (connection error)');
-      if (done === total) {
-        alert('\u26a0\ufe0f Could not save to the sheet for: ' + failed.join(', ') + '.\n\nCheck your connection and try again \u2014 nothing was recorded for these items.');
-      }
-    });
+    }
   });
 }
 </script>

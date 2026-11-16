@@ -2163,7 +2163,8 @@ function _eqSave(body, item, action){
     }).catch(function(err){
       k++; if(k<waits.length) return loop();
       delete _eqSaving[item.row]; _eqFailed[item.row]=true;
-      var list=_eqUnsaved().filter(function(u){ return !(u.body&&u.body.row===body.row); });
+      var _k=function(bd){ return bd ? (bd.row!=null ? 'r'+bd.row : 'n'+bd.name) : ''; };
+      var list=_eqUnsaved().filter(function(u){ return _k(u.body)!==_k(body); });
       list.push({ body:body, name:item.name, action:action, at:Date.now(), err:String(err&&err.message||err) });
       _eqSetUnsaved(list);
       try{ if(navigator.vibrate) navigator.vibrate([200,100,200]); }catch(e){}
