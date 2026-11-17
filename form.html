@@ -867,11 +867,13 @@ function handleGoogleCredential(response) {
     var payload = JSON.parse(atob(response.credential.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
     var email = payload.email;
     if (!email) { errEl.textContent = '✕ Could not read Google email'; return; }
-    var url = BASE_URL + '?action=getMemberByEmail&email=' + encodeURIComponent(email);
+    // Send Google's signed proof too, so the server can verify it and issue a session (Nov 2026)
+    var url = BASE_URL + '?action=getMemberByEmail&email=' + encodeURIComponent(email) + '&credential=' + encodeURIComponent(response.credential);
     fetch(url, {redirect:'follow', credentials:'omit'})
       .then(function(r){ return r.json(); })
       .then(function(d) {
         if (d && d.id) {
+          if (d.sess) _eqSaveSess(d.sess);
           finishMemberLogin(d);
           errEl.textContent = '';
         } else {
@@ -985,6 +987,22 @@ function doShowPage(page) {
 }
 
 function fetchJ(url) { return fetch(url,{redirect:'follow',credentials:'omit'}).then(function(r){return r.json();}); }
+// Read lock (Nov 2026): the server only gives the inventory / locations / member list to a
+// signed-in phone. Send the saved session (and the Firebase sign-in once it's ready);
+// if the server still says "sign in", wait for Firebase and try once more.
+function _eqReadAuth(){ var t=window._fbIdToken; return _eqSessParam()+(t?'&authToken='+encodeURIComponent(t):''); }
+function _eqReadJ(action){
+  return fetchJ(BASE_URL+'?action='+action+_eqReadAuth()).then(function(d){
+    if(!d || !d.authRequired) return d;
+    return _getAuthToken().then(function(tok){
+      return fetchJ(BASE_URL+'?action='+action+_eqSessParam()+(tok?'&authToken='+encodeURIComponent(tok):''));
+    });
+  });
+}
+// Session expired and no Firebase sign-in: back to the sign-in screen instead of an empty list.
+function _eqNeedSignIn(){ try{ showToast('Please sign in again'); }catch(e){} try{ logout(); }catch(e){} }
+function _qrNeedSignIn(){ try{ localStorage.removeItem('cobc_qr_signin'); }catch(e){} try{ location.reload(); }catch(e){} }
+
 function postJ(body) {
   // keepalive: the send finishes even if the app is closed or the phone locks right after the tap.
   return fetch(BASE_URL,{method:'POST',redirect:'follow',credentials:'omit',keepalive:true,
@@ -997,11 +1015,12 @@ function loadData() {
   _getAuthToken().then(function(tok){
   var mUrl=BASE_URL+'?action=getMembers'+(tok?'&authToken='+encodeURIComponent(tok):'')+_eqSessParam();
   return Promise.all([
-    fetchJ(BASE_URL+'?action=getInventory'),
+    _eqReadJ('getInventory'),
     fetchJ(mUrl),
-    fetchJ(BASE_URL+'?action=getLocations')
+    _eqReadJ('getLocations')
   ]);
 }).then(function(res) {
+    if (res[0] && res[0].authRequired) { _eqNeedSignIn(); showLoad(false); return; }
     items   = res[0].items   || [];
     members = res[1].members || [];
     window._eqPhonesHidden = !!(res[1] && res[1].phonesHidden);
@@ -3781,9 +3800,9 @@ function qrShowForm() {
   _qrExtraItems = [];
   qrRenderItemsList();
   // Fetch inventory
-  fetch(BASE_URL + '?action=getInventory', {redirect:'follow',credentials:'omit'})
-    .then(function(r){ return r.json(); })
+  _eqReadJ('getInventory')
     .then(function(d) {
+      if (d && d.authRequired) { _qrNeedSignIn(); return; }
       _qrAllItems = d.items || [];
       qrUpdateMoveOpt();
       try{ if(!_fleetVehicles.length) loadFleetVehicles(); }catch(e){}
