@@ -1449,17 +1449,14 @@ function _populateVehicleSelects(){
 // Tap-to-pick call numbers under a Call Number box (filled by _autofillCallForMember).
 // Shows the member's live calls (approved or waiting); if none, every open call.
 var _callPicksData={};
-// Street name only (no house number) so the call list on a public sticker page
-// doesn't show a full address: "1006 Haddon Place, Teaneck, NJ" -> "Haddon Place".
-// Route / highway / exit numbers stay ("Route 4", "I-80").
+// Short address for the call buttons: house number + the start of the street name, so two
+// calls on the same street can be told apart without showing a full address:
+// "1006 Haddon Place, Teaneck, NJ" -> "1006 Hadd…". No house number -> first 10 letters.
 function _eqStreetOnly(a){
-  var parts=String(a||'').split(',')[0].trim().split(/\s+/), out=[];
-  for(var i=0;i<parts.length;i++){
-    var w=parts[i], prev=(out[out.length-1]||'').toLowerCase().replace(/\./g,'');
-    if(/^#?\d+[a-z]?(-\d+[a-z]?)?$/i.test(w) && !/^(route|rt|rte|hwy|highway|exit|i|us|nj|cr|county|interstate)$/.test(prev)) continue;
-    out.push(w);
-  }
-  return out.join(' ');
+  var first=String(a||'').split(',')[0].trim(); if(!first) return '';
+  var m=first.match(/^#?(\d+[a-z]?(?:-\d+[a-z]?)?)\s+(.+)$/i);
+  if(m){ var st=m[2].trim(); return m[1]+' '+(st.length>4?st.slice(0,4)+'\u2026':st); }
+  return first.length>10?first.slice(0,10).trim()+'\u2026':first;
 }
 function _eqTypeLabel(t){ t=String(t||''); if(t.indexOf('other:')===0) t=t.slice(6); t=t.replace(/_/g,' '); return t.charAt(0).toUpperCase()+t.slice(1); }
 function _renderCallPicksEq(fieldId){
