@@ -1460,7 +1460,7 @@ function _renderCallPicksEq(fieldId){
   if(!list.length){ box.innerHTML=''; return; }
   var cur=String(fld.value||'').trim();
   var e=function(s){ return String(s||'').replace(/[<>&"']/g,''); };
-  box.innerHTML='<div style="font-size:11px;font-weight:700;color:#666;margin:6px 0 4px">'+(d.mine.length?(d.mine.length>1?'You’re on '+d.mine.length+' calls — tap the right one:':'Your call:'):'Open calls — tap one:')+'</div>'
+  box.innerHTML='<div style="font-size:11px;font-weight:700;color:#666;margin:6px 0 4px">'+(d.mine.length?(d.mine.length>1?'You’re on '+d.mine.length+' calls — tap the right one:':'Your call:'):'Current open calls — tap one:')+'</div>'
     +'<div style="display:flex;flex-wrap:wrap;gap:6px">'+list.map(function(c){
       var on=cur===c.num;
       return '<button type="button" onclick="_pickCallNumEq(\''+fieldId+'\',\''+e(c.num)+'\')" style="border:1.5px solid '+(on?'#1a3a5c':'#ccd3dc')+';background:'+(on?'#1a3a5c':'#fff')+';color:'+(on?'#fff':'#1a1a1a')+';border-radius:999px;padding:6px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">'
