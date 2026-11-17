@@ -1446,13 +1446,39 @@ function _populateVehicleSelects(){
 // Read the live dispatch calls from Firestore (same REST mechanism the form already
 // uses for car-access sync) and pre-fill the call # for the given unit — but ONLY if
 // that unit is on exactly ONE open/active call. Blank for zero or 2+ (never guess wrong).
+// Tap-to-pick call numbers under a Call Number box (filled by _autofillCallForMember).
+// Shows the member's live calls (approved or waiting); if none, every open call.
+var _callPicksData={};
+function _eqTypeLabel(t){ t=String(t||''); if(t.indexOf('other:')===0) t=t.slice(6); t=t.replace(/_/g,' '); return t.charAt(0).toUpperCase()+t.slice(1); }
+function _renderCallPicksEq(fieldId){
+  var fld=document.getElementById(fieldId); if(!fld) return;
+  var box=document.getElementById(fieldId+'-picks');
+  if(!box){ box=document.createElement('div'); box.id=fieldId+'-picks'; fld.parentNode.insertBefore(box, fld.nextSibling);
+    fld.addEventListener('input', function(){ _renderCallPicksEq(fieldId); }); }
+  var d=_callPicksData[fieldId]||{mine:[],all:[]};
+  var list=(d.mine.length?d.mine:d.all).slice(0,6);
+  if(!list.length){ box.innerHTML=''; return; }
+  var cur=String(fld.value||'').trim();
+  var e=function(s){ return String(s||'').replace(/[<>&"']/g,''); };
+  box.innerHTML='<div style="font-size:11px;font-weight:700;color:#666;margin:6px 0 4px">'+(d.mine.length?(d.mine.length>1?'You’re on '+d.mine.length+' calls — tap the right one:':'Your call:'):'Open calls — tap one:')+'</div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:6px">'+list.map(function(c){
+      var on=cur===c.num;
+      return '<button type="button" onclick="_pickCallNumEq(\''+fieldId+'\',\''+e(c.num)+'\')" style="border:1.5px solid '+(on?'#1a3a5c':'#ccd3dc')+';background:'+(on?'#1a3a5c':'#fff')+';color:'+(on?'#fff':'#1a1a1a')+';border-radius:999px;padding:6px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">'
+        +(on?'✓ ':'')+'#'+e(c.num)+' · '+e(_eqTypeLabel(c.type))+(c.town?' · '+e(c.town):'')+'</button>';
+    }).join('')+'</div>';
+}
+function _pickCallNumEq(fieldId, num){
+  var f=document.getElementById(fieldId); if(!f) return;
+  f.value=num; try{ if(typeof haptic==='function') haptic('light'); }catch(e){}
+  _renderCallPicksEq(fieldId);
+}
 function _autofillCallForMember(unitId, fieldId){
   try{
     fieldId = fieldId || 'modal-call';
     var u = String(unitId||'').replace(/^BC-?/i,'').trim();
     if(!u) return;
     var field = document.getElementById(fieldId);
-    if(!field || field.value) return; // don't clobber a value (incl. COBC4 'SHIFT')
+    if(!field || field.value==='SHIFT') return; // COBC4 shift — no call #
     var apiKey='AIzaSyBYAz3ohsJGX_zo-Yq3faZ2m0uv4tfuSl8';
     // Only open/active calls (a handful) — not a page of the whole calls collection,
     // which came back oldest-first and missed today's calls once there were 300+.
@@ -1465,25 +1491,31 @@ function _autofillCallForMember(unitId, fieldId){
     }).then(function(r){ if(!r.ok){ console.warn('[autofill] calls read failed', r.status); } return r.json(); }).then(function(data){
       if(data && data.error){ console.warn('[autofill] Firestore error:', data.error.message||data.error); }
       var docs=(Array.isArray(data)?data:[]).map(function(x){ return x&&x.document; }).filter(Boolean);
-      var matches=[];
+      var mine=[], all=[];
       docs.forEach(function(d){
         var f=d.fields||{};
         var status=(f.status&&f.status.stringValue)||'';
         if(status!=='open'&&status!=='active') return;
-        var resp=(f.responders&&f.responders.arrayValue&&f.responders.arrayValue.values)||[];
-        var has=resp.some(function(rv){
+        var cn=(f.callNum&&(f.callNum.integerValue||f.callNum.stringValue));
+        if(cn==null || cn==='') return;
+        var _has=function(arr){ return ((arr&&arr.arrayValue&&arr.arrayValue.values)||[]).some(function(rv){
           var rf=(rv.mapValue&&rv.mapValue.fields)||{};
           var ru=(rf.unit&&(rf.unit.stringValue||rf.unit.integerValue))||'';
           return String(ru).replace(/^BC-?/i,'').trim()===u;
-        });
-        if(has){
-          var cn=(f.callNum&&(f.callNum.integerValue||f.callNum.stringValue));
-          if(cn!=null && cn!=='') matches.push(String(cn));
-        }
+        }); };
+        var approved=_has(f.responders), pending=_has(f.pendingResponders);
+        var created=Date.parse((f.createdAt&&(f.createdAt.timestampValue||f.createdAt.stringValue))||'')||Number(f.createdAt&&(f.createdAt.integerValue||f.createdAt.doubleValue))||0;
+        var c={num:String(cn), type:(f.type&&f.type.stringValue)||'', town:(f.town&&f.town.stringValue)||'', at:created, approved:approved};
+        all.push(c); if(approved||pending) mine.push(c);
       });
-      // Same rule as the in-app logic: exactly one live call → fill; else leave blank.
+      var byNew=function(a,b){ return (b.at||0)-(a.at||0); };
+      mine.sort(byNew); all.sort(byNew);
+      var approvedOnly=mine.filter(function(c){ return c.approved; });
+      // Same rule as the in-app logic: exactly one approved live call → fill; else leave blank.
       var fld=document.getElementById(fieldId);
-      if(fld && !fld.value && matches.length===1) fld.value=matches[0];
+      if(fld && !fld.value && approvedOnly.length===1) fld.value=approvedOnly[0].num;
+      _callPicksData[fieldId]={mine:mine, all:all};
+      _renderCallPicksEq(fieldId);
     }).catch(function(){});
   }catch(e){}
 }
@@ -3610,7 +3642,7 @@ function qrFirebaseSignIn(pin, unit){
           return firebase.auth().currentUser.getIdToken(true);
         }).then(function(t){
           window._fbIdToken = t;
-          try{ if(_qrMember && !isCarItem(_qrName)){ var f=document.getElementById('qr-call'); if(f && !f.value) _autofillCallForMember(_qrMember.id, 'qr-call'); } }catch(e){}
+          try{ if(_qrMember && !isCarItem(_qrName)){ var f=document.getElementById('qr-call'); if(f) _autofillCallForMember(_qrMember.id, 'qr-call'); } }catch(e){}
         });
       }).catch(function(){});
   }catch(e){}
@@ -3716,11 +3748,12 @@ function qrShowForm() {
       var _qf=document.getElementById('qr-call');
       var _lastCall=''; try{ _lastCall=sessionStorage.getItem('qr_last_call')||''; }catch(e){}
       if(_qf && !_qf.value && _lastCall) _qf.value=_lastCall;
-      if(_qf && !_qf.value){
+      if(_qf){
+        // Fills the call # (only if blank) and shows the tap-to-pick call buttons.
         _autofillCallForMember(_qrMember.id, 'qr-call');
         // Retry after auth token settles — the first read often fires before Firebase auth is ready.
-        setTimeout(function(){ var f=document.getElementById('qr-call'); if(f && !f.value) _autofillCallForMember(_qrMember.id, 'qr-call'); }, 1500);
-        setTimeout(function(){ var f=document.getElementById('qr-call'); if(f && !f.value) _autofillCallForMember(_qrMember.id, 'qr-call'); }, 3500);
+        setTimeout(function(){ if(!_callPicksData['qr-call']) _autofillCallForMember(_qrMember.id, 'qr-call'); }, 1500);
+        setTimeout(function(){ if(!_callPicksData['qr-call']) _autofillCallForMember(_qrMember.id, 'qr-call'); }, 3500);
       }
     }
   }
