@@ -1449,6 +1449,18 @@ function _populateVehicleSelects(){
 // Tap-to-pick call numbers under a Call Number box (filled by _autofillCallForMember).
 // Shows the member's live calls (approved or waiting); if none, every open call.
 var _callPicksData={};
+// Street name only (no house number) so the call list on a public sticker page
+// doesn't show a full address: "1006 Haddon Place, Teaneck, NJ" -> "Haddon Place".
+// Route / highway / exit numbers stay ("Route 4", "I-80").
+function _eqStreetOnly(a){
+  var parts=String(a||'').split(',')[0].trim().split(/\s+/), out=[];
+  for(var i=0;i<parts.length;i++){
+    var w=parts[i], prev=(out[out.length-1]||'').toLowerCase().replace(/\./g,'');
+    if(/^#?\d+[a-z]?(-\d+[a-z]?)?$/i.test(w) && !/^(route|rt|rte|hwy|highway|exit|i|us|nj|cr|county|interstate)$/.test(prev)) continue;
+    out.push(w);
+  }
+  return out.join(' ');
+}
 function _eqTypeLabel(t){ t=String(t||''); if(t.indexOf('other:')===0) t=t.slice(6); t=t.replace(/_/g,' '); return t.charAt(0).toUpperCase()+t.slice(1); }
 function _renderCallPicksEq(fieldId){
   var fld=document.getElementById(fieldId); if(!fld) return;
@@ -1460,11 +1472,11 @@ function _renderCallPicksEq(fieldId){
   if(!list.length){ box.innerHTML=''; return; }
   var cur=String(fld.value||'').trim();
   var e=function(s){ return String(s||'').replace(/[<>&"']/g,''); };
-  box.innerHTML='<div style="font-size:11px;font-weight:700;color:#666;margin:6px 0 4px">'+(d.mine.length?(d.mine.length>1?'You’re on '+d.mine.length+' calls — tap the right one:':'Your call:'):'Current open calls — tap one:')+'</div>'
+  box.innerHTML='<div style="font-size:11px;font-weight:700;color:#666;margin:6px 0 4px">'+(d.mine.length?(d.mine.length>1?'You’re on '+d.mine.length+' calls — tap the right one:':'Your call:'):'Open calls — tap one:')+'</div>'
     +'<div style="display:flex;flex-wrap:wrap;gap:6px">'+list.map(function(c){
       var on=cur===c.num;
       return '<button type="button" onclick="_pickCallNumEq(\''+fieldId+'\',\''+e(c.num)+'\')" style="border:1.5px solid '+(on?'#1a3a5c':'#ccd3dc')+';background:'+(on?'#1a3a5c':'#fff')+';color:'+(on?'#fff':'#1a1a1a')+';border-radius:999px;padding:6px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">'
-        +(on?'✓ ':'')+'#'+e(c.num)+' · '+e(_eqTypeLabel(c.type))+(c.town?' · '+e(c.town):'')+'</button>';
+        +(on?'✓ ':'')+'#'+e(c.num)+' · '+e(_eqTypeLabel(c.type))+(c.street?' · '+e(c.street):'')+(c.town?(c.street?', ':' · ')+e(c.town):'')+'</button>';
     }).join('')+'</div>';
 }
 function _pickCallNumEq(fieldId, num){
@@ -1505,7 +1517,7 @@ function _autofillCallForMember(unitId, fieldId){
         }); };
         var approved=_has(f.responders), pending=_has(f.pendingResponders);
         var created=Date.parse((f.createdAt&&(f.createdAt.timestampValue||f.createdAt.stringValue))||'')||Number(f.createdAt&&(f.createdAt.integerValue||f.createdAt.doubleValue))||0;
-        var c={num:String(cn), type:(f.type&&f.type.stringValue)||'', town:(f.town&&f.town.stringValue)||'', at:created, approved:approved};
+        var c={num:String(cn), type:(f.type&&f.type.stringValue)||'', town:(f.town&&f.town.stringValue)||'', street:_eqStreetOnly((f.address&&f.address.stringValue)||''), at:created, approved:approved};
         all.push(c); if(approved||pending) mine.push(c);
       });
       var byNew=function(a,b){ return (b.at||0)-(a.at||0); };
