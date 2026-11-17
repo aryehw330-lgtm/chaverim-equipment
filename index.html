@@ -1315,6 +1315,7 @@ function checkPin() {
         if (errEl) errEl.textContent = '';
       } else if (d && d.id) {
         try { localStorage.setItem('cobc_pin_unit', unitNo); } catch(e) {}
+        _eqMemberFirebase({pin: raw, unit: unitNo});
         finishMemberLogin(d);
         if (errEl) errEl.textContent = '';
       } else {
@@ -1680,6 +1681,7 @@ function handleGoogleCredential(response) {
       .then(function(d) {
         if (d && d.id) {
           if (d.sess) _eqSaveSess(d.sess);
+          _eqMemberFirebase({googleIdToken: response.credential});
           finishMemberLogin(d);
           errEl.textContent = '';
         } else {
@@ -2393,6 +2395,101 @@ function getVehicleList() {
 function bookingVehicle(b){ return (b && b.vehicle) ? b.vehicle.toString().trim() : 'COBC 4'; }
 function multiVehicle(){ return getVehicleList().length > 1; }
 function vehicleTag(b){ return multiVehicle() ? ' <span style="font-size:12px;font-weight:800;color:#1a3a5c;background:#e8eef5;padding:1px 7px;border-radius:8px">🚗 '+esc(bookingVehicle(b))+'</span>' : ''; }
+// ── Call-number buttons in the Items check-out box (Nov 2026, same as the sticker page) ──
+// Reading open calls needs a real member Firebase sign-in (not the anonymous one), so PIN and
+// Google sign-in also get one from the dispatch login server.
+function _eqMemberFirebase(payload){
+  try{
+    return fetch('https://us-east1-cobc-dispatch.cloudfunctions.net/getAuthToken',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+      .then(function(r){ return r.json().catch(function(){ return {}; }); })
+      .then(function(v){
+        if(!v || !v.ok || !v.token) return;
+        try{ initFirebaseAuth(); }catch(e){}
+        return firebase.auth().signInWithCustomToken(v.token).then(function(){ return firebase.auth().currentUser.getIdToken(true); })
+          .then(function(t){ window._fbIdToken=t; });
+      }).catch(function(){});
+  }catch(e){}
+}
+var _callPicksData={};
+// Short address for the call buttons: house number + the start of the street name, so two
+// calls on the same street can be told apart without showing a full address:
+// "1006 Haddon Place, Teaneck, NJ" -> "1006 Hadd…". No house number -> first 10 letters.
+function _eqStreetOnly(a){
+  var first=String(a||'').split(',')[0].trim(); if(!first) return '';
+  var m=first.match(/^#?(\d+[a-z]?(?:-\d+[a-z]?)?)\s+(.+)$/i);
+  if(m){ var st=m[2].trim(); return m[1]+' '+(st.length>4?st.slice(0,4)+'\u2026':st); }
+  return first.length>10?first.slice(0,10).trim()+'\u2026':first;
+}
+function _eqTypeLabel(t){ t=String(t||''); if(t.indexOf('other:')===0) t=t.slice(6); t=t.replace(/_/g,' '); return t.charAt(0).toUpperCase()+t.slice(1); }
+function _renderCallPicksEq(fieldId){
+  var fld=document.getElementById(fieldId); if(!fld) return;
+  var box=document.getElementById(fieldId+'-picks');
+  if(!box){ box=document.createElement('div'); box.id=fieldId+'-picks'; fld.parentNode.insertBefore(box, fld.nextSibling);
+    fld.addEventListener('input', function(){ _renderCallPicksEq(fieldId); }); }
+  var d=_callPicksData[fieldId]||{mine:[],all:[]};
+  var list=(d.mine.length?d.mine:d.all).slice(0,6);
+  if(!list.length){ box.innerHTML=''; return; }
+  var cur=String(fld.value||'').trim();
+  var e=function(s){ return String(s||'').replace(/[<>&"']/g,''); };
+  box.innerHTML='<div style="font-size:11px;font-weight:700;color:#666;margin:6px 0 4px">'+(d.mine.length?(d.mine.length>1?'You’re on '+d.mine.length+' calls — tap the right one:':'Your call:'):'Open calls — tap one:')+'</div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:6px">'+list.map(function(c){
+      var on=cur===c.num;
+      return '<button type="button" onclick="_pickCallNumEq(\''+fieldId+'\',\''+e(c.num)+'\')" style="border:1.5px solid '+(on?'#1a3a5c':'#ccd3dc')+';background:'+(on?'#1a3a5c':'#fff')+';color:'+(on?'#fff':'#1a1a1a')+';border-radius:999px;padding:6px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">'
+        +(on?'✓ ':'')+'#'+e(c.num)+' · '+e(_eqTypeLabel(c.type))+(c.street?' · '+e(c.street):'')+(c.town?(c.street?', ':' · ')+e(c.town):'')+'</button>';
+    }).join('')+'</div>';
+}
+function _pickCallNumEq(fieldId, num){
+  var f=document.getElementById(fieldId); if(!f) return;
+  f.value=num; try{ if(typeof haptic==='function') haptic('light'); }catch(e){}
+  _renderCallPicksEq(fieldId);
+}
+function _autofillCallForMember(unitId, fieldId){
+  try{
+    fieldId = fieldId || 'modal-call';
+    var u = String(unitId||'').replace(/^BC-?/i,'').trim();
+    if(!u) return;
+    var field = document.getElementById(fieldId);
+    if(!field || field.value==='SHIFT') return; // COBC4 shift — no call #
+    var apiKey='AIzaSyBYAz3ohsJGX_zo-Yq3faZ2m0uv4tfuSl8';
+    // Only open/active calls (a handful) — not a page of the whole calls collection,
+    // which came back oldest-first and missed today's calls once there were 300+.
+    var url='https://firestore.googleapis.com/v1/projects/cobc-dispatch/databases/(default)/documents:runQuery?key='+apiKey;
+    var q={structuredQuery:{from:[{collectionId:'calls'}],where:{fieldFilter:{field:{fieldPath:'status'},op:'IN',value:{arrayValue:{values:[{stringValue:'open'},{stringValue:'active'}]}}}}}};
+    var tokP = (typeof _getAuthToken==='function') ? _getAuthToken() : Promise.resolve(null);
+    tokP.then(function(tok){
+      var h={'Content-Type':'application/json'}; if(tok) h['Authorization']='Bearer '+tok;
+      return fetch(url,{method:'POST',headers:h,body:JSON.stringify(q)});
+    }).then(function(r){ if(!r.ok){ console.warn('[autofill] calls read failed', r.status); } return r.json(); }).then(function(data){
+      if(data && data.error){ console.warn('[autofill] Firestore error:', data.error.message||data.error); }
+      var docs=(Array.isArray(data)?data:[]).map(function(x){ return x&&x.document; }).filter(Boolean);
+      var mine=[], all=[];
+      docs.forEach(function(d){
+        var f=d.fields||{};
+        var status=(f.status&&f.status.stringValue)||'';
+        if(status!=='open'&&status!=='active') return;
+        var cn=(f.callNum&&(f.callNum.integerValue||f.callNum.stringValue));
+        if(cn==null || cn==='') return;
+        var _has=function(arr){ return ((arr&&arr.arrayValue&&arr.arrayValue.values)||[]).some(function(rv){
+          var rf=(rv.mapValue&&rv.mapValue.fields)||{};
+          var ru=(rf.unit&&(rf.unit.stringValue||rf.unit.integerValue))||'';
+          return String(ru).replace(/^BC-?/i,'').trim()===u;
+        }); };
+        var approved=_has(f.responders), pending=_has(f.pendingResponders);
+        var created=Date.parse((f.createdAt&&(f.createdAt.timestampValue||f.createdAt.stringValue))||'')||Number(f.createdAt&&(f.createdAt.integerValue||f.createdAt.doubleValue))||0;
+        var c={num:String(cn), type:(f.type&&f.type.stringValue)||'', town:(f.town&&f.town.stringValue)||'', street:_eqStreetOnly((f.address&&f.address.stringValue)||''), at:created, approved:approved};
+        all.push(c); if(approved||pending) mine.push(c);
+      });
+      var byNew=function(a,b){ return (b.at||0)-(a.at||0); };
+      mine.sort(byNew); all.sort(byNew);
+      var approvedOnly=mine.filter(function(c){ return c.approved; });
+      // Same rule as the in-app logic: exactly one approved live call → fill; else leave blank.
+      var fld=document.getElementById(fieldId);
+      if(fld && !fld.value && approvedOnly.length===1) fld.value=approvedOnly[0].num;
+      _callPicksData[fieldId]={mine:mine, all:all};
+      _renderCallPicksEq(fieldId);
+    }).catch(function(){});
+  }catch(e){}
+}
 function openCheckout(row, action) {
   var it = items.find(function(i){return i.row===row;});
   if(!it) return;
@@ -2501,6 +2598,9 @@ function openCheckout(row, action) {
   } else {
     if (callGrp) callGrp.style.display  = 'block';
     if (ccncGrp) ccncGrp.style.display  = 'block';
+    // Call-number buttons: the call this member is on first, else the open calls.
+    var _forUnit = (logForSel && logForSel.value) ? logForSel.value : (loggedInMember ? loggedInMember.id : '');
+    try{ var _mc=document.getElementById('modal-call'); if(_mc && _mc.value!=='SHIFT') _autofillCallForMember(_forUnit, 'modal-call'); }catch(e){}
   }
 }
 function closeModal() {
@@ -2523,6 +2623,8 @@ function updateModalLogForNote() {
   } else {
     note.style.display = 'none';
   }
+  var _cf=document.getElementById('modal-call');
+  if(_cf && _cf.value!=='SHIFT'){ _cf.value=''; try{ _autofillCallForMember(sel.value || (loggedInMember?loggedInMember.id:''), 'modal-call'); }catch(e){} }
 }
 function toggleCNCNote() {
   var v = document.getElementById('modal-ccnc').value;
