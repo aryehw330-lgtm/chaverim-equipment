@@ -2651,6 +2651,16 @@ function updateCCLabel() {
 }
 // Load fleet vehicles from Firestore config/vehicles into the picker (falls back to text input)
 var _vehiclesCache = null;
+// If the list came back empty (sign-in not finished yet), try again once the sign-in changes.
+var _vehRetryArmed = false, _vehRetries = 0;
+function _vehRetryOnSignIn(fn){
+  if (_vehRetryArmed || _vehRetries >= 2 || !window.firebase || !firebase.auth) return; _vehRetryArmed = true;
+  var off = firebase.auth().onIdTokenChanged(function(u){
+    if (!u || u.isAnonymous) return;               // wait for the member sign-in
+    off(); _vehRetries++;
+    u.getIdToken().then(function(t){ window._fbIdToken = t; _vehRetryArmed = false; fn(); }).catch(function(){ _vehRetryArmed = false; });
+  });
+}
 function loadVehiclesIntoPicker() {
   var sel = document.getElementById('modal-truck');
   var txt = document.getElementById('modal-truck-text');
@@ -2664,14 +2674,18 @@ function loadVehiclesIntoPicker() {
   }
   if (_vehiclesCache) { fill(_vehiclesCache); return; }
   var url = 'https://firestore.googleapis.com/v1/projects/cobc-dispatch/databases/(default)/documents/config/vehicles?key=AIzaSyBYAz3ohsJGX_zo-Yq3faZ2m0uv4tfuSl8';
-  fetch(url).then(function(r){return r.json();}).then(function(d){
+  // The truck list is members-only (Nov 2026): send the member's sign-in.
+  var tokP = (typeof _getAuthToken==='function') ? _getAuthToken() : Promise.resolve(null);
+  tokP.then(function(tok){ var h={}; if(tok) h['Authorization']='Bearer '+tok; return fetch(url,{headers:h}); })
+  .then(function(r){return r.json();}).then(function(d){
     var arr = [];
     try {
       var vals = d.fields.list.arrayValue.values || [];
       arr = vals.map(function(v){ var f=v.mapValue.fields; return {name:(f.name&&f.name.stringValue)||'', type:(f.type&&f.type.stringValue)||''}; }).filter(function(v){return v.name;});
     } catch(e) { arr = []; }
-    _vehiclesCache = arr; fill(arr);
-  }).catch(function(){ fill([]); });
+    if (arr.length) _vehiclesCache = arr; else _vehRetryOnSignIn(loadVehiclesIntoPicker);
+    fill(arr);
+  }).catch(function(){ fill([]); _vehRetryOnSignIn(loadVehiclesIntoPicker); });
 }
 function submitCheckout(action) {
   if(!modalItems.length) { alert('Please select at least one item.'); return; }

@@ -1441,6 +1441,17 @@ function isCarItem(name) {
 // Fleet vehicles for the "In vehicle" picker — read from the same Firestore doc the
 // dispatch app writes (config/vehicles). Populates both the modal and QR dropdowns.
 var _fleetVehicles = [];
+// The truck list is members-only (Nov 2026). If it came back empty because the
+// sign-in hadn't finished, try again once the sign-in changes.
+var _vehRetryArmed = false, _vehRetries = 0;
+function _vehRetryOnSignIn(fn){
+  if (_vehRetryArmed || _vehRetries >= 2 || !window.firebase || !firebase.auth) return; _vehRetryArmed = true;
+  var off = firebase.auth().onIdTokenChanged(function(u){
+    if (!u || u.isAnonymous) return;               // wait for the member sign-in
+    off(); _vehRetries++;
+    u.getIdToken().then(function(t){ window._fbIdToken = t; _vehRetryArmed = false; fn(); }).catch(function(){ _vehRetryArmed = false; });
+  });
+}
 function loadFleetVehicles(){
   try{
     var apiKey='AIzaSyBYAz3ohsJGX_zo-Yq3faZ2m0uv4tfuSl8';
@@ -1454,7 +1465,8 @@ function loadFleetVehicles(){
       var vals=(arr&&arr.values)||[];
       _fleetVehicles=vals.map(function(v){ var f=(v.mapValue&&v.mapValue.fields)||{}; return (f.name&&f.name.stringValue)||''; }).filter(Boolean);
       _populateVehicleSelects();
-    }).catch(function(){});
+      if(!_fleetVehicles.length) _vehRetryOnSignIn(loadFleetVehicles);
+    }).catch(function(){ _vehRetryOnSignIn(loadFleetVehicles); });
   }catch(e){}
 }
 function _populateVehicleSelects(){
