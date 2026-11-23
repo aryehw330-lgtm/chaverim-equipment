@@ -3899,7 +3899,7 @@ function _qrMemberReason(it){
   if (!it || !_qrScannerIsMember() || (typeof isCarItem==='function' && isCarItem(it.name))) return '';
   var me = _qrMe();
   if (it.equipStatus === 'Damaged') return '🔧 ' + it.name + ' needs to be fixed.\n\nPlease contact an admin.';
-  if (it.equipStatus === 'Missing') return it.name + ' is listed as missing.\n\nPlease contact an admin.';
+  if (it.equipStatus === 'Missing') return it.name + ' is listed as missing — looks like you found it! 🙌\n\nPlease contact an admin.';
   if (it.status === 'OUT' && !(me && _eqU(it.member) === me)) return it.name + ' was never signed back in.\n\nIf you are returning it, tap Check IN.\nTo take it out, please contact an admin.';
   return '';
 }
