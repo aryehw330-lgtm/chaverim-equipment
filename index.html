@@ -4990,6 +4990,12 @@ function _qrScannerIsMember(){
   if (loggedInMember) return _eqMemberView();
   return true;
 }
+// Admin scanning? (sticker status buttons are admin only — owner, Nov 23)
+function _qrScannerIsAdmin(){
+  try{ var r=JSON.parse(localStorage.getItem('cobc_qr_signin')||'null'); if (r && r.m && r.m.admin) return true; }catch(e){}
+  if (typeof _qrMember!=='undefined' && _qrMember && _qrMember.status!=null) return /admin/i.test(String(_qrMember.status));
+  try{ return isAdminUser(); }catch(e){ return false; }
+}
 function _qrMe(){ return _eqU((typeof _qrMember!=='undefined' && _qrMember && _qrMember.id) || (loggedInMember && loggedInMember.id) || ''); }
 function _qrMemberReason(it){
   if (!it || !_qrScannerIsMember() || (typeof isCarItem==='function' && isCarItem(it.name))) return '';
@@ -5004,7 +5010,7 @@ function _qrMemberGate(it){
     var w = !it ? '' : it.equipStatus==='Damaged' ? '🔧 Damaged — needs fixing' : '';   // Missing: the label already says MISSING
     var b = document.getElementById('qr-form-badge');
     if (w && b) { b.textContent = w + ' · ' + b.textContent; b.style.background = '#fff4e5'; b.style.color = '#b45309'; }
-    try{ _qrStaffStatusRow(it); }catch(e){}
+    try{ if (_qrScannerIsAdmin()) _qrStaffStatusRow(it); }catch(e){}
     return;
   }
   var badge = document.getElementById('qr-form-badge'); if (badge) badge.style.display = 'none';
@@ -5023,7 +5029,7 @@ function _qrMemberOutBlock(){
   }
   return '';
 }
-// Admin / equipment team: change the item's status right from the sticker (Nov 2026)
+// Admin only: change the item's status right from the sticker (Nov 2026)
 function _qrStaffStatusRow(it){
   var old=document.getElementById('qr-admin-status'); if(old) old.remove();
   var b=document.getElementById('qr-form-badge'); if(!b||!it) return;
@@ -5039,6 +5045,7 @@ function _qrStaffStatusRow(it){
   b.insertAdjacentElement('afterend', d);
 }
 function _qrSetStatus(status){
+  if (!_qrScannerIsAdmin()) { alert('Only an admin can change the status.'); return; }
   var it=(_qrAllItems||[]).find(function(x){ return x.name===_qrName; }); if(!it) return;
   if((it.equipStatus||'OK')===status) return;
   if(!confirm('Change '+it.name+' to '+(status==='OK'?'OK / Active':status)+'?')) return;
