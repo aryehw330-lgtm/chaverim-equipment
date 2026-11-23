@@ -5000,8 +5000,8 @@ function _qrMemberReason(it){
   return '';
 }
 function _qrMemberGate(it){
-  if (!_qrScannerIsMember()) {   // admin / equipment team / dispatch: show the problem, don't block (Nov 2026)
-    var w = !it ? '' : it.equipStatus==='Damaged' ? '🔧 Damaged — needs fixing' : it.equipStatus==='Missing' ? '⚠️ Listed as Missing' : '';
+  if (!_qrScannerIsMember()) {   // admin / equipment team: show the problem, don't block (Nov 2026)
+    var w = !it ? '' : it.equipStatus==='Damaged' ? '🔧 Damaged — needs fixing' : '';   // Missing: the label already says MISSING
     var b = document.getElementById('qr-form-badge');
     if (w && b) { b.textContent = w + ' · ' + b.textContent; b.style.background = '#fff4e5'; b.style.color = '#b45309'; }
     try{ _qrStaffStatusRow(it); }catch(e){}
@@ -5023,7 +5023,7 @@ function _qrMemberOutBlock(){
   }
   return '';
 }
-// Admin / equipment team / dispatch: change the item's status right from the sticker (Nov 2026)
+// Admin / equipment team: change the item's status right from the sticker (Nov 2026)
 function _qrStaffStatusRow(it){
   var old=document.getElementById('qr-admin-status'); if(old) old.remove();
   var b=document.getElementById('qr-form-badge'); if(!b||!it) return;
@@ -5048,7 +5048,9 @@ function _qrSetStatus(status){
       if(d && (d.success||d.ok)){
         it.equipStatus=status; if(status==='OK'){ it.isCNC=false; }
         var b=document.getElementById('qr-form-badge');
-        if(b){ var isOut=it.status==='OUT'; b.textContent=isOut?'Currently OUT':'Currently IN'; b.style.background=isOut?'#fdecea':'#e8f5e9'; b.style.color=isOut?'#c0392b':'#2e7d32'; }
+        if(b){ var isOut=it.status==='OUT';
+          if(status==='Missing'){ b.textContent='MISSING — '+(isOut?'last signed out by ':'not signed out, last checked in by ')+(it.member?'BC-'+String(it.member).replace(/^BC-?/i,''):'unknown'); b.style.background='#fdecea'; b.style.color='#c0392b'; }
+          else { b.textContent=isOut?'Currently OUT':'Currently IN'; b.style.background=isOut?'#fdecea':'#e8f5e9'; b.style.color=isOut?'#c0392b':'#2e7d32'; } }
         try{ _qrMemberGate(it); }catch(e){}
         alert('✅ '+it.name+' is now '+(status==='OK'?'OK / Active':status)+'.');
       } else alert('Could not change status'+(d&&d.error?': '+d.error:'')+'.');
