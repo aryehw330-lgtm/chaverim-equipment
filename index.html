@@ -2297,7 +2297,16 @@ function _renderInventoryMember() {
       +'<div class="inv-actions">'+(inBtn?'<button class="btn-in" onclick="openCheckout('+it.row+')">✓ Check IN</button>':'<button class="btn-out" onclick="openCheckout('+it.row+', &quot;OUT&quot;)">↓ Check OUT</button>')+'</div>'
       +'</div>';
   };
-  var html='';
+  // At a glance (members, Nov 2026): only how many are AVAILABLE of each kind — no out / missing / broken.
+  var g={};
+  items.forEach(function(it){
+    if (bad.indexOf(it.equipStatus)>=0 || isCarItem(it.name) || it.status!=='IN' || it.isCNC) return;
+    var k=glanceKey(it); g[k]=(g[k]||0)+1;
+  });
+  var gk=Object.keys(g).sort(function(a,b){ return g[b]-g[a] || a.localeCompare(b); });
+  var html = gk.length ? '<div class="glance" style="display:block;margin-bottom:12px"><div class="glance-head" style="cursor:default"><span class="glance-title">Equipment at a Glance</span></div><div class="glance-list">'
+    + gk.map(function(k){ return '<button class="glance-row" data-k="'+esc(k)+'" onclick="glancePick(this.dataset.k)"><span class="glance-name">'+esc(k)+'</span><span class="glance-pills"><span class="gp gp-in">'+g[k]+' avail</span></span></button>'; }).join('')
+    + '</div></div>' : '';
   if (mine.length) html += '<div class="sec-label" style="font-weight:800;margin:4px 0 8px">My items</div>'+mine.map(function(it){ return card(it,true); }).join('');
   html += '<div class="sec-label" style="font-weight:800;margin:10px 0 8px">Available</div>'
        + (avail.length ? avail.map(function(it){ return card(it,false); }).join('') : '<div class="empty"><div class="empty-text">No items found</div></div>');
