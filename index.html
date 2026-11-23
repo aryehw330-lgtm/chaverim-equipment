@@ -4992,7 +4992,12 @@ function _qrMemberReason(it){
   return '';
 }
 function _qrMemberGate(it){
-  if (!_qrScannerIsMember()) return;
+  if (!_qrScannerIsMember()) {   // admin / equipment team / dispatch: show the problem, don't block (Nov 2026)
+    var w = !it ? '' : it.equipStatus==='Damaged' ? '🔧 Damaged — needs fixing' : it.equipStatus==='Missing' ? '⚠️ Listed as Missing' : '';
+    var b = document.getElementById('qr-form-badge');
+    if (w && b) { b.textContent = w + ' · ' + b.textContent; b.style.background = '#fff4e5'; b.style.color = '#b45309'; }
+    return;
+  }
   var badge = document.getElementById('qr-form-badge'); if (badge) badge.style.display = 'none';
   var why = _qrMemberReason(it); if (!why) return;
   var bOut = document.getElementById('qr-btn-out'), bIn = document.getElementById('qr-btn-in');
