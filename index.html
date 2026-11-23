@@ -604,7 +604,7 @@ body.dark .btn-ghost{background:var(--surface2);color:var(--text);border-color:v
         <span class="search-icon">🔍</span>
         <input id="inv-search" type="text" placeholder="Search items..." oninput="renderInventory()" style="padding-left:36px"/>
       </div>
-      <div class="filter-row">
+      <div class="filter-row" id="inv-filter-row">
         <button class="fchip active" onclick="setFilter('all',this)">All</button>
         <button class="fchip" onclick="setFilter('out',this)">Out</button>
         <button class="fchip" onclick="setFilter('in',this)">In</button>
@@ -1277,6 +1277,10 @@ function memberHasStatus(s) {
 function isAdminUser()    { return userLevel >= 3 || memberHasStatus('Admin'); }
 function isDispatchUser() { return memberHasStatus('Dispatch'); }
 function isEquipTeamUser(){ return userLevel >= 2 || memberHasStatus('Equipment Team'); }
+// Members (not admin / equipment team / dispatch) see only what's available + their own items:
+// no statuses, nothing broken/missing, no names of who has what (Nov 2026).
+function _eqMemberView(){ try{ return !(isAdminUser()||isEquipTeamUser()||isDispatchUser()); }catch(e){ return true; } }
+function _eqU(u){ return String(u||'').trim().toUpperCase().replace(/^BC-?/,'').replace(/^0+(?=\d)/,''); }
 // Admin can log for others everywhere; Dispatch only for inventory (pass true for car/COBC4 check)
 function canLogForOthers(isCarAction) {
   if (isCarAction) return isAdminUser();
@@ -1711,7 +1715,8 @@ function finishMemberLogin(d) {
   document.getElementById('app').style.display = 'flex';
   applyAccessLevel();
   loadData();
-  var goPageAfterLogin = new URLSearchParams(window.location.search).get('page') || 'dashboard';
+  var goPageAfterLogin = new URLSearchParams(window.location.search).get('page') || (_eqMemberView()?'inventory':'dashboard');
+  if (_eqMemberView() && (goPageAfterLogin==='dashboard'||goPageAfterLogin==='car')) goPageAfterLogin='inventory';
   var btn = document.querySelector('.tab[data-page="' + goPageAfterLogin + '"]');
   showPage(goPageAfterLogin, btn);
 }
@@ -1723,8 +1728,14 @@ function applyAccessLevel() {
     var required = tabs[page] || 1;
     t.style.display = userLevel >= required ? 'flex' : 'none';
   });
-  if (curPage==='checklist' && userLevel<2) doShowPage('dashboard');
-  if (curPage==='admin' && userLevel<3) doShowPage('dashboard');
+  // Members: no Dashboard, no Car tab, no status filters (Nov 2026)
+  var _mv=_eqMemberView();
+  document.querySelectorAll('.tab[data-page="dashboard"], .tab[data-page="car"]').forEach(function(t){ if(_mv) t.style.display='none'; });
+  ['inv-filter-row','inv-glance'].forEach(function(id){ var x=document.getElementById(id); if(x) x.style.display=_mv?'none':''; });
+  var _home=_mv?'inventory':'dashboard';
+  if (curPage==='checklist' && userLevel<2) doShowPage(_home);
+  if (curPage==='admin' && userLevel<3) doShowPage(_home);
+  if (_mv && (curPage==='dashboard'||curPage==='car')) doShowPage('inventory');
   // Show member avatar + name in header
   var hsub   = document.getElementById('h-sub');
   var avatar = document.getElementById('member-avatar');
@@ -1792,6 +1803,7 @@ function cancelSec() {
 }
 document.getElementById('sec-input').addEventListener('keydown', function(e){ if(e.key==='Enter') checkSec(); });
 function showPage(page, btn) {
+  if (_eqMemberView() && (page==='dashboard'||page==='car')) { page='inventory'; btn=document.querySelector('.tab[data-page="inventory"]'); }
   if (page==='admin'     && userLevel < 3) { showToast('Admin access required'); return; }
   if (page==='checklist' && userLevel < 2) { showToast('Equipment Team access required'); return; }
   // Tap animation + haptic
@@ -2262,7 +2274,35 @@ function _eqBanner(){
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
   window.addEventListener('online', function(){ _eqRetryUnsaved(false); });
 })();
+function _renderInventoryMember() {
+  var q = (document.getElementById('inv-search').value||'').toLowerCase().trim();
+  var me = _eqU(loggedInMember && loggedInMember.id);
+  var bad = ['Damaged','Missing','Not Active'];
+  var all = items.filter(function(it){
+    if (bad.indexOf(it.equipStatus)>=0 || isCarItem(it.name)) return false;
+    if (curInvLoc !== 'all' && it.homeLocation !== curInvLoc) return false;
+    if (curCat !== 'all' && getCat(it.name) !== curCat) return false;
+    if (q && it.name.toLowerCase().indexOf(q)<0 && String(it.homeLocation||'').toLowerCase().indexOf(q)<0) return false;
+    return true;
+  });
+  var byName=function(a,b){ return a.name.localeCompare(b.name, undefined, {numeric:true, sensitivity:'base'}); };
+  var mine = all.filter(function(it){ return it.status==='OUT' && me && _eqU(it.member)===me; }).sort(byName);
+  var avail = all.filter(function(it){ return it.status==='IN' && !it.isCNC; }).sort(byName);
+  var card = function(it, inBtn){
+    return '<div class="inv-card">'
+      +'<div class="inv-top"><div class="inv-name">'+esc(it.name)+'</div></div>'
+      +'<div class="inv-meta">📍 '+esc(it.homeLocation)+(inBtn&&it.call?' · Call #'+esc(it.call):'')+'</div>'
+      +'<div class="inv-actions">'+(inBtn?'<button class="btn-in" onclick="openCheckout('+it.row+')">✓ Check IN</button>':'<button class="btn-out" onclick="openCheckout('+it.row+', &quot;OUT&quot;)">↓ Check OUT</button>')+'</div>'
+      +'</div>';
+  };
+  var html='';
+  if (mine.length) html += '<div class="sec-label" style="font-weight:800;margin:4px 0 8px">My items</div>'+mine.map(function(it){ return card(it,true); }).join('');
+  html += '<div class="sec-label" style="font-weight:800;margin:10px 0 8px">Available</div>'
+       + (avail.length ? avail.map(function(it){ return card(it,false); }).join('') : '<div class="empty"><div class="empty-text">No items found</div></div>');
+  document.getElementById('inv-list').innerHTML = html;
+}
 function renderInventory() {
+  if (_eqMemberView()) return _renderInventoryMember();
   renderGlance();
   var q = document.getElementById('inv-search').value.toLowerCase().trim();
   var filtered = items.filter(function(it) {
@@ -2344,7 +2384,13 @@ function renderModalSearch() {
   var q = document.getElementById('modal-item-search').value.toLowerCase().trim();
   var res = document.getElementById('modal-search-results');
   if (!q) { res.style.display='none'; return; }
+  var _mv = _eqMemberView(), _me = _eqU(loggedInMember && loggedInMember.id);
   var matches = items.filter(function(it){
+    if (_mv) {   // members: only available items + their own (Nov 2026)
+      if (['Damaged','Missing','Not Active'].indexOf(it.equipStatus)>=0) return false;
+      var ok = (it.status==='IN' && !it.isCNC) || (it.status==='OUT' && _me && _eqU(it.member)===_me);
+      if (!ok) return false;
+    }
     return it.equipStatus!=='Not Active'
       && it.name.toLowerCase().indexOf(q) >= 0
       && !modalItems.find(function(m){ return m.row===it.row; });
@@ -2353,7 +2399,7 @@ function renderModalSearch() {
   res.style.display = 'block';
  res.innerHTML = matches.map(function(it){
     var isOut = it.status === 'OUT';
-    var badge = '<span style="font-size:12px;font-weight:700;padding:2px 6px;border-radius:8px;margin-left:6px;background:'+(isOut?'#fdecea':'#e8f5e9')+';color:'+(isOut?'#c0392b':'#2e7d32')+'">'+(isOut?'OUT':'IN')+'</span>';
+    var badge = _mv ? (isOut?'<span style="font-size:12px;color:#6b7280">mine</span>':'') : '<span style="font-size:12px;font-weight:700;padding:2px 6px;border-radius:8px;margin-left:6px;background:'+(isOut?'#fdecea':'#e8f5e9')+';color:'+(isOut?'#c0392b':'#2e7d32')+'">'+(isOut?'OUT':'IN')+'</span>';
     return '<div onclick="addModalItem('+it.row+')" style="padding:9px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:13px;font-weight:600;color:#1a3a5c;display:flex;align-items:center;justify-content:space-between">'
       +'<span>'+esc(it.name)+' <span style="color:#6b7280;font-weight:400;font-size:12px">'+esc(it.homeLocation)+'</span></span>'+badge+'</div>';
   }).join('');
@@ -4914,6 +4960,7 @@ function qrShowForm() {
         badge.textContent = isOut ? 'Currently OUT' : 'Currently IN';
         badge.style.background = isOut ? '#fdecea' : '#e8f5e9';
         badge.style.color = isOut ? '#c0392b' : '#2e7d32';
+        try{ _qrMemberGate(it); }catch(e){}
       }
     }).catch(function(){});
   // For COBC 4, also fetch car schedule for access control
@@ -4923,6 +4970,44 @@ function qrShowForm() {
       .then(function(cs){ _qrCarSchedule = cs.bookings || []; })
       .catch(function(){ _qrCarSchedule = []; });
   }
+}
+// ── QR scan rules for members (Nov 2026) ──────────────────────────────────────
+// Damaged → "needs to be fixed, contact admin"; Missing → "contact admin";
+// still signed out (not by me) → "never signed back in". Sign-OUT blocked in those cases;
+// Check IN (returning it) always works. Members don't see the IN/OUT status label.
+// Who is scanning: the QR sign-in (_qrMember / admin PIN), else the main app sign-in.
+function _qrScannerIsMember(){
+  try{ var r=JSON.parse(localStorage.getItem('cobc_qr_signin')||'null'); if (r && r.m && r.m.admin) return false; }catch(e){}
+  if (typeof _qrMember!=='undefined' && _qrMember && _qrMember.status!=null) return !/admin|equipment team|dispatch/i.test(String(_qrMember.status));
+  if (loggedInMember) return _eqMemberView();
+  return true;
+}
+function _qrMe(){ return _eqU((typeof _qrMember!=='undefined' && _qrMember && _qrMember.id) || (loggedInMember && loggedInMember.id) || ''); }
+function _qrMemberReason(it){
+  if (!it || !_qrScannerIsMember() || (typeof isCarItem==='function' && isCarItem(it.name))) return '';
+  var me = _qrMe();
+  if (it.equipStatus === 'Damaged') return '🔧 ' + it.name + ' needs to be fixed.\n\nPlease contact an admin.';
+  if (it.equipStatus === 'Missing') return it.name + ' is listed as missing.\n\nPlease contact an admin.';
+  if (it.status === 'OUT' && !(me && _eqU(it.member) === me)) return it.name + ' was never signed back in.\n\nIf you are returning it, tap Check IN.\nTo take it out, please contact an admin.';
+  return '';
+}
+function _qrMemberGate(it){
+  if (!_qrScannerIsMember()) return;
+  var badge = document.getElementById('qr-form-badge'); if (badge) badge.style.display = 'none';
+  var why = _qrMemberReason(it); if (!why) return;
+  var bOut = document.getElementById('qr-btn-out'), bIn = document.getElementById('qr-btn-in');
+  if (bOut) bOut.style.display = 'none';
+  if (bIn && it.status === 'OUT') bIn.style.display = 'block';
+  setTimeout(function(){ alert(why); }, 300);
+}
+function _qrMemberOutBlock(){
+  if (!_qrScannerIsMember()) return '';
+  var names = [_qrName].concat(_qrExtraItems||[]);
+  for (var i=0;i<names.length;i++){
+    var it = (_qrAllItems||[]).find(function(x){ return x.name === names[i]; });
+    var why = _qrMemberReason(it); if (why) return why;
+  }
+  return '';
 }
 function qrToggleCNC() {
   document.getElementById('qr-cnc-wrap').style.display = document.getElementById('qr-ccnc').value === 'CNC' ? 'block' : 'none';
@@ -4947,7 +5032,9 @@ function qrItemSearch() {
   var res = document.getElementById('qr-item-results');
   if (!q) { res.style.display='none'; return; }
   var taken = [_qrName].concat(_qrExtraItems);
+  var _mv = _qrScannerIsMember();
   var matches = _qrAllItems.filter(function(it){
+    if (_mv && _qrMemberReason(it)) return false;   // members: nothing broken/missing/someone else's (Nov 2026)
     return it.equipStatus !== 'Not Active' && it.name.toLowerCase().indexOf(q) >= 0 && taken.indexOf(it.name) < 0;
   }).slice(0, 8);
   if (!matches.length) { res.style.display='none'; return; }
@@ -4966,6 +5053,7 @@ function qrAddItem(el) {
   document.getElementById('qr-item-results').style.display = 'none';
 }
 function qrSubmit(action) {
+  if (action === 'OUT') { var _blk = _qrMemberOutBlock(); if (_blk) { alert(_blk); return; } }
   var member  = document.getElementById('qr-member').value.trim();
   var call    = document.getElementById('qr-call').value.trim();
   var ccnc    = document.getElementById('qr-ccnc').value;

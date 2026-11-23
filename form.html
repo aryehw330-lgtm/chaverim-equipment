@@ -780,6 +780,10 @@ function memberHasStatus(s) {
 function isAdminUser()    { return userLevel >= 3 || memberHasStatus('Admin'); }
 function isDispatchUser() { return memberHasStatus('Dispatch'); }
 function isEquipTeamUser(){ return userLevel >= 2 || memberHasStatus('Equipment Team'); }
+// Members (not admin / equipment team / dispatch): no statuses, nothing broken/missing (Nov 2026)
+function _eqMemberView(){ try{ return !(isAdminUser()||isEquipTeamUser()||isDispatchUser()); }catch(e){ return true; } }
+function _eqU(u){ return String(u||'').trim().toUpperCase().replace(/^BC-?/,'').replace(/^0+(?=\d)/,''); }
+
 // Admin can log for others everywhere; Dispatch only for inventory (pass true for car/COBC4 check)
 function canLogForOthers(isCarAction) {
   if (isCarAction) return isAdminUser();
@@ -3846,6 +3850,7 @@ function qrShowForm() {
           btnIn.style.display = 'block'; btnOut.style.display = 'block';
           if (grid) grid.style.gridTemplateColumns = '1fr 1fr';
         }
+        try{ _qrMemberGate(it); }catch(e){}
       }
     }).catch(function(){});
   // For COBC 4, also fetch car schedule for access control
@@ -3878,6 +3883,44 @@ function qrDone() {
   location.replace(location.origin + location.pathname + '?name=__general__');
 }
 
+// ── QR scan rules for members (Nov 2026) ──────────────────────────────────────
+// Damaged → "needs to be fixed, contact admin"; Missing → "contact admin";
+// still signed out (not by me) → "never signed back in". Sign-OUT blocked in those cases;
+// Check IN (returning it) always works. Members don't see the IN/OUT status label.
+// Who is scanning: the QR sign-in (_qrMember / admin PIN), else the main app sign-in.
+function _qrScannerIsMember(){
+  try{ var r=JSON.parse(localStorage.getItem('cobc_qr_signin')||'null'); if (r && r.m && r.m.admin) return false; }catch(e){}
+  if (typeof _qrMember!=='undefined' && _qrMember && _qrMember.status!=null) return !/admin|equipment team|dispatch/i.test(String(_qrMember.status));
+  if (loggedInMember) return _eqMemberView();
+  return true;
+}
+function _qrMe(){ return _eqU((typeof _qrMember!=='undefined' && _qrMember && _qrMember.id) || (loggedInMember && loggedInMember.id) || ''); }
+function _qrMemberReason(it){
+  if (!it || !_qrScannerIsMember() || (typeof isCarItem==='function' && isCarItem(it.name))) return '';
+  var me = _qrMe();
+  if (it.equipStatus === 'Damaged') return '🔧 ' + it.name + ' needs to be fixed.\n\nPlease contact an admin.';
+  if (it.equipStatus === 'Missing') return it.name + ' is listed as missing.\n\nPlease contact an admin.';
+  if (it.status === 'OUT' && !(me && _eqU(it.member) === me)) return it.name + ' was never signed back in.\n\nIf you are returning it, tap Check IN.\nTo take it out, please contact an admin.';
+  return '';
+}
+function _qrMemberGate(it){
+  if (!_qrScannerIsMember()) return;
+  var badge = document.getElementById('qr-form-badge'); if (badge) badge.style.display = 'none';
+  var why = _qrMemberReason(it); if (!why) return;
+  var bOut = document.getElementById('qr-btn-out'), bIn = document.getElementById('qr-btn-in');
+  if (bOut) bOut.style.display = 'none';
+  if (bIn && it.status === 'OUT') bIn.style.display = 'block';
+  setTimeout(function(){ alert(why); }, 300);
+}
+function _qrMemberOutBlock(){
+  if (!_qrScannerIsMember()) return '';
+  var names = [_qrName].concat(_qrExtraItems||[]);
+  for (var i=0;i<names.length;i++){
+    var it = (_qrAllItems||[]).find(function(x){ return x.name === names[i]; });
+    var why = _qrMemberReason(it); if (why) return why;
+  }
+  return '';
+}
 function qrToggleCNC() {
   var ccnc = document.getElementById('qr-ccnc').value;
   var useSel=(ccnc==='TRUCK' && _fleetVehicles.length>0);
@@ -3957,7 +4000,9 @@ function qrItemSearch() {
   var res = document.getElementById('qr-item-results');
   if (!q) { res.style.display='none'; return; }
   var taken = qrSelectedNames();
+  var _mv = _qrScannerIsMember();
   var matches = _qrAllItems.filter(function(it){
+    if (_mv && _qrMemberReason(it)) return false;   // members: nothing broken/missing/someone else's (Nov 2026)
     return it.equipStatus !== 'Not Active' && it.name.toLowerCase().indexOf(q) >= 0 && taken.indexOf(it.name) < 0;
   }).slice(0, 8);
   if (!matches.length) { res.style.display='none'; return; }
@@ -4049,6 +4094,7 @@ function qrTryAddScanned(data){
 }
 
 function qrSubmit(action) {
+  if (action === 'OUT') { var _blk = _qrMemberOutBlock(); if (_blk) { alert(_blk); return; } }
   var member  = document.getElementById('qr-member').value.trim();
   var call    = document.getElementById('qr-call').value.trim();
   var ccnc    = document.getElementById('qr-ccnc').value;
