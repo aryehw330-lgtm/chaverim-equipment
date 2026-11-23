@@ -3908,6 +3908,7 @@ function _qrMemberGate(it){
     var w = !it ? '' : it.equipStatus==='Damaged' ? '🔧 Damaged — needs fixing' : it.equipStatus==='Missing' ? '⚠️ Listed as Missing' : '';
     var b = document.getElementById('qr-form-badge');
     if (w && b) { b.textContent = w + ' · ' + b.textContent; b.style.background = '#fff4e5'; b.style.color = '#b45309'; }
+    try{ _qrStaffStatusRow(it); }catch(e){}
     return;
   }
   var badge = document.getElementById('qr-form-badge'); if (badge) badge.style.display = 'none';
@@ -3925,6 +3926,37 @@ function _qrMemberOutBlock(){
     var why = _qrMemberReason(it); if (why) return why;
   }
   return '';
+}
+// Admin / equipment team / dispatch: change the item's status right from the sticker (Nov 2026)
+function _qrStaffStatusRow(it){
+  var old=document.getElementById('qr-admin-status'); if(old) old.remove();
+  var b=document.getElementById('qr-form-badge'); if(!b||!it) return;
+  var cur=it.equipStatus||'OK';
+  var opts=[['OK','✅ OK / Active'],['Damaged','🔧 Damaged'],['Missing','⚠️ Missing'],['Not Active','⛔ Not Active']];
+  var d=document.createElement('div'); d.id='qr-admin-status';
+  d.style.cssText='margin:-6px 0 14px;text-align:center;';
+  d.innerHTML='<div style="font-size:12px;color:#6b7280;margin-bottom:6px">Admin — change status</div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center">'
+    +opts.map(function(o){ var on=(o[0]===cur)||(o[0]==='OK'&&(cur===''||cur==='OK'));
+      return '<button type="button" onclick="_qrSetStatus(\''+o[0]+'\')" style="padding:7px 10px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid '+(on?'#1a3a5c':'#d1d5db')+';background:'+(on?'#1a3a5c':'#fff')+';color:'+(on?'#fff':'#1a3a5c')+'">'+o[1]+'</button>'; }).join('')
+    +'</div>';
+  b.insertAdjacentElement('afterend', d);
+}
+function _qrSetStatus(status){
+  var it=(_qrAllItems||[]).find(function(x){ return x.name===_qrName; }); if(!it) return;
+  if((it.equipStatus||'OK')===status) return;
+  if(!confirm('Change '+it.name+' to '+(status==='OK'?'OK / Active':status)+'?')) return;
+  var who=(typeof _qrMember!=='undefined'&&_qrMember&&_qrMember.id)||(loggedInMember&&loggedInMember.id)||'';
+  postJ({action:'updateEquipmentStatus', row:it.row, status:status, note:'', resetNote:status==='OK', markOk:status==='OK', member:who})
+    .then(function(d){
+      if(d && (d.success||d.ok)){
+        it.equipStatus=status; if(status==='OK'){ it.isCNC=false; }
+        var b=document.getElementById('qr-form-badge');
+        if(b){ var isOut=it.status==='OUT'; b.textContent=isOut?'Currently OUT':'Currently IN'; b.style.background=isOut?'#fdecea':'#e8f5e9'; b.style.color=isOut?'#c0392b':'#2e7d32'; }
+        try{ _qrMemberGate(it); }catch(e){}
+        alert('✅ '+it.name+' is now '+(status==='OK'?'OK / Active':status)+'.');
+      } else alert('Could not change status'+(d&&d.error?': '+d.error:'')+'.');
+    }).catch(function(){ alert('Could not change status — check signal and try again.'); });
 }
 function qrToggleCNC() {
   var ccnc = document.getElementById('qr-ccnc').value;
