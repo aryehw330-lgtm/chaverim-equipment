@@ -1277,9 +1277,9 @@ function memberHasStatus(s) {
 function isAdminUser()    { return userLevel >= 3 || memberHasStatus('Admin'); }
 function isDispatchUser() { return memberHasStatus('Dispatch'); }
 function isEquipTeamUser(){ return userLevel >= 2 || memberHasStatus('Equipment Team'); }
-// Members (not admin / equipment team / dispatch) see only what's available + their own items:
+// Members (not admin / equipment team) see only what's available + their own items:
 // no statuses, nothing broken/missing, no names of who has what (Nov 2026).
-function _eqMemberView(){ try{ return !(isAdminUser()||isEquipTeamUser()||isDispatchUser()); }catch(e){ return true; } }
+function _eqMemberView(){ try{ return !(isAdminUser()||isEquipTeamUser()); }catch(e){ return true; } }   // owner: admin (+ equipment team) only
 function _eqU(u){ return String(u||'').trim().toUpperCase().replace(/^BC-?/,'').replace(/^0+(?=\d)/,''); }
 // Admin can log for others everywhere; Dispatch only for inventory (pass true for car/COBC4 check)
 function canLogForOthers(isCarAction) {
@@ -1982,7 +1982,9 @@ function renderDashboard() {
       +(timeStr?'<span style="display:block;font-size:12px;color:#6b7280;margin-top:2px">'+esc(timeStr)+'</span>':'')
       +'</div></div>'
       +'<div class="alert-detail" style="margin-top:4px">📍 '+esc(it.homeLocation)
-      +(it.member?' · <b>'+fmtMemberBadge(it.member)+'</b>':'')
+      +(it.equipStatus==='Missing'
+         ? '<br>'+(it.status==='OUT'?'Last signed out by ':'Not signed out — last checked in by ')+'<b>'+(it.member?fmtMemberBadge(it.member):'unknown')+'</b>'
+         : (it.member?' · <b>'+fmtMemberBadge(it.member)+'</b>':''))
       +(it.call?' · Call #'+esc(it.call):'')+'</div>'
       +(hDisplay?'<div style="margin-top:5px;font-size:13px;color:#e65100;font-weight:600;background:#fff8f0;border-radius:6px;padding:4px 8px">📍 Member: '+esc(hDisplay)+'</div>':'')
       +(lNote?'<div style="margin-top:5px;font-size:13px;color:#c0392b;font-weight:700;background:#fff5f5;border-radius:6px;padding:4px 8px">🔧 ET Note: '+esc(lNote)+'</div>':'<div style="margin-top:5px;font-size:12px;color:#6b7280;font-style:italic;padding:2px 4px">No ET note yet</div>')
@@ -2324,14 +2326,16 @@ function renderInventory() {
   var el = document.getElementById('inv-list');
   if (!filtered.length) { el.innerHTML='<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">No items found</div><div class="empty-sub">Try a different search or filter</div></div>'; return; }
   el.innerHTML = filtered.map(function(it) {
-    var sb = it.status==='OUT'?'<span class="badge badge-out">OUT</span>':'<span class="badge badge-in">IN</span>';
+    var _miss = it.equipStatus==='Missing';   // Missing: no IN/OUT badge (can't be "in" and missing) — Nov 2026
+    var sb = _miss ? '' : (it.status==='OUT'?'<span class="badge badge-out">OUT</span>':'<span class="badge badge-in">IN</span>');
     var eb = getEB(it.equipStatus);
     var cb = it.isCNC?'<span class="badge badge-cnc">'+cncLabel(it)+'</span>':'';
     var fl = it.equipStatus==='Missing'?'fl-miss':it.equipStatus==='Damaged'?'fl-dmg':it.isCNC?'fl-cnc':'';
     var histBtn = (isAdminUser()||isDispatchUser()) ? '<button onclick="openItemHistory(\''+it.name.replace(/'/g,"\\'")+'\')" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:2px 4px;float:right" title="View history">🕐 History</button>' : '';
     return '<div class="inv-card '+fl+'">'
       +'<div class="inv-top"><div class="inv-name">'+esc(it.name)+'</div><div class="inv-badges">'+_eqSaveBadge(it.row)+sb+eb+cb+'</div></div>'
-      +'<div class="inv-meta">📍 '+esc(it.homeLocation)+(it.member?' · '+fmtMemberBadge(it.member):'')+(it.call?' · Call #'+esc(it.call):'')+(it.lastUpdated?' · '+fmtTime(it.lastUpdated):'')+'</div>'
+      +'<div class="inv-meta">📍 '+esc(it.homeLocation)+(_miss?'':((it.member?' · '+fmtMemberBadge(it.member):'')+(it.call?' · Call #'+esc(it.call):'')+(it.lastUpdated?' · '+fmtTime(it.lastUpdated):'')))+'</div>'
+      +(_miss?'<div class="inv-meta" style="color:#c0392b;font-weight:700">'+(it.status==='OUT'?'Last signed out by ':'Not signed out — last checked in by ')+(it.member?fmtMemberBadge(it.member):'unknown')+(it.call?' · Call #'+esc(it.call):'')+(it.lastUpdated?' · '+fmtTime(it.lastUpdated):'')+'</div>':'')
       +(it.isCNC?'<div class="inv-cnc">📍 '+esc(it.cncNote||it.ccnc)+'</div>':'')
       +'<div class="inv-actions"><button class="btn-in" onclick="openCheckout('+it.row+')">✓ Check IN</button><button class="btn-out" onclick="openCheckout('+it.row+', &quot;OUT&quot;)">↓ Check OUT</button>'+histBtn+'</div>'
       +((['Missing','Damaged','Need More'].indexOf(it.equipStatus)>=0)?'<div style="margin-top:6px"><button class="btn-reset" onclick="resetStatus('+it.row+')">↺ Mark as OK</button></div>':'')
@@ -4960,6 +4964,10 @@ function qrShowForm() {
         badge.textContent = isOut ? 'Currently OUT' : 'Currently IN';
         badge.style.background = isOut ? '#fdecea' : '#e8f5e9';
         badge.style.color = isOut ? '#c0392b' : '#2e7d32';
+        if (it.equipStatus === 'Missing') {   // admins: Missing is shown instead of IN/OUT (Nov 2026)
+          badge.textContent = 'MISSING — ' + (isOut ? 'last signed out by ' : 'not signed out, last checked in by ') + (it.member ? 'BC-' + String(it.member).replace(/^BC-?/i,'') : 'unknown');
+          badge.style.background = '#fdecea'; badge.style.color = '#c0392b';
+        }
         try{ _qrMemberGate(it); }catch(e){}
       }
     }).catch(function(){});
@@ -4978,7 +4986,7 @@ function qrShowForm() {
 // Who is scanning: the QR sign-in (_qrMember / admin PIN), else the main app sign-in.
 function _qrScannerIsMember(){
   try{ var r=JSON.parse(localStorage.getItem('cobc_qr_signin')||'null'); if (r && r.m && r.m.admin) return false; }catch(e){}
-  if (typeof _qrMember!=='undefined' && _qrMember && _qrMember.status!=null) return !/admin|equipment team|dispatch/i.test(String(_qrMember.status));
+  if (typeof _qrMember!=='undefined' && _qrMember && _qrMember.status!=null) return !/admin|equipment team/i.test(String(_qrMember.status));
   if (loggedInMember) return _eqMemberView();
   return true;
 }

@@ -780,8 +780,8 @@ function memberHasStatus(s) {
 function isAdminUser()    { return userLevel >= 3 || memberHasStatus('Admin'); }
 function isDispatchUser() { return memberHasStatus('Dispatch'); }
 function isEquipTeamUser(){ return userLevel >= 2 || memberHasStatus('Equipment Team'); }
-// Members (not admin / equipment team / dispatch): no statuses, nothing broken/missing (Nov 2026)
-function _eqMemberView(){ try{ return !(isAdminUser()||isEquipTeamUser()||isDispatchUser()); }catch(e){ return true; } }
+// Members (not admin / equipment team): no statuses, nothing broken/missing (Nov 2026)
+function _eqMemberView(){ try{ return !(isAdminUser()||isEquipTeamUser()); }catch(e){ return true; } }   // owner: admin (+ equipment team) only
 function _eqU(u){ return String(u||'').trim().toUpperCase().replace(/^BC-?/,'').replace(/^0+(?=\d)/,''); }
 
 // Admin can log for others everywhere; Dispatch only for inventory (pass true for car/COBC4 check)
@@ -3835,6 +3835,10 @@ function qrShowForm() {
         badge.textContent = isOut ? ('Currently OUT' + (_outLoc ? ' — ' + _outLoc : '')) : 'Currently IN';
         badge.style.background = isOut ? '#fdecea' : '#e8f5e9';
         badge.style.color = isOut ? '#c0392b' : '#2e7d32';
+        if (it.equipStatus === 'Missing') {   // admins: Missing is shown instead of IN/OUT (Nov 2026)
+          badge.textContent = 'MISSING — ' + (isOut ? 'last signed out by ' : 'not signed out, last checked in by ') + (it.member ? 'BC-' + String(it.member).replace(/^BC-?/i,'') : 'unknown');
+          badge.style.background = '#fdecea'; badge.style.color = '#c0392b';
+        }
         // Show only the valid action button (avoids tap-then-blocked confusion).
         // CNC items → OUT only (can't be checked IN). IN items → OUT only. OUT items → IN only.
         // COBC 4 (car) keeps both — its booking flow governs direction.
@@ -3890,7 +3894,7 @@ function qrDone() {
 // Who is scanning: the QR sign-in (_qrMember / admin PIN), else the main app sign-in.
 function _qrScannerIsMember(){
   try{ var r=JSON.parse(localStorage.getItem('cobc_qr_signin')||'null'); if (r && r.m && r.m.admin) return false; }catch(e){}
-  if (typeof _qrMember!=='undefined' && _qrMember && _qrMember.status!=null) return !/admin|equipment team|dispatch/i.test(String(_qrMember.status));
+  if (typeof _qrMember!=='undefined' && _qrMember && _qrMember.status!=null) return !/admin|equipment team/i.test(String(_qrMember.status));
   if (loggedInMember) return _eqMemberView();
   return true;
 }
