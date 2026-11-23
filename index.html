@@ -397,7 +397,7 @@ body.dark .btn-ghost{background:var(--surface2);color:var(--text);border-color:v
     <div class="pin-sub">Equipment Dashboard</div>
     <div id="google-btn-container" style="display:flex;justify-content:center;margin-bottom:4px;min-height:44px;"></div>
     <div class="pin-divider">or use your PIN</div>
-    <input id="pin-unit" class="pin-inp" type="text" inputmode="numeric" autocomplete="off" placeholder="BC #" style="font-size:18px;margin-bottom:8px"/>
+    <input id="pin-unit" class="pin-inp" type="text" inputmode="numeric" autocomplete="off" placeholder="Unit number" style="font-size:18px;margin-bottom:8px"/>
     <input id="pin-input" class="pin-inp" type="password" autocomplete="off" placeholder="Enter PIN" style="letter-spacing:2px;font-size:18px"/>
     <div id="pin-error" class="pin-err"></div>
     <button class="pin-btn" onclick="checkPin()">Enter</button>
@@ -1295,7 +1295,7 @@ function checkPin() {
   var unitEl = document.getElementById('pin-unit');
   var unitNo = unitEl ? String(unitEl.value||'').replace(/\D+/g,'').replace(/^0+(?=\d)/,'') : '';
   var errEl = document.getElementById('pin-input') && document.getElementById('pin-error');
-  if (!unitNo) { if (errEl) errEl.textContent = 'Enter your BC #'; if (unitEl) unitEl.focus(); return; }
+  if (!unitNo) { if (errEl) errEl.textContent = 'Enter your unit number'; if (unitEl) unitEl.focus(); return; }
   if (!raw) return;
   if (errEl) errEl.textContent = 'Checking...';
   // All PIN validation happens server-side — the PIN must belong to this BC #
@@ -1323,7 +1323,7 @@ function checkPin() {
         finishMemberLogin(d);
         if (errEl) errEl.textContent = '';
       } else {
-        if (errEl) errEl.textContent = (d && d.locked) ? ('✕ ' + d.error) : '✕ Wrong BC # or PIN';
+        if (errEl) errEl.textContent = (d && d.locked) ? ('✕ ' + d.error) : '✕ Wrong unit number or PIN';
         document.getElementById('pin-input').value = '';
         setTimeout(function(){ if(errEl) errEl.textContent=''; }, 2000);
       }
@@ -4769,10 +4769,10 @@ function toggleAlertRecipient(memberId, enabled) {
       <div style="font-size:48px;margin-bottom:12px">🔒</div>
       <div style="font-size:18px;font-weight:700;color:#1a3a5c;margin-bottom:4px">Bergen County Chaverim</div>
       <div id="qr-item-title" style="font-size:15px;font-weight:600;color:#555;margin-bottom:16px"></div>
-      <div style="font-size:13px;color:#5f6b7a;margin-bottom:20px">Enter your BC # and PIN</div>
+      <div style="font-size:13px;color:#5f6b7a;margin-bottom:20px">Unit number and PIN</div>
       <button id="qr-fid-btn" type="button" onclick="qrFaceId()" style="display:none;width:100%;padding:14px;background:#111827;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:8px">Use Face ID</button>
-      <div id="qr-fid-or" style="display:none;font-size:12px;color:#888;margin-bottom:10px">or BC # and PIN</div>
-      <input id="qr-unit-input" type="text" inputmode="numeric" autocomplete="off" placeholder="BC #"
+      <div id="qr-fid-or" style="display:none;font-size:12px;color:#888;margin-bottom:10px">or unit number and PIN</div>
+      <input id="qr-unit-input" type="text" inputmode="numeric" autocomplete="off" placeholder="Unit number"
         style="width:100%;padding:12px;font-size:22px;text-align:center;border:2px solid #e0e0e0;border-radius:12px;outline:none;margin-bottom:8px"/>
       <input id="qr-pin-input" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN"
         style="width:100%;padding:16px;font-size:32px;text-align:center;letter-spacing:12px;border:2px solid #e0e0e0;border-radius:12px;outline:none;margin-bottom:10px"/>
@@ -4898,7 +4898,7 @@ function qrFaceId(){
   }).catch(function(e){
     if (b) { b.disabled=false; b.textContent='Use Face ID'; }
     var m=String(e && e.message || e);
-    errEl.textContent = /NotAllowed|cancel|abort/i.test(m) ? 'Face ID cancelled — use BC # and PIN' : ('✕ ' + m);
+    errEl.textContent = /NotAllowed|cancel|abort/i.test(m) ? 'Face ID cancelled — use unit number and PIN' : ('✕ ' + m);
   });
 }
 function qrCheckPin() {
@@ -4906,7 +4906,7 @@ function qrCheckPin() {
   var errEl = document.getElementById('qr-pin-error');
   var qu = document.getElementById('qr-unit-input');
   var qUnit = qu ? String(qu.value||'').replace(/\D+/g,'').replace(/^0+(?=\d)/,'') : '';
-  if (!qUnit) { errEl.textContent = 'Enter your BC #'; if (qu) qu.focus(); return; }
+  if (!qUnit) { errEl.textContent = 'Enter your unit number'; if (qu) qu.focus(); return; }
   if (!v) return;
   document.getElementById('qr-pin-input').disabled = true;
   fetch(BASE_URL + '?action=getMemberByPin&pin=' + encodeURIComponent(v) + '&unit=' + encodeURIComponent('BC-' + qUnit), {redirect:'follow',credentials:'omit'})
@@ -4916,7 +4916,7 @@ function qrCheckPin() {
       if (d && d.sess) _eqSaveSess(d.sess);
       if (d && d.isAdminPin && d.adminLevel > 0) { _qrMember = null; qrShowForm(); }
       else if (d && d.id) { try { localStorage.setItem('cobc_pin_unit', qUnit); } catch(e) {} _qrMember = d; qrShowForm(); }
-      else { errEl.textContent = (d && d.locked) ? ('\u2715 ' + d.error) : '\u2715 Wrong BC # or PIN'; document.getElementById('qr-pin-input').value = ''; document.getElementById('qr-pin-input').focus(); setTimeout(function(){ errEl.textContent=''; }, 2000); }
+      else { errEl.textContent = (d && d.locked) ? ('\u2715 ' + d.error) : '\u2715 Wrong unit number or PIN'; document.getElementById('qr-pin-input').value = ''; document.getElementById('qr-pin-input').focus(); setTimeout(function(){ errEl.textContent=''; }, 2000); }
     })
     .catch(function(){ document.getElementById('qr-pin-input').disabled = false; errEl.textContent = '\u2715 Connection error'; document.getElementById('qr-pin-input').value = ''; setTimeout(function(){ errEl.textContent=''; }, 3000); });
 }
